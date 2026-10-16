@@ -1,0 +1,10 @@
+.header {
+  padding: var(--space-4) var(--space-3) var(--space-1);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--text-title-size);
+  line-height: var(--text-title-line);
+  font-weight: 700;
+}
