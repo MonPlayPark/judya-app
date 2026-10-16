@@ -9,3 +9,9 @@ Read `docs/BRIEF.md` before any work. It is the approved spec for milestone M3 (
 - Storage key `judya.v2` only. Never read, change or delete other localStorage keys.
 - Work on a branch, open a PR, never merge. Commit one logical change at a time; English commit messages.
 - At the end of every session update `docs/HANDOFF.md`.
+
+## Commands and layout
+- `npm test` (Vitest), `npm run build` (strict type check + Vite build), `npm run dev`. Run both test and build before every PR.
+- `src/domain/` pure logic (calc, zod schema, storage). No UI code in there. `src/pages/`, `src/components/` UI. Styles use the CSS variables in `src/styles/tokens.css` (Design System v2); do not invent colours or sizes.
+- No `any`. Smallest text 15px, tap targets at least 48px, status never by colour alone (icon + word).
+- Decisions made while building and open questions: `docs/DECISIONS.md`.
