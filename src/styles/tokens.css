@@ -1,0 +1,61 @@
+/* Design tokens from the JudYa Design System v2 (project/ds/judya/tokens.json). Do not invent new values. */
+:root {
+  /* colour */
+  --color-primary: #1a73e8;
+  --color-primary-pressed: #1557b0;
+  --color-primary-ink: #1967d2;
+  --color-primary-tint: #e8f0fe;
+  --color-secondary: #4285f4; /* illustration only, never a button fill */
+  --color-success: #34a853;
+  --color-success-ink: #137333;
+  --color-success-tint: #e6f4ea;
+  --color-warning: #fbbc05;
+  --color-warning-ink: #8a5300;
+  --color-warning-tint: #fef7e0;
+  --color-error: #ea4335;
+  --color-error-solid: #d93025;
+  --color-error-ink: #c5221f;
+  --color-error-tint: #fce8e6;
+  --color-ink: #202124;
+  --color-ink-muted: #5f6368;
+  --color-background: #f8f9fa;
+  --color-surface: #ffffff;
+  --color-border: #dadce0; /* decoration only */
+  --color-border-strong: #80868b; /* boundary of controls */
+
+  /* type */
+  --font-sans: 'Noto Sans Thai', system-ui, sans-serif;
+  --text-display-size: 30px;
+  --text-display-line: 40px;
+  --text-title-size: 22px;
+  --text-title-line: 30px;
+  --text-heading-size: 20px;
+  --text-heading-line: 28px;
+  --text-body-size: 17px;
+  --text-body-line: 26px;
+  --text-label-size: 17px;
+  --text-label-line: 24px;
+  --text-secondary-size: 16px;
+  --text-secondary-line: 24px;
+  --text-nav-size: 15px; /* the smallest size allowed */
+  --text-nav-line: 20px;
+
+  /* spacing (8px grid) */
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --touch-min: 48px;
+  --button-h: 52px;
+
+  /* radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+
+  /* shadow */
+  --elevation-1: 0 1px 2px rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+  --elevation-2: 0 1px 2px rgba(60, 64, 67, 0.3), 0 2px 6px 2px rgba(60, 64, 67, 0.15);
+}
