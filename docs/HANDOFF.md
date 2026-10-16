@@ -4,7 +4,7 @@ Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every
 
 ## Status after step 3.1 (16 ต.ค. 2569)
 
-Step 3.1 "app skeleton" is built on branch `claude/judya-pwa-setup-domain-ikjqu5`, PR open, **not merged**.
+Step 3.1 "app skeleton" is merged to `main` (PR #2) and live.
 
 ### Done
 - Vite + React 18 + TypeScript strict + Vitest + zod + vite-plugin-pwa in the repo root.
@@ -25,10 +25,11 @@ Step 3.1 "app skeleton" is built on branch `claude/judya-pwa-setup-domain-ikjqu5
 - Lighthouse 12 (local preview): Accessibility 100, Best-practices 100, Performance 100, SEO 100 (SEO was 90 before the
   meta description was added). Lighthouse 12 has no PWA score; installability is for the S24 test.
 
-### Not checked (needs the owner's S24)
-BRIEF 3.1 item 5: open the URL, "Add to home screen", icon shows, opens in airplane mode. See the list below.
+### Owner's S24 test (BRIEF 3.1 item 5): PASSED
+PR #2 merged and deployed. On the S24 the owner confirmed: URL opens, "Add to home screen" works, the JudYa icon
+shows, and the app opens in airplane mode. **Step 3.1 is accepted.**
 
-## Owner's S24 test for 3.1 (after the PR is merged and the green check appears, ~3 minutes)
+## Owner's S24 test list for 3.1 (done, kept for reference)
 1. Chrome → `https://monplaypark.github.io/judya-app/` — the page "หน้าแรก" with 4 menu items opens.
 2. Chrome ⋮ → "เพิ่มลงหน้าจอหลัก" (Add to Home screen) / "ติดตั้งแอป" — it adds.
 3. The JudYa icon (white bag on blue) appears on the home screen; the name under it is "JudYa".
