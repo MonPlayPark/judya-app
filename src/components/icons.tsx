@@ -48,3 +48,26 @@ export const SettingsIcon = () => (
     <circle cx="8" cy="17" r="2" />
   </Icon>
 );
+
+export const WarningIcon = () => (
+  <Icon>
+    <path d="M12 4l9 16H3z" />
+    <path d="M12 10v4" />
+    <path d="M12 17.2v.1" />
+  </Icon>
+);
+
+export const CheckCircleIcon = () => (
+  <Icon>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M8 12.5l3 3 5-6" />
+  </Icon>
+);
+
+export const InfoIcon = () => (
+  <Icon>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 11v5" />
+    <path d="M12 7.8v.1" />
+  </Icon>
+);
