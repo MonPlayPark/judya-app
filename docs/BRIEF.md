@@ -97,6 +97,15 @@ interface MedEvent { id; assignmentId; type: 'start'|'adjust'|'stop'|'resume'|'e
   reason?: 'หมอสั่ง'|'แพ้ยา'|'ใช้ยาไม่ได้ / ผลข้างเคียง'|'อื่น ๆ';   // บังคับสำหรับ adjust และ stop
   note?: string /*≤200*/; }
 
+// Snapshot = ค่าก่อน/หลังใน event (ตัดสินแล้ว O1, เจ้าของตอบ 17 ต.ค. 2569) ทุก field ไม่บังคับ
+type Snapshot = { schedule?: MealSchedule | IntervalSchedule; name?: string;
+  stockQty?: number | null; expiry?: string | null; note?: string | null }
+// กฎตามประเภท event
+// - start : to = { schedule } เท่านั้น, ไม่มี from
+// - adjust: from = { schedule }, to = { schedule } และสองค่าต้องต่างกัน
+// - edit  : from / to มี key ชุดเดียวกัน เฉพาะ field ที่เปลี่ยน อย่างน้อย 1 field (ค่าแต่ละ field ต้องต่างกัน)
+// - stop / resume: ไม่มี from / to
+
 interface HouseItem { id; name /*2–60*/;
   stock?: { qty: number; unit: string /*เม็ด แคปซูล ขวด หลอด ซอง แผง กล่อง หรือพิมพ์เอง*/ };   // ไม่มี = ไม่นับสต๊อก ไม่เตือนซื้อ
   lowAt?: number;                // เตือนเมื่อเหลือ ≤ ค่านี้ (ต้องมี stock)
