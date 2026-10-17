@@ -1,7 +1,7 @@
 // "Today" and today's doses (BRIEF sections 3.2 and 4). Pure: the caller passes `today`.
-import type { IsoDate } from './calc';
+import { diffDays, type IsoDate } from './calc';
 import { doseKey, dosesOn, intervalTimes } from './schedule';
-import type { Root } from './schema';
+import type { IntervalSchedule, Root } from './schema';
 
 /** Calendar date in Asia/Bangkok (UTC+7, no daylight saving) as 'YYYY-MM-DD'. */
 export function todayInBangkok(now: Date = new Date()): IsoDate {
@@ -68,4 +68,18 @@ export function todayDoses(root: Root, today: IsoDate, who?: string): TodayDose[
     const [b1, b2, b3] = rank(y);
     return a1 - b1 || a2 - b2 || a3.localeCompare(b3);
   });
+}
+
+/** Prepared / total doses and the percent for the progress bar (rounded; 0 when there is nothing to prepare). */
+export function todayProgress(doses: TodayDose[]): { done: number; total: number; percent: number } {
+  const total = doses.length;
+  const done = doses.filter((d) => d.done).length;
+  return { done, total, percent: total === 0 ? 0 : Math.round((done / total) * 100) };
+}
+
+/** Course day of an interval medicine: 'วันที่ 2 จาก 5'. An ongoing medicine has no start date, so no text (null). */
+export function intervalDay(schedule: IntervalSchedule, today: IsoDate): string | null {
+  const { course } = schedule;
+  if (course.kind === 'ongoing') return null;
+  return `วันที่ ${diffDays(course.startDate, today) + 1} จาก ${course.days}`;
 }

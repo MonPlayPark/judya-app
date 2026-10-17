@@ -9,7 +9,7 @@ import { PREV_KEY, STORAGE_KEY } from './domain/storage';
 import { requestPersistence, resetPersistenceAsked } from './state/persist';
 
 const EMPTY_TEXT = 'ยังไม่มีสมาชิกหรือยา';
-const SAMPLE_TEXT = 'ข้อมูลตัวอย่างพร้อมแล้ว: สมาชิก 2 คน ยา 4 รายการ';
+const SAMPLE_TEXT = 'นี่คือข้อมูลตัวอย่าง';
 
 const click = (el: HTMLElement) => fireEvent.click(el);
 

@@ -1,0 +1,66 @@
+.card {
+  display: block;
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--elevation-1);
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-size: var(--text-heading-size);
+  line-height: var(--text-heading-line);
+  font-weight: 600;
+}
+
+.badge {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+}
+.badge svg {
+  width: 22px;
+  height: 22px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-secondary-size);
+  line-height: var(--text-secondary-line);
+  font-weight: 600;
+}
+.pill svg {
+  flex: none;
+  width: 20px;
+  height: 20px;
+}
+.info {
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+}
+.success {
+  background: var(--color-success-tint);
+  color: var(--color-success-ink);
+}
+.warning {
+  background: var(--color-warning-tint);
+  color: var(--color-warning-ink);
+}
+.neutral {
+  background: var(--color-background);
+  color: var(--color-ink-muted);
+  border: 1px solid var(--color-border-strong);
+}
