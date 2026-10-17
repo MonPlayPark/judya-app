@@ -241,6 +241,8 @@ export const rootSchema = z.object({
 
 export type Person = z.infer<typeof personSchema>;
 export type Medication = z.infer<typeof medicationSchema>;
+export type MealSchedule = z.infer<typeof mealScheduleSchema>;
+export type IntervalSchedule = z.infer<typeof intervalScheduleSchema>;
 export type Schedule = z.infer<typeof scheduleSchema>;
 export type Assignment = z.infer<typeof assignmentSchema>;
 export type MedEvent = z.infer<typeof medEventSchema>;

@@ -233,16 +233,18 @@ export function compareShops(lines: ShopLine[], pharmacies: Pharmacy[]): Compare
 }
 
 /** Common household medicines are reminded by EXPIRY, not by stock (owner, review round 7).
- * NOTE: fixed 30 days as in the reference; BRIEF section 4 replaces it with settings.expiryWarnDays in step 3.2. */
+ * `warnDays` comes from settings.expiryWarnDays (BRIEF section 4); the default 30 is only the reference value
+ * the 18 old tests use — new code must always pass the setting. */
 export const EXPIRY_WARN_DAYS = 30;
 export type ExpiryStatus = 'unknown' | 'expired' | 'soon' | 'ok';
 export const expiryStatus = (
   expiryIso: IsoDate | null | undefined,
   today: IsoDate,
+  warnDays: number = EXPIRY_WARN_DAYS,
 ): { status: ExpiryStatus; days: number | null } => {
   if (!expiryIso) return { status: 'unknown', days: null };
   const days = diffDays(today, expiryIso);
-  return { status: days < 0 ? 'expired' : days <= EXPIRY_WARN_DAYS ? 'soon' : 'ok', days };
+  return { status: days < 0 ? 'expired' : days <= warnDays ? 'soon' : 'ok', days };
 };
 
 /** Allergy match is by GENERIC name (case-insensitive, either contains the other, >= 3 chars), so every brand is covered. */
