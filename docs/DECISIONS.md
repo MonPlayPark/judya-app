@@ -89,3 +89,32 @@ decisions taken **while building**, and questions the BRIEF does not answer. New
 - **Home tab (temporary)**: the count "ยา M รายการ" is the number of medicines of members (assignments); house medicines are not
   counted in that sentence. Real home screen: 3.2a-2.
 - **Tests**: no new libraries (no `user-event`); screen tests use `fireEvent`. `helpers.test-util.ts` holds test builders only.
+
+## Step 3.2a-2
+
+### Decided by the owner (18 ต.ค. 2569 "ตามที่แนะนำ")
+1. The bell button is hidden (a web app cannot warn while closed; in M3 warnings are seen only when the app is open).
+2. "ยาที่ต้องดูแล" includes members' medicines that are expired / expiring (with the owner's name), not only house medicines.
+3. The home "ยาวันนี้" card shows the first 3 doses **not yet prepared**. All prepared = "จัดครบแล้ว"; nothing today = "วันนี้ไม่มียาที่ต้องจัด".
+
+### Hidden because the page is not built yet (Q12) — show them when the page exists
+- Home: add-medicine button (3.2b), order button "สั่งยา N รายการ" (3.3), "เปลี่ยนเกณฑ์" link (Settings, 3.2d), members "ดูทั้งหมด" link (3.2c).
+- Home: member cards and care rows are not tappable (member page 3.2c, medicine/house pages 3.2b / 3.3).
+- Top bell (owner decision 1; stays hidden for good unless the owner changes it).
+
+### Decisions taken (BRIEF / board silent; easy to change)
+- **Care list** (`domain/care.ts`): a medicine that is both low on stock and expiring appears in both groups, but the total count counts it once.
+  Stock group order: members first (fewest days left first), then house medicines (smallest quantity first), because days and units cannot be compared.
+  Member stock line shows the quantity at the start of today ("มี N เม็ด"); the order text of the board ("สั่ง 60 เม็ด") is not shown (no ordering yet).
+- **Self-managed member with low stock** still shows "ใกล้หมด" on the member card (a warning is never hidden); otherwise it says "จัดยาเอง · เราดูแลสต๊อก".
+- **Member card statuses**: ใกล้หมด / สต๊อกพอ / จัดยาเอง · เราดูแลสต๊อก / ยังไม่ใส่ยา (no active medicine) / ยังไม่ใส่จำนวนยา (no medicine has a stock count).
+  If only some medicines have a count and none is low, it says "สต๊อกพอ" (only counted ones are judged).
+  Gray member colour uses `--color-background` with a border (no gray tint token exists).
+- **Interval medicine, no end ("ongoing")**: no "วันที่ X จาก Y" line (there is no start date in the data to count from).
+- **Section title** for every-X-hours medicines is "ยาที่กินทุก ๆ ชั่วโมง" (the board's literal "X" looks like a placeholder).
+- **Home preview row label** for an interval dose is its clock time (e.g. 08:00), not "เช้า".
+- **Progress** on the today screen is always for everyone; the member filter only narrows the list. Filter chips exist only for members with doses today; an unknown `?who=` shows everyone.
+- **Note "ไม่รวม … เพราะจัดยาเอง"** (from the board) lists self-managed members who have at least one active medicine.
+- **Clock**: `DataProvider` / `App` take an optional `getToday` (tests only). Screens re-read today on visibility change, focus and every 60 s.
+  A tap made after midnight but before the screen noticed is dropped (the screen refreshes), so a tick never lands on the wrong day.
+- **Avatar initial**: first letter of the name, skipping Thai leading vowels (เ แ โ ใ ไ).

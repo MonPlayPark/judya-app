@@ -41,7 +41,7 @@ with a Pages error, that setting is the first thing to check.
 
 ## Status after step 3.2a-1 (17 ต.ค. 2569) — logic + data layer + sample data
 
-Branch `ccr-a1307fb4-8nuvcp`, PR open (not merged). Home screen and "ยาวันนี้" screen are **not** built yet (that is 3.2a-2).
+PR #5 is **merged** to `main` (deployed). Home screen and "ยาวันนี้" were built in 3.2a-2 (below).
 
 ### Done
 - `Snapshot` defined by the owner (O1) in BRIEF section 2; `schema.ts` enforces the per-event-type rules (start / adjust / edit /
@@ -70,7 +70,29 @@ Branch `ccr-a1307fb4-8nuvcp`, PR open (not merged). Home screen and "ยาว�
   solved in the first action that adds a member or medicine (clear `meta.isSample`); O4 before the adjust-dose screen (3.2b).
 - Stock numbers: today is not deducted; days left walks the real schedule from today.
 
-## Next: step 3.2a-2 (home screen + "ยาวันนี้" screen using the logic above), then 3.2b, c, d
+## Status after step 3.2a-2 (18 ต.ค. 2569) — home screen (S1) + "ยาวันนี้" (S2)
+
+Branch `ccr-085d0f08-jmy885`, PR open (not merged).
+
+### Done
+- Logic with tests (owner's hand examples included, numbers unchanged): `domain/care.ts` (`careItems`, `memberCards`), `domain/format.ts`
+  (`thaiDate`, `thaiDateShort`, `formatPills`), `todayProgress` and `intervalDay` in `domain/today.ts`.
+- Clock: `getToday` on `DataProvider`/`App` (tests inject it), `state/useToday.ts` re-reads on visibility / focus / every minute.
+- Screens: `pages/HomePage.tsx` (greeting, today card, care list, member cards, sample banner), `pages/TodayPage.tsx` (`#/today?who=`),
+  shared `components/Card.tsx`. Ticks go through `actions.tickDose/untickDose` only (pruning of 14-day-old ticks is in `actions.tickDose`).
+- Hidden-for-now list and all choices: `docs/DECISIONS.md` section "Step 3.2a-2".
+- `npm test`: 167 pass. `npm run build` passes. Playwright 360px: no text under 15px, no tap target under 48px, no sideways scroll, no console errors.
+
+### Owner's S24 test list for 3.2a-2 (after merge and deploy)
+1. Open the app, tap "ลองดูด้วยข้อมูลตัวอย่าง": home shows greeting + date, a banner "นี่คือข้อมูลตัวอย่าง", the today card, "ยาที่ต้องดูแล", "สมาชิกในบ้าน".
+2. Tap the today card → "ยาวันนี้". Tap a row: ring turns green with a tick and says "จัดแล้ว"; the top counter and "เหลืออีก N" change. Tap again: it unticks.
+3. Close the app fully and reopen: the ticks are still there. Go back to home: the card shows the same count.
+4. Tap the member chip: only that member's rows. Reopen via the back arrow: filter resets.
+5. Leave the app open past midnight (Thai time), come back: the date is new and all rows are unticked.
+6. Airplane mode: everything above still works.
+7. Check the numbers by hand: "เหลือ N วัน" of each medicine in "ยาที่ต้องดูแล" (sample numbers are made up).
+
+## Next: step 3.2b (add medicine + medicine detail), then 3.2c, 3.2d. Add-data actions must clear `meta.isSample` (O5).
 Open points from 3.1 still waiting: `settings.expiryWarnDays` must be passed to `expiryStatus` by every screen;
 persist status line in Settings (3.2d); `judya.v2.prev` is now written by "เริ่มใหม่" (restore-from-backup in 3.2d will reuse it).
 
