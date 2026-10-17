@@ -9,7 +9,6 @@ decisions taken **while building**, and questions the BRIEF does not answer. New
 
 | # | Question | Needed by | What was done meanwhile |
 |---|---|---|---|
-| O1 | What fields does `Snapshot` (the `from` / `to` of an `adjust` or `edit` event) contain? BRIEF section 2 names the type but never defines it. | 3.2b (first time an event with `from`/`to` is saved) | `snapshotSchema` accepts any JSON object, marked as an open question in `schema.ts`. Nothing writes events in 3.1, so no data exists yet. Tighten it before 3.2b. |
 | O2 | Default text of `settings.orderTemplate` (variables `{ร้าน}` `{รายการ}`). BRIEF gives defaults for the three numbers only. | 3.3 | Default is an empty string. `buildOrderMessage` already appends the list when `{รายการ}` is missing, so an empty template still works. |
 | O3 | Wording of the "page not found" screen for an unknown `#/...` route. | any time (low) | Shows the title "ไม่พบหน้านี้". |
 
@@ -41,3 +40,52 @@ decisions taken **while building**, and questions the BRIEF does not answer. New
   Only `.woff2` files are precached.
 - **Updates**: `registerType: 'prompt'`. A bar "มีเวอร์ชันใหม่ · โหลดใหม่" appears; the page reloads only when tapped.
 - **CI**: pull requests run test + build; deploy runs only on `main` after both pass. Actions pinned to major versions.
+
+## Step 3.2a-1
+
+### Decided by the owner
+
+| # | Question | Answer (17 ต.ค. 2569) |
+|---|---|---|
+| O1 | What fields does `Snapshot` (`from` / `to` of an event) contain? | Defined in BRIEF section 2. `Snapshot = { schedule?, name?, stockQty?, expiry?, note? }`, all optional, unknown keys rejected. `start`: `to={schedule}` only, no `from`. `adjust`: `from={schedule}`, `to={schedule}`, the two must differ. `edit`: `from`/`to` have the same keys, only changed fields, at least 1 field, each value must differ. `stop`/`resume`: no `from`/`to`. Implemented in `schema.ts` (`snapshotSchema`, `medEventSchema`) with tests. |
+
+### Open questions (need an answer before the step named)
+
+| # | Question | Needed by | What was done meanwhile |
+|---|---|---|---|
+| O4 | `stockNow` uses the **current** schedule for every day since `countedOn`. If a dose is adjusted (event `adjust`) after the count, the days before the adjustment are recomputed with the new dose, so the number is wrong. Options: (a) the adjust screen also asks for a new count (sets `countedOn` = adjust date), (b) the walk uses the schedule from the events history. This changes medicine numbers. | 3.2b (adjust-dose screen) | Nothing writes `adjust` yet. `stockNow` is correct as long as the schedule has not changed since the count. |
+| O5 | Sample data lives in the same house as real data: `meta.isSample` is one flag for the whole house. When the owner adds a real member or medicine on top of the sample, "ลบข้อมูลตัวอย่าง" would delete the real data too. | 3.2b / 3.2c (first screen that adds data) | `loadSample` only runs on a blank house and `clearSample` only on a house flagged `isSample`. Every add/edit action written later **must clear `meta.isSample`** (or the screen must ask first). |
+
+### Decisions taken (no BRIEF rule existed; easy to change)
+
+- **`meta.isSample`** (optional boolean in `meta`): marks the whole house as the made-up sample set, so "delete sample" can remove
+  everything in one step and can never run on real data. Chosen over a per-record flag because the sample is loaded only into a
+  blank house (simplest). See O5 for the risk.
+- **Sample set** (`domain/sample.ts`): members "สมาชิกตัวอย่าง ก/ข" (ข manages their own medicine), medicines "ยาตัวอย่าง ก/ข/ค/ง"
+  (ก daily morning+evening, ข Mon/Wed/Fri, ค every 12 h for a 5-day course starting today, ง belongs to ข = self-managed),
+  house medicines "ยาสามัญตัวอย่าง ก" (expires in 10 days = soon with the default 15) and "ข" (expires in 400 days).
+  Dates follow today; stock counts are made up. `createdAt` uses the current time (`toISOString()`, ends with `Z`).
+- **Stock walk** (`stock.ts`) replaces the old `stockWalk` for new code (old one is kept for its 18 tests). `daysLeft` returns
+  `unknown` (no count / stopped), `ok {days, depletionDate}` (days from today to the first day that cannot be covered) or
+  `enough` (a short course ends before the stock does, or more than 3650 days).
+- **Stop / resume** (BRIEF "ช่วงที่หยุดยาไม่หัก"): `stockNow` / `daysLeft` / `isLowStock` take an optional `events` list; a `stop`
+  event pauses deduction from its `effectiveOn` day (inclusive) until the next `resume` day (inclusive = deducting again).
+  Without events nothing is paused.
+- **Interval doses per day** = `24 / everyHours × pills` on every day of the course (`startDate` .. `startDate + days − 1`),
+  whatever `firstTime` is. A late first dose on day 1 is not treated as a partial day.
+- **`todayDoses`** returns a flat list already sorted (morning, noon, evening, bedtime; inside a slot before / with / after meal;
+  interval doses last by clock time). Each item says its slot or time and meal timing, so the screen groups it (3.2a-2).
+  Interval keys are `<assignmentId>:<HH:MM>`; times are `firstTime` + N hours, wrapping past midnight.
+- **`expiryStatus`** got an optional third argument `warnDays`; the default 30 stays only so the 18 old tests pass. New code always
+  passes `settings.expiryWarnDays`.
+- **Load problems**: "ลองอีกครั้ง" loads again. "เริ่มใหม่" (not shown for `unavailable`: there is nothing to start over from when the
+  browser blocks storage) asks for confirmation, copies the current text of `judya.v2` to `judya.v2.prev`, and only then writes a
+  blank house; if either step fails the old text stays in `judya.v2`. An older `judya.v2.prev` is overwritten.
+- **First launch** writes nothing: the blank house is held in memory until the first change is saved.
+- **Failed save**: the screen keeps the old data (the change is not shown), a red bar says "บันทึกไม่ได้ ข้อมูลเดิมยังอยู่" with a
+  retry button that re-applies the same change on the current data.
+- **`navigator.storage.persist()`**: asked once per page load, skipped when already granted (BRIEF 3.2 also wants it after the first
+  saved medicine, and a status in Settings — both later). No screen shows the result yet.
+- **Home tab (temporary)**: the count "ยา M รายการ" is the number of medicines of members (assignments); house medicines are not
+  counted in that sentence. Real home screen: 3.2a-2.
+- **Tests**: no new libraries (no `user-event`); screen tests use `fireEvent`. `helpers.test-util.ts` holds test builders only.

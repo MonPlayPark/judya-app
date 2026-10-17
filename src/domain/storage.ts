@@ -1,11 +1,13 @@
-// localStorage access for JudYa (BRIEF 3.2). ONE key only: `judya.v2`.
+// localStorage access for JudYa (BRIEF 3.2). Two keys only: `judya.v2` and its safety copy `judya.v2.prev`
+// (written only by startFresh, before the old text is replaced).
 // This module never reads, writes, lists or deletes any other key (judya.v1 and medmate.v1 live on the
 // same origin and belong to older apps).
 //
 // Saving = validate -> write -> read back -> validate; if anything goes wrong the previous value is put back.
-import { rootSchema, type Root } from './schema';
+import { emptyRoot, rootSchema, type Root } from './schema';
 
 export const STORAGE_KEY = 'judya.v2';
+export const PREV_KEY = 'judya.v2.prev';
 
 /** The only part of the Storage API this module uses. */
 export interface KeyValueStore {
@@ -113,4 +115,26 @@ function safeParse(text: string | null): unknown {
   } catch {
     return undefined;
   }
+}
+
+/** "Start over" for data that cannot be loaded (corrupt / other version): first copy the text now in `judya.v2`
+ * to `judya.v2.prev`, and only if that worked replace `judya.v2` with a blank house. If either step fails the old
+ * text is still in `judya.v2`. An older `judya.v2.prev` is overwritten. */
+export function startFresh(nowIso: string, store: KeyValueStore | null = browserStore()): SaveResult {
+  if (!store) return { ok: false, reason: 'unavailable' };
+  let old: string | null;
+  try {
+    old = store.getItem(STORAGE_KEY);
+  } catch {
+    return { ok: false, reason: 'unavailable' };
+  }
+  if (old !== null) {
+    try {
+      store.setItem(PREV_KEY, old);
+      if (store.getItem(PREV_KEY) !== old) return { ok: false, reason: 'verify-failed', detail: 'safety copy' };
+    } catch (e) {
+      return { ok: false, reason: isQuotaError(e) ? 'quota' : 'unavailable', detail: 'safety copy' };
+    }
+  }
+  return saveRoot(emptyRoot(nowIso), store);
 }

@@ -87,10 +87,38 @@ export const assignmentSchema = z.object({
 
 export const EVENT_REASONS = ['หมอสั่ง', 'แพ้ยา', 'ใช้ยาไม่ได้ / ผลข้างเคียง', 'อื่น ๆ'] as const;
 
-// OPEN QUESTION (see docs/DECISIONS.md): BRIEF names `Snapshot` but never defines its fields.
-// Until the architecture team decides, any JSON object is accepted so no history is rejected.
-// No screen writes events in step 3.1. Tighten this in step 3.2b before the first real event is saved.
-export const snapshotSchema = z.record(z.string(), z.unknown());
+// Snapshot = before / after values inside an event (O1, decided by the owner; BRIEF section 2).
+// Every field is optional; what is required depends on the event type (see medEventSchema).
+export const snapshotSchema = z
+  .object({
+    schedule: scheduleSchema.optional(),
+    name: z.string().min(2).max(60).optional(),
+    stockQty: halfStep(0, 9999).nullable().optional(),
+    expiry: isoDate.nullable().optional(),
+    note: z.string().nullable().optional(),
+  })
+  .strict();
+export type Snapshot = z.infer<typeof snapshotSchema>;
+
+/** Deep equality for JSON values; object key order does not matter. */
+function sameJson(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+  const ka = Object.keys(a);
+  const kb = Object.keys(b);
+  if (ka.length !== kb.length) return false;
+  return ka.every(
+    (k) => k in b && sameJson((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k]),
+  );
+}
+
+/** Keys that really carry a value (an explicit `undefined` does not count). */
+const presentKeys = (s: Snapshot): string[] =>
+  Object.entries(s)
+    .filter(([, v]) => v !== undefined)
+    .map(([k]) => k)
+    .sort();
 
 export const medEventSchema = z
   .object({
@@ -104,9 +132,40 @@ export const medEventSchema = z
     reason: z.enum(EVENT_REASONS).optional(),
     note: z.string().max(200).optional(),
   })
-  .refine((e) => (e.type !== 'adjust' && e.type !== 'stop') || e.reason !== undefined, {
-    path: ['reason'],
-    message: 'reason is required for adjust and stop',
+  .superRefine((e, ctx) => {
+    const bad = (path: 'from' | 'to' | 'reason', message: string) => ctx.addIssue({ code: 'custom', path: [path], message });
+
+    if ((e.type === 'adjust' || e.type === 'stop') && e.reason === undefined) {
+      bad('reason', 'reason is required for adjust and stop');
+    }
+
+    const from = e.from ? presentKeys(e.from) : null;
+    const to = e.to ? presentKeys(e.to) : null;
+    switch (e.type) {
+      case 'start':
+        if (e.from) bad('from', 'start has no from');
+        if (!to || to.join() !== 'schedule') bad('to', 'start needs to = { schedule } only');
+        break;
+      case 'adjust':
+        if (!from || from.join() !== 'schedule') bad('from', 'adjust needs from = { schedule } only');
+        if (!to || to.join() !== 'schedule') bad('to', 'adjust needs to = { schedule } only');
+        else if (e.from && e.to && sameJson(e.from.schedule, e.to.schedule)) bad('to', 'adjust: from and to must differ');
+        break;
+      case 'edit':
+        if (!from || from.length === 0) bad('from', 'edit needs at least one changed field');
+        else if (!to || to.join() !== from.join()) bad('to', 'edit: from and to must have the same keys');
+        else if (e.from && e.to) {
+          const f = e.from as Record<string, unknown>;
+          const t = e.to as Record<string, unknown>;
+          if (from.some((k) => sameJson(f[k], t[k]))) bad('to', 'edit: list only fields that changed');
+        }
+        break;
+      case 'stop':
+      case 'resume':
+        if (e.from) bad('from', `${e.type} has no from`);
+        if (e.to) bad('to', `${e.type} has no to`);
+        break;
+    }
   });
 
 export const houseItemSchema = z.object({
@@ -177,11 +236,17 @@ export const rootSchema = z.object({
   prices: z.array(priceSchema),
   settings: settingsSchema,
   prepLog: prepLogSchema,
-  meta: z.object({ createdAt: isoDateTime, lastBackupAt: isoDateTime.optional() }),
+  meta: z.object({
+    createdAt: isoDateTime,
+    lastBackupAt: isoDateTime.optional(),
+    isSample: z.boolean().optional(), // true = the whole house is the made-up sample set (can be cleared in one tap)
+  }),
 });
 
 export type Person = z.infer<typeof personSchema>;
 export type Medication = z.infer<typeof medicationSchema>;
+export type MealSchedule = z.infer<typeof mealScheduleSchema>;
+export type IntervalSchedule = z.infer<typeof intervalScheduleSchema>;
 export type Schedule = z.infer<typeof scheduleSchema>;
 export type Assignment = z.infer<typeof assignmentSchema>;
 export type MedEvent = z.infer<typeof medEventSchema>;
