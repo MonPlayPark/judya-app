@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { sampleRoot } from './fixtures';
-import { STORAGE_KEY, loadRoot, saveRoot, type KeyValueStore } from './storage';
+import { PREV_KEY, STORAGE_KEY, loadRoot, saveRoot, startFresh, type KeyValueStore } from './storage';
 
 /** In-memory store that records every key it is asked about. */
 class FakeStore implements KeyValueStore {
   data = new Map<string, string>();
   touched = new Set<string>();
   failSet: 'quota' | null = null;
+  failKey: string | null = null; // when set, only writes to this key fail
   garbleNextSet = false; // corrupts only the next write, like a one-off disk glitch
 
   getItem(key: string): string | null {
@@ -15,7 +16,7 @@ class FakeStore implements KeyValueStore {
   }
   setItem(key: string, value: string): void {
     this.touched.add(key);
-    if (this.failSet === 'quota') throw new DOMException('full', 'QuotaExceededError');
+    if (this.failSet === 'quota' && (this.failKey === null || this.failKey === key)) throw new DOMException('full', 'QuotaExceededError');
     const garble = this.garbleNextSet;
     this.garbleNextSet = false;
     this.data.set(key, garble ? value.slice(0, -5) : value);
@@ -120,5 +121,43 @@ describe('storage (key judya.v2)', () => {
   it('missing or blocked storage is reported, not thrown', () => {
     expect(loadRoot(null)).toEqual({ status: 'unavailable' });
     expect(saveRoot(sampleRoot(), null)).toMatchObject({ ok: false, reason: 'unavailable' });
+  });
+
+  describe('start fresh (after corrupt / wrong-version data)', () => {
+    it('keeps the old text under judya.v2.prev, then writes a blank house', () => {
+      const s = new FakeStore();
+      s.data.set(STORAGE_KEY, '{"version":2,"persons":[');
+      expect(startFresh('2026-10-17T09:00:00+07:00', s)).toEqual({ ok: true });
+      expect(s.data.get(PREV_KEY)).toBe('{"version":2,"persons":[');
+      expect(loadRoot(s)).toMatchObject({ status: 'ok', root: { persons: [], assignments: [] } });
+    });
+
+    it('if the safety copy cannot be written, the old data is left exactly as it was', () => {
+      const s = new FakeStore();
+      s.data.set(STORAGE_KEY, 'garbage');
+      s.failSet = 'quota';
+      s.failKey = PREV_KEY;
+      expect(startFresh('2026-10-17T09:00:00+07:00', s)).toMatchObject({ ok: false });
+      expect(s.data.get(STORAGE_KEY)).toBe('garbage');
+      expect(s.data.has(PREV_KEY)).toBe(false);
+    });
+
+    it('if the blank house cannot be written, the old data is still in judya.v2', () => {
+      const s = new FakeStore();
+      s.data.set(STORAGE_KEY, 'garbage');
+      s.failSet = 'quota';
+      s.failKey = STORAGE_KEY;
+      expect(startFresh('2026-10-17T09:00:00+07:00', s)).toMatchObject({ ok: false, reason: 'quota' });
+      expect(s.data.get(STORAGE_KEY)).toBe('garbage');
+    });
+
+    it('touches only judya.v2 and judya.v2.prev', () => {
+      const s = new FakeStore();
+      s.data.set('judya.v1', 'old-app-data');
+      s.data.set(STORAGE_KEY, 'garbage');
+      startFresh('2026-10-17T09:00:00+07:00', s);
+      expect([...s.touched].sort()).toEqual([STORAGE_KEY, PREV_KEY].sort());
+      expect(s.data.get('judya.v1')).toBe('old-app-data');
+    });
   });
 });

@@ -236,7 +236,11 @@ export const rootSchema = z.object({
   prices: z.array(priceSchema),
   settings: settingsSchema,
   prepLog: prepLogSchema,
-  meta: z.object({ createdAt: isoDateTime, lastBackupAt: isoDateTime.optional() }),
+  meta: z.object({
+    createdAt: isoDateTime,
+    lastBackupAt: isoDateTime.optional(),
+    isSample: z.boolean().optional(), // true = the whole house is the made-up sample set (can be cleared in one tap)
+  }),
 });
 
 export type Person = z.infer<typeof personSchema>;
