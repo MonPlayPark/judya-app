@@ -25,7 +25,7 @@ describe('app shell', () => {
 
   it('opens on the home tab and follows the hash', () => {
     render(<App />);
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('หน้าแรก');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('สวัสดีค่ะ');
     expect(screen.getByRole('link', { name: 'หน้าแรก' })).toHaveAttribute('aria-current', 'page');
 
     go('#/members');

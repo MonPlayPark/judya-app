@@ -5,6 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import * as actions from '../domain/actions';
 import { emptyRoot, type Root } from '../domain/schema';
 import { loadRoot, saveRoot, startFresh, type LoadResult, type SaveResult } from '../domain/storage';
+import type { IsoDate } from '../domain/calc';
 import { todayInBangkok } from '../domain/today';
 import { requestPersistence } from './persist';
 
@@ -21,6 +22,8 @@ export interface DataApi {
   reload: () => void;
   /** Keep a copy of the unreadable data, then start with a blank house. */
   startOver: () => SaveResult;
+  /** The clock of the app: today's date in Bangkok. Tests pass their own. */
+  getToday: () => IsoDate;
   tickDose: (key: string) => void;
   untickDose: (key: string) => void;
   loadSample: () => void;
@@ -42,7 +45,7 @@ function toState(result: LoadResult): DataState {
 
 const DataContext = createContext<DataApi | null>(null);
 
-export function DataProvider({ children }: { children: ReactNode }) {
+export function DataProvider({ children, getToday = todayInBangkok }: { children: ReactNode; getToday?: () => IsoDate }) {
   const [state, setState] = useState<DataState>(() => toState(loadRoot()));
   const [saveFailure, setSaveFailure] = useState<SaveFailure | null>(null);
   const stateRef = useRef(state);
@@ -89,12 +92,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (result.ok) commit(toState(loadRoot()));
         return result;
       },
-      tickDose: (key) => apply((r) => actions.tickDose(r, todayInBangkok(), key)),
-      untickDose: (key) => apply((r) => actions.untickDose(r, todayInBangkok(), key)),
-      loadSample: () => apply((r) => actions.loadSample(r, todayInBangkok(), nowIso())),
+      getToday,
+      tickDose: (key) => apply((r) => actions.tickDose(r, getToday(), key)),
+      untickDose: (key) => apply((r) => actions.untickDose(r, getToday(), key)),
+      loadSample: () => apply((r) => actions.loadSample(r, getToday(), nowIso())),
       clearSample: () => apply(actions.clearSample),
     }),
-    [state, saveFailure, apply, commit],
+    [state, saveFailure, apply, commit, getToday],
   );
 
   return <DataContext.Provider value={api}>{children}</DataContext.Provider>;
