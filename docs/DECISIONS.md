@@ -9,7 +9,6 @@ decisions taken **while building**, and questions the BRIEF does not answer. New
 
 | # | Question | Needed by | What was done meanwhile |
 |---|---|---|---|
-| O1 | What fields does `Snapshot` (the `from` / `to` of an `adjust` or `edit` event) contain? BRIEF section 2 names the type but never defines it. | 3.2b (first time an event with `from`/`to` is saved) | `snapshotSchema` accepts any JSON object, marked as an open question in `schema.ts`. Nothing writes events in 3.1, so no data exists yet. Tighten it before 3.2b. |
 | O2 | Default text of `settings.orderTemplate` (variables `{ร้าน}` `{รายการ}`). BRIEF gives defaults for the three numbers only. | 3.3 | Default is an empty string. `buildOrderMessage` already appends the list when `{รายการ}` is missing, so an empty template still works. |
 | O3 | Wording of the "page not found" screen for an unknown `#/...` route. | any time (low) | Shows the title "ไม่พบหน้านี้". |
 
@@ -41,3 +40,11 @@ decisions taken **while building**, and questions the BRIEF does not answer. New
   Only `.woff2` files are precached.
 - **Updates**: `registerType: 'prompt'`. A bar "มีเวอร์ชันใหม่ · โหลดใหม่" appears; the page reloads only when tapped.
 - **CI**: pull requests run test + build; deploy runs only on `main` after both pass. Actions pinned to major versions.
+
+## Step 3.2a-1
+
+### Decided by the owner
+
+| # | Question | Answer (17 ต.ค. 2569) |
+|---|---|---|
+| O1 | What fields does `Snapshot` (`from` / `to` of an event) contain? | Defined in BRIEF section 2. `Snapshot = { schedule?, name?, stockQty?, expiry?, note? }`, all optional, unknown keys rejected. `start`: `to={schedule}` only, no `from`. `adjust`: `from={schedule}`, `to={schedule}`, the two must differ. `edit`: `from`/`to` have the same keys, only changed fields, at least 1 field, each value must differ. `stop`/`resume`: no `from`/`to`. Implemented in `schema.ts` (`snapshotSchema`, `medEventSchema`) with tests. |
