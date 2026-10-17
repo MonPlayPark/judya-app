@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { TODAY, assignment, dailyMeal, person, rootWith } from './helpers.test-util';
-import { todayDoses, todayInBangkok } from './today';
-import type { Assignment, Schedule } from './schema';
+import { intervalDay, todayDoses, todayInBangkok, todayProgress, type TodayDose } from './today';
+import type { Assignment, IntervalSchedule, Schedule } from './schema';
 
 describe('todayInBangkok', () => {
   it('g) 16:59:59 UTC is still 16 Oct in Bangkok; 17:00:00 UTC is already 17 Oct', () => {
@@ -89,5 +89,36 @@ describe('todayDoses', () => {
       ],
     });
     expect(todayDoses(root, TODAY).map((d) => d.assignmentId)).toEqual(['before', 'with', 'after', 'noon', 'eve', 'night']);
+  });
+});
+
+describe('todayProgress', () => {
+  const d = (done: boolean) => ({ done }) as TodayDose;
+  it('counts done / total and rounds the percent (3 of 11 = 27)', () => {
+    const doses = [...Array(3).fill(true), ...Array(8).fill(false)].map(d);
+    expect(todayProgress(doses)).toEqual({ done: 3, total: 11, percent: 27 });
+  });
+  it('nothing to prepare is 0 of 0, 0 percent', () => {
+    expect(todayProgress([])).toEqual({ done: 0, total: 0, percent: 0 });
+  });
+  it('all done is 100', () => {
+    expect(todayProgress([d(true), d(true)]).percent).toBe(100);
+  });
+});
+
+describe('intervalDay', () => {
+  const course = (startDate: string, days: number): IntervalSchedule => ({
+    kind: 'interval',
+    everyHours: 12,
+    firstTime: '08:00',
+    pills: 1,
+    course: { kind: 'days', days, startDate },
+  });
+  it('first and last day of a course', () => {
+    expect(intervalDay(course(TODAY, 5), TODAY)).toBe('วันที่ 1 จาก 5');
+    expect(intervalDay(course('2026-10-12', 5), TODAY)).toBe('วันที่ 5 จาก 5');
+  });
+  it('ongoing has no total, so no text', () => {
+    expect(intervalDay({ ...course(TODAY, 5), course: { kind: 'ongoing' } }, TODAY)).toBeNull();
   });
 });
