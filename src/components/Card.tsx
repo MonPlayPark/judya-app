@@ -30,7 +30,7 @@ export function Pill({
   children,
   className,
 }: {
-  tone: 'info' | 'success' | 'warning' | 'neutral';
+  tone: 'info' | 'success' | 'warning' | 'danger' | 'neutral';
   icon?: ReactNode;
   children: ReactNode;
   className?: string;

@@ -1,0 +1,83 @@
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sectionTitle {
+  margin: 0;
+  font-size: var(--text-heading-size);
+  line-height: var(--text-heading-line);
+  font-weight: 600;
+}
+.sectionHint {
+  font-size: var(--text-secondary-size);
+  font-weight: 400;
+  color: var(--color-ink-muted);
+}
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.cardBodyWide {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.subTitle {
+  font-size: var(--text-label-size);
+  line-height: var(--text-label-line);
+  font-weight: 600;
+}
+
+.modes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.mode {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 72px;
+  padding: var(--space-1) 20px;
+  border: 2px solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.modeOn {
+  border-color: var(--color-primary);
+  background: var(--color-primary-tint);
+}
+.modeText {
+  flex: 1;
+}
+.modeTitle {
+  display: block;
+  font-size: var(--text-label-size);
+  line-height: var(--text-label-line);
+  font-weight: 600;
+}
+.modeSub {
+  display: block;
+  font-size: var(--text-secondary-size);
+  line-height: var(--text-secondary-line);
+  color: var(--color-ink-muted);
+}
+.modeTick {
+  display: flex;
+  color: var(--color-primary-ink);
+}
+.modeTick svg {
+  stroke-width: 2.6;
+}

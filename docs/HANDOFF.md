@@ -149,6 +149,28 @@ Branch `ccr-4cf532e7-4aq45a`, PR open (not merged). Only `src/domain/medicine.ts
 
 ### Next: 3.2b-2 (add-medicine screens S4/S5/S5b + medicine detail S6), then 3.2c, 3.2d.
 
+## Status after step 3.2b-2 (18 ต.ค. 2569) — screens for medicines
+
+Branch `ccr-d4f6ddc2-2t2963`, PR open (not merged). Schema and the functions in `domain/medicine.ts` untouched.
+
+### Done
+- Data layer (`state/DataContext.tsx`): six methods wrapping the medicine functions; refused / failed-save results never show as done (tested).
+- `domain/errorText.ts` (Thai text for every code, completeness test), `domain/scheduleForm.ts` (form <-> schedule, Monday-first days via `canvasDayToModelDay`, summaries), `domain/medView.ts` (badges, stock / expiry blocks, history), `domain/suggest.ts` (name suggestions, pluggable source).
+- Screens: `#/meds`, `#/meds/new` -> `/schedule` -> `/stock` ("ขั้น N จาก 3", draft in memory), `#/meds/:id` (adjust, stop, resume, edit, history). Hidden-for-now list and every choice: `docs/DECISIONS.md` "Step 3.2b-2".
+- `npm test`: 276 pass. `npm run build` passes. Playwright 360px (20 shots: list, 3 add steps, detail normal / adjust / edit / stop / stopped, empty house, sample box, refresh note, not found): no text under 15px, no tap target under 48px, no sideways scroll, no console errors.
+- Owner's hand examples 1-5 are screen tests; numbers not changed (14 left / 7 days / low at the border of 7; adjust keeps 14; stop+resume deducts nothing; shared rename warns "2 คน"; จ. พ. ศ. = [1,3,5]).
+
+### Owner's S24 test list for 3.2b-2 (after merge and deploy)
+1. Blank house -> tab ยา: lead-in text + "เพิ่มยา". Add: name, "เพิ่มสมาชิก" (name, relation, switch), next, schedule (try meal and every-X-hours), next, count + unit + expiry, save -> "เพิ่มยาแล้ว".
+2. "ไปที่ยาทั้งหมด": the medicine is under the member; open the home / ยาวันนี้: it shows (if the member is not "จัดยาเอง").
+3. Detail: check "เหลือ N เม็ด · พอทาน N วัน (ถึง …)" by hand against your own count.
+4. ปรับโดส: pick new amounts, reason, save: the count stays the same that day; history has the line.
+5. หยุดยา with a reason: row moves to "ยาที่หยุดแล้ว", gone from ยาวันนี้; กลับมาใช้ยานี้อีก: back, stock unchanged by the stopped days.
+6. With sample data on: ยา -> เพิ่มยา shows the box about deleting the sample first.
+7. Airplane mode: all of the above works. Refresh in the middle of adding: polite note, back to step 1.
+
+### Next: 3.2c (members), 3.2d (settings / backup), 3.3. The members page should replace the small add-member form in add-medicine step 1.
+
 ## Next after 3.2b-1: 3.2b-2 screens, then 3.2c, 3.2d. (O5 solved: the functions refuse with `sample_present`; the screen clears the sample after asking.)
 Open points from 3.1 still waiting: `settings.expiryWarnDays` must be passed to `expiryStatus` by every screen;
 persist status line in Settings (3.2d); `judya.v2.prev` is now written by "เริ่มใหม่" (restore-from-backup in 3.2d will reuse it).

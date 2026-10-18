@@ -3,6 +3,21 @@
 // A change that cannot be saved is NOT shown as done: the screen keeps the old data and a "save failed" bar appears.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import * as actions from '../domain/actions';
+import * as medicine from '../domain/medicine';
+import type {
+  AddMedicineError,
+  AddMedicineInput,
+  AddPersonError,
+  AddPersonInput,
+  AdjustDoseError,
+  EditMedicineError,
+  EditMedicinePatch,
+  EventReason,
+  MedicineContext,
+  ResumeMedicineError,
+  StopMedicineError,
+} from '../domain/medicine';
+import type { Schedule } from '../domain/schema';
 import { emptyRoot, type Root } from '../domain/schema';
 import { loadRoot, saveRoot, startFresh, type LoadResult, type SaveResult } from '../domain/storage';
 import type { IsoDate } from '../domain/calc';
@@ -12,6 +27,10 @@ import { requestPersistence } from './persist';
 export type ProblemKind = 'corrupt' | 'wrong-version' | 'unavailable';
 export type DataState = { kind: 'ready'; root: Root } | { kind: 'problem'; problem: ProblemKind };
 export type SaveFailure = Extract<SaveResult, { ok: false }>['reason'];
+
+/** Result of a change that can be refused. `save_failed` = the change was fine but could not be written to the phone;
+ * then nothing changed, in memory or on disk, and the screen must not say it worked. */
+export type ActionResult<Extra extends object, E extends string> = ({ ok: true } & Extra) | { ok: false; error: E | 'save_failed' };
 
 export interface DataApi {
   state: DataState;
@@ -28,9 +47,26 @@ export interface DataApi {
   untickDose: (key: string) => void;
   loadSample: () => void;
   clearSample: () => void;
+  addPerson: (input: AddPersonInput) => ActionResult<{ personId: string }, AddPersonError>;
+  addMedicine: (
+    input: AddMedicineInput,
+  ) => ActionResult<{ assignmentId: string; medicationId: string; reusedMedication: boolean }, AddMedicineError>;
+  adjustDose: (
+    assignmentId: string,
+    input: { schedule: Schedule; reason: EventReason; note?: string },
+  ) => ActionResult<object, AdjustDoseError>;
+  stopMedicine: (assignmentId: string, input: { reason: EventReason; note?: string }) => ActionResult<object, StopMedicineError>;
+  resumeMedicine: (assignmentId: string, input: { note?: string }) => ActionResult<object, ResumeMedicineError>;
+  editMedicine: (assignmentId: string, patch: EditMedicinePatch) => ActionResult<{ sharedWith: number }, EditMedicineError>;
 }
 
 const nowIso = (): string => new Date().toISOString();
+
+/** Short random id (BRIEF section 2). */
+const newId = (): string =>
+  typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID().replace(/-/g, '').slice(0, 12)
+    : Math.random().toString(36).slice(2, 14).padEnd(12, '0');
 
 function toState(result: LoadResult): DataState {
   switch (result.status) {
@@ -79,6 +115,27 @@ export function DataProvider({ children, getToday = todayInBangkok }: { children
     [commit],
   );
 
+  /** Runs one function of domain/medicine.ts on the current data and saves the result. Only a saved result is shown:
+   * a refusal or a failed save leaves the data in memory exactly as it was (like tickDose). */
+  const mutate = useCallback(
+    <R extends { ok: true; root: Root }, E extends string>(
+      change: (root: Root, ctx: MedicineContext) => R | { ok: false; error: E },
+    ): Omit<R, 'root'> | { ok: false; error: E | 'save_failed' } => {
+      const current = stateRef.current;
+      if (current.kind !== 'ready') return { ok: false, error: 'save_failed' };
+      const res = change(current.root, { today: getToday(), nowIso: nowIso(), newId });
+      if (!res.ok) return res;
+      const saved = saveRoot(res.root);
+      if (!saved.ok) return { ok: false, error: 'save_failed' };
+      pending.current = null;
+      setSaveFailure(null);
+      commit({ kind: 'ready', root: res.root });
+      const { root: _root, ...rest } = res;
+      return rest;
+    },
+    [commit, getToday],
+  );
+
   const api = useMemo<DataApi>(
     () => ({
       state,
@@ -97,8 +154,14 @@ export function DataProvider({ children, getToday = todayInBangkok }: { children
       untickDose: (key) => apply((r) => actions.untickDose(r, getToday(), key)),
       loadSample: () => apply((r) => actions.loadSample(r, getToday(), nowIso())),
       clearSample: () => apply(actions.clearSample),
+      addPerson: (input) => mutate((r, ctx) => medicine.addPerson(r, input, ctx)),
+      addMedicine: (input) => mutate((r, ctx) => medicine.addMedicine(r, input, ctx)),
+      adjustDose: (id, input) => mutate((r, ctx) => medicine.adjustDose(r, id, input, ctx)),
+      stopMedicine: (id, input) => mutate((r, ctx) => medicine.stopMedicine(r, id, input, ctx)),
+      resumeMedicine: (id, input) => mutate((r, ctx) => medicine.resumeMedicine(r, id, input, ctx)),
+      editMedicine: (id, patch) => mutate((r, ctx) => medicine.editMedicine(r, id, patch, ctx)),
     }),
-    [state, saveFailure, apply, commit, getToday],
+    [state, saveFailure, apply, commit, getToday, mutate],
   );
 
   return <DataContext.Provider value={api}>{children}</DataContext.Provider>;

@@ -35,3 +35,20 @@
   background: var(--color-error-solid);
   color: #fff;
 }
+
+.dangerOutline {
+  background: var(--color-surface);
+  color: var(--color-error-ink);
+  border-color: var(--color-error-solid);
+}
+.dangerOutline:active {
+  background: var(--color-error-tint);
+}
+
+/* Off: grey with a border, and the screen always says why in words next to the button. */
+.button:disabled {
+  background: var(--color-background);
+  color: var(--color-ink-muted);
+  border-color: var(--color-border);
+  cursor: not-allowed;
+}

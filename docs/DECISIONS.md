@@ -160,3 +160,33 @@ decisions taken **while building**, and questions the BRIEF does not answer. New
 ### Open question for the owner (does not block this step)
 - None that touch the numbers. If unit editing is wanted later (`editMedicine` does not support it), the owner must decide what happens to prices and shared members.
 
+
+## Step 3.2b-2 (18 ต.ค. 2569) — screens: all medicines, add medicine (3 steps), medicine detail
+
+### Decided by the owner (18 ต.ค. 2569 "ตามที่แนะนำ")
+1. No ready-made medicine list this round. The name field takes a "source" (`SuggestionSource`, `domain/suggest.ts`); today the source is the names already in the house (`houseSuggestions`), matched ignoring letter case and outer spaces, from 2 characters. Always a row "ใช้ชื่อ “…” ตามที่พิมพ์". A medicine list can be plugged in later without touching the field.
+2. O4: adjust / stop / resume take effect today only. The date field is the words "วันนี้ (วันที่ …)", not editable; no recount question.
+3. O5: while `meta.isSample` is true the first step shows the box "ต้องลบข้อมูลตัวอย่างก่อน" (cancel / "ลบตัวอย่างแล้วเริ่ม" which calls `clearSample`). `addPerson` / `addMedicine` are never called while it is a sample.
+4. O6: renaming a medicine used by 2+ members asks first: "ยานี้ใช้อยู่ N คน การแก้ชื่อจะเปลี่ยนให้ทุกคน" (N counted from assignments before saving).
+5. Empty house: step 1 has a simple add-member form (name, relation, switch "จัดยาทานเอง" -> `addPerson`). The full members page (3.2c) will replace it.
+
+### Hidden because the page is not built yet (Q12) — show when the page exists
+- Medicines: tab "ยาสามัญประจำบ้าน" and its add button (3.3). Detail: "ราคาตามร้าน" section (3.3), "แชร์ให้แพทย์" (3.4). Member page links (3.2c).
+- The sentence "(ฟีเจอร์นี้กำลังจะมา)" about allergies is cut; picking the reason "แพ้ยา" only says "ถ้าแพ้ยานี้ ควรแจ้งแพทย์หรือเภสัชกร". The board's owner chip "ยาสามัญประจำบ้าน" in step 1 is not offered either.
+- The bottom tab "ยา" is now the real page.
+
+### Decisions taken (board / message silent; easy to change)
+- Branch: worked on the session branch `ccr-d4f6ddc2-2t2963` (the task said "new branch"; the session instructions fix this one).
+- Data layer: `addPerson`, `addMedicine`, `adjustDose`, `stopMedicine`, `resumeMedicine`, `editMedicine` on `DataContext` return `{ ok: true, … }` or `{ ok: false, error }`; a valid change that cannot be written returns `save_failed` and memory + disk stay as they were. These methods do not raise the global "บันทึกไม่ได้" bar (no retry of a stale change); the form shows the Thai reason and the person taps save again. ids: first 12 hex chars of `crypto.randomUUID()`.
+- Error texts live in `domain/errorText.ts`; a test scans `medicine.ts` for every code so none is missed.
+- Step 1 gate for the sample, not at the final save (otherwise the draft could point at sample members that get deleted). Deep link `#/meds/new` with a sample shows the same box.
+- Step 1 preselects the owner when there is exactly one member (no risk of a wrong owner). `?member=` also preselects. Duplicate (same member already uses the medicine) stops at step 1 with the Thai text; the same text still shows if the save is refused.
+- Step 2 shows amounts in the draft unit ("เม็ด" until step 3 changes it; a shared medicine uses its own unit). Step 2 has a frequency section (every day / every other day from today / pick days) that the board's AddSchedule did not have (it exists in the adjust form of the Med boards); one editor (`ScheduleEditor`) serves both.
+- Dates when editing a schedule: a running "every other day" anchor and a course start date stay as they were if nothing but them would differ; any real change restarts from today.
+- Unit has chips เม็ด แคปซูล ซอง มล. ขวด หลอด แผง กล่อง + own text; a medicine already in the house locks to its unit. Step 3 has no note field (not asked).
+- Detail: "เหลืออยู่" shows the number (stockNow, or the frozen count while stopped) and "พอทาน N วัน (ถึง <last covered day>)"; 0 left = "หมดแล้ว"; N = 0 = "ไม่พอสำหรับวันนี้"; stock covers the whole short course = "พอทานตามวิธีกินที่ตั้งไว้". No count = "ไม่ได้ใส่จำนวนคงเหลือ". Texts of how it is taken include before/with/after meal in the detail, history and adjust form (the list row keeps the short board text).
+- Stopped medicine: the "ปรับโดส" button is hidden (the function refuses it); "แก้ไขข้อมูลยา" and "กลับมาใช้ยานี้อีก" stay. Resume has no form (board: one tap).
+- Edit form: leaving the count empty removes the count ("ไม่นับสต๊อก"); the number shown is today's number, typing it unchanged is "no change".
+- List: badges are the warnings (expired, low, expiring); if none, "สต๊อกพอ" or "ไม่ได้ใส่จำนวน"; stopped rows show only "หยุดใช้แล้ว". "ยา N รายการ" counts active medicines. Members without medicines are listed with "ยังไม่มียา". The board's link "ไปที่ยาวันนี้" is kept.
+- Page not found for a medicine of a removed member too.
+- The draft of the add flow is in memory only (`DraftContext`); the list's "เพิ่มยา" button starts from an empty draft.

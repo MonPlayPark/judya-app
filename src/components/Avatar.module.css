@@ -1,0 +1,28 @@
+.avatar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  font-size: var(--text-heading-size);
+  font-weight: 700;
+}
+.blue {
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+}
+.green {
+  background: var(--color-success-tint);
+  color: var(--color-success-ink);
+}
+.yellow {
+  background: var(--color-warning-tint);
+  color: var(--color-warning-ink);
+}
+.gray {
+  background: var(--color-background);
+  color: var(--color-ink-muted);
+  border: 1px solid var(--color-border-strong);
+}
