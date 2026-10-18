@@ -78,6 +78,9 @@ const stored = (): Root => JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}')
 const MORNING_A = 3;
 const boxes = () => screen.queryAllByRole('checkbox');
 const checked = () => boxes().map((b) => b.getAttribute('aria-checked') === 'true');
+/** Text of an element including its child spans (the status word sits in its own nowrap span). */
+const rowText = (text: string) => (_: string, el: Element | null) =>
+  el?.tagName === 'SPAN' && el.className.includes('rowSub') && el.textContent === text;
 const comeBack = () => act(() => void document.dispatchEvent(new Event('visibilitychange')));
 
 beforeEach(() => {
@@ -110,9 +113,9 @@ describe('today screen', () => {
     expect(screen.getByText('พร้อมอาหาร')).toBeInTheDocument();
     expect(screen.getAllByText('หลังอาหาร')).toHaveLength(2);
     expect(screen.getByText('ก่อนอาหาร')).toBeInTheDocument();
-    expect(screen.getByText('Test Person D · 1 เม็ด · ยังไม่จัด')).toBeInTheDocument();
-    expect(screen.getByText('Test Person A · 2 เม็ด · ยังไม่จัด')).toBeInTheDocument();
-    expect(screen.getByText('Test Person A · ½ เม็ด · ยังไม่จัด')).toBeInTheDocument(); // bedtime, no meal label of its own
+    expect(screen.getByText(rowText('Test Person D · 1 เม็ด · ยังไม่จัด'))).toBeInTheDocument();
+    expect(screen.getByText(rowText('Test Person A · 2 เม็ด · ยังไม่จัด'))).toBeInTheDocument();
+    expect(screen.getByText(rowText('Test Person A · ½ เม็ด · ยังไม่จัด'))).toBeInTheDocument(); // bedtime, no meal label of its own
     expect(boxes()).toHaveLength(7);
   });
 
@@ -147,7 +150,7 @@ describe('today screen', () => {
     first.unmount(); // "reload"
     render(<App getToday={getToday} />);
     expect(checked()).toEqual([false, false, false, true, false, false, false]);
-    expect(screen.getByText('Test Person A · 1 เม็ด · จัดแล้ว')).toBeInTheDocument();
+    expect(screen.getByText(rowText('Test Person A · 1 เม็ด · จัดแล้ว'))).toBeInTheDocument();
   });
 
   it('taking the tick off works and is saved', () => {
@@ -280,7 +283,7 @@ describe('home screen', () => {
     expect(within(card).getByText('Med Noon')).toBeInTheDocument();
     expect(within(card).getByText('Med Morning Evening')).toBeInTheDocument(); // the evening dose
     expect(within(card).getByText('Med Bedtime')).toBeInTheDocument();
-    expect(within(card).getByText('ดูทั้งหมด (อีก 4 รายการ)')).toBeInTheDocument();
+    expect(within(card).getByText('ดูทั้งหมด (อีก 2 รายการ)')).toBeInTheDocument(); // 5 left, 3 shown
   });
 
   it('every-X-hours medicine in the preview shows its time and interval', () => {
@@ -327,7 +330,7 @@ describe('home screen', () => {
       open('#/', house({ houseItems }));
       expect(screen.getByRole('heading', { name: 'ยาที่ต้องดูแล' })).toBeInTheDocument();
       expect(screen.getByText('หมดอายุแล้ว')).toBeInTheDocument();
-      expect(screen.getByText('ถึงรอบซื้อเติมสต๊อก')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /ถึงรอบซื้อเติมสต๊อก/ })).toBeInTheDocument(); // plain heading, not a button
       expect(screen.getByText('ใกล้หมดอายุ')).toBeInTheDocument();
       expect(screen.getByText('หมดอายุภายใน 15 วัน · 1 รายการ')).toBeInTheDocument();
 
