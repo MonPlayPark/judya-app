@@ -65,12 +65,14 @@ export function summarizeBackup(text: string): BackupCheck {
   return { ok: true, root: parsed.data, summary: summarizeRoot(parsed.data) };
 }
 
+/** Thai calendar date of the last backup (null = never backed up). */
+export const backupDate = (root: Root): IsoDate | null =>
+  root.meta.lastBackupAt === undefined ? null : todayInBangkok(new Date(root.meta.lastBackupAt));
+
 /** Last backup as a Thai calendar date and the days since then (null = never backed up). */
 export function backupAge(root: Root, today: IsoDate): { date: IsoDate; daysAgo: number } | null {
-  const at = root.meta.lastBackupAt;
-  if (at === undefined) return null;
-  const date = todayInBangkok(new Date(at));
-  return { date, daysAgo: diffDays(date, today) };
+  const date = backupDate(root);
+  return date === null ? null : { date, daysAgo: diffDays(date, today) };
 }
 
 /** True when the house has data (not blank, not the sample) and it was never backed up, or the last backup is

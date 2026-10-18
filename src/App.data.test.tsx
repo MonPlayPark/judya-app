@@ -196,6 +196,6 @@ describe('persistent storage request', () => {
     withStorage(async () => {
       throw new Error('refused');
     });
-    await expect(requestPersistence()).resolves.toBeUndefined();
+    await expect(requestPersistence()).resolves.toBe('denied'); // a refusal is just "no promise"
   });
 });

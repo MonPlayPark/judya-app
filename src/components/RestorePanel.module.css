@@ -1,0 +1,36 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.compare {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+  font-size: var(--text-secondary-size);
+  line-height: var(--text-secondary-line);
+}
+.compare dt {
+  color: var(--color-ink-muted);
+}
+.compare dd {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-label-size);
+  line-height: var(--text-label-line);
+  font-weight: 600;
+}
+.compare dd:last-child {
+  margin-bottom: 0;
+}
+.buttons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.file {
+  display: none;
+}
