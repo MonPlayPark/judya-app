@@ -4,6 +4,7 @@ import { thaiDate } from '../domain/format';
 import { todayDoses, todayProgress } from '../domain/today';
 import { Button } from '../components/Button';
 import { Card, CardTitle, Pill } from '../components/Card';
+import { SubLine } from '../components/SubLine';
 import {
   BagIcon,
   CalendarCheckIcon,
@@ -75,7 +76,7 @@ function TodayCard() {
   const { done, total, percent } = todayProgress(doses);
   const undone = doses.filter((d) => !d.done);
   const shown = undone.slice(0, PREVIEW_ROWS);
-  const more = total - shown.length;
+  const more = undone.length - shown.length; // only what is still to do, so it never contradicts "จัดครบแล้ว"
 
   return (
     <Card href={href('/today')}>
@@ -122,7 +123,7 @@ function TodayCard() {
                     {v.everyHours !== undefined && ` ทุก ${v.everyHours} ชม.`}
                   </div>
                   <div className={styles.sub}>
-                    {v.who} · {v.amount} · ยังไม่จัด
+                    <SubLine text={`${v.who} · ${v.amount}`} status="ยังไม่จัด" />
                   </div>
                 </div>
               </div>
@@ -192,13 +193,10 @@ function CareCard() {
       )}
       {care.lowStock.length > 0 && (
         <>
-          <div className={`${styles.banner} ${styles.bannerBlue}`}>
-            <BagIcon />
-            <div>
-              <div className={styles.bannerTitle}>ถึงรอบซื้อเติมสต๊อก</div>
-              <div>สต๊อกใกล้หมด · {care.lowStock.length} รายการ</div>
-            </div>
-          </div>
+          {/* Plain heading, not a banner: the order page does not exist yet, so nothing here may look tappable. */}
+          <h3 className={styles.groupTitle}>
+            ถึงรอบซื้อเติมสต๊อก · {care.lowStock.length} รายการ
+          </h3>
           <CareRows items={care.lowStock} />
         </>
       )}

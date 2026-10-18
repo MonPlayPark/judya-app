@@ -92,6 +92,32 @@ Branch `ccr-085d0f08-jmy885`, PR open (not merged).
 6. Airplane mode: everything above still works.
 7. Check the numbers by hand: "เหลือ N วัน" of each medicine in "ยาที่ต้องดูแล" (sample numbers are made up).
 
+## Status after step 3.2a-3 (18 ต.ค. 2569) — fixes after the S24 test of PR #6
+
+Branch `ccr-9976fdd5-9nagba`, PR open (not merged).
+
+### Main bug ("5 rows but counter says 4, morning card twice") — NOT reproduced in code
+- Real sample (`makeSample`, today = 2026-10-18, Sunday) rendered through the real app: jsdom test **and** real Chromium 360px on the
+  production build both give 4 rows, counter "จัดแล้ว 0 จาก 4", cards เช้า / เย็น once each, no repeated ids or tick keys.
+  The code cannot draw two "เช้า" cards from one list (one card per slot; rows and counter come from the same list `all`).
+- The deployed build equals `main` (workflow run #10 on `39ee793` is green), so it is not a wrong deploy.
+- Most likely cause (unproven): Android "scroll/long screenshot" stitching — the fixed bottom menu and a repeated slice of the page
+  look like a duplicated card when the page is longer than the screen. In a Playwright full-page shot the menu also lands in the middle.
+- Stored data was checked in theory: the old 3.2a-1 sample is the same `makeSample`; duplicates in storage would also raise the counter.
+- Locked with tests (`src/App.sample.test.tsx`): unique ids/keys in the sample, rows = total, one card per time of day.
+- Owner: please check on the S24 with the live eye (scroll, no long screenshot). If it still repeats, send a normal screenshot and tell
+  the time on the phone; then add a visible build id in Settings (3.2d) to be sure which version runs.
+  Note `registerType: 'prompt'`: a new build only runs after tapping the "new version" bar or closing the app fully.
+
+### Small fixes (all with tests)
+a. Home "ดูทั้งหมด": no "(อีก N รายการ)" when all prepared; N counts only unprepared doses. b. Status word never splits (`components/SubLine`).
+c. "ถึงรอบซื้อเติมสต๊อก" is a plain heading. d. Member chips hidden with one member. e. ยา / สมาชิก / ตั้งค่า show "หน้านี้กำลังสร้าง" + back button
+(was an empty page). Decisions in `docs/DECISIONS.md` "Step 3.2a-3".
+
+### Checks
+`npm test`: 175 pass. `npm run build` passes. Playwright 360px (sample, Sunday 18 ต.ค. 2569): `#/today` 4 rows / 4, no chips, no text under 15px,
+no sideways scroll, no console errors; `#/` all done = "ดูทั้งหมด" only; the 3 blank tabs show the note and the button goes home.
+
 ## Next: step 3.2b (add medicine + medicine detail), then 3.2c, 3.2d. Add-data actions must clear `meta.isSample` (O5).
 Open points from 3.1 still waiting: `settings.expiryWarnDays` must be passed to `expiryStatus` by every screen;
 persist status line in Settings (3.2d); `judya.v2.prev` is now written by "เริ่มใหม่" (restore-from-backup in 3.2d will reuse it).

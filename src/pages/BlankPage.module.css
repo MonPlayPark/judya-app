@@ -1,0 +1,9 @@
+.body {
+  padding: var(--space-2) var(--space-3) var(--space-4);
+}
+.line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0 0 var(--space-2);
+}
