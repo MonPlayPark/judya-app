@@ -219,3 +219,28 @@ Done before 3.2c because the owner already enters real data that lives only in C
 
 ### Note on the owner's example 6
 `2026-11-01` is 14 days after `2026-10-18`, so it already shows as "อีก 14 วัน" with the default 15. The numbers are right and tested as written; the test also uses 7 (not listed), 13 (not listed), 14 and 30 (listed) to show the new value is used at once.
+
+## Step 3.2c (18 ต.ค. 2569) — members: list, one member, add / edit form, take out / put back
+
+### Hidden because the part is not built yet (Q12) — show when it exists
+- Member page: "เพิ่มบันทึกแพ้ยา" button (the status "ยังไม่พบการแพ้ยา" and the text "ยังไม่ได้บันทึก — ถามแพทย์/เภสัชกรก่อนใช้ยาใหม่" stay), "สั่งยา" (3.3), "แชร์ให้แพทย์" and "สรุปพบแพทย์" (3.4). The quick-button grid has one button, "จัดยาวันนี้", at full width; go back to two columns when the others come.
+- Home: there was no link to members, so none was changed. The home member cards and the "ดูทั้งหมด" link of the members card are still not tappable (left as in 3.2a-2). Add them if wanted.
+- Medicines page: the member name is not a link to the member page (not asked).
+
+### Decisions taken (board / message silent; easy to change)
+- **Take out = only `removedAt`**. No event is written (events have no member-level type), so "events unchanged" holds. Checked every place that reads members: today, home care list and member cards, all medicines, medicine detail and the today filter chips already skip removed members; the tests prove it. No number code was touched.
+- **Stock while a member is out**: nothing pauses. `stockNow` still counts the calendar days, so a member put back after 10 days shows 10 days of doses less than before. The owner's example (same `today` before and after) holds. If the owner wants the days out not deducted, that changes stock numbers: ask first.
+- **Backup summary** counts medicines of removed members (as in example 3: 1 member, 3 medicines) and the backup reminder treats a house with only removed members as "has data" (their data is in the file, so it must be backed up).
+- **Colour of a new member**: first colour that no member in the house uses; all four used = start again from blue (by member count). Removed members do not use a colour. The form pre-selects it.
+- **Birth year** is typed as digits only (letters cannot be entered). The message shows after leaving the box or pressing save ("ใส่ปี พ.ศ. 4 หลัก ตั้งแต่ 2400 ถึง {ปีนี้}"); the save button stays on, pressing it with a wrong year only shows the message. The same rule (`checkBirthYear`) is used by the domain and the screen. Insurance max 60 characters (also the box limit).
+- **A patch that changes nothing** in `editPerson` is ok (same root), not an error: saving an untouched form just goes back.
+- **New member needs a relation** (same as the small form in add medicine): the save button says "เลือกว่าเป็นใครของเรา แล้วค่อยกดบันทึก". The name is the first reason shown.
+- **Save failure** follows the existing methods: the data layer returns `save_failed`, the form stays and shows the red alert "บันทึกไม่ได้ ข้อมูลเดิมยังอยู่ …" (not the global bar with retry: a retry would run a stale change while the form is still open).
+- **Sample data**: new / edit forms show the "ต้องลบข้อมูลตัวอย่างก่อน" box before the form (`ClearSampleDialog`, now shared with add medicine); "นำกลับ" with a sample also asks. Editing a sample member and agreeing deletes the sample, so that member is gone afterwards.
+- **Card chips**: "ทานวันนี้ N ครั้ง" = rows of that member in "ยาวันนี้" (same `todayDoses`). Stock chip: ใกล้หมด N รายการ / สต๊อกพอ / ยังไม่ใส่ยา / ยังไม่ใส่จำนวนยา (same words as home). A self-managed member shows "จัดยาเอง · เราดูแลสต๊อก" in place of "ทานวันนี้" and still shows the stock chip, also when low.
+- **Switch text** in the form: on = "ยาไม่อยู่ในรายการยาวันนี้ แต่แอพยังนับสต๊อกและเตือนเมื่อยาใกล้หมด" (the board says "เตือนให้สั่ง"; ordering does not exist yet).
+- **Colour swatches** wrap to a second row at 360px (the board's own 4 x 72px also wrap at 390px); the chosen one has a tick and the colour name.
+- **Remove box** uses the shared `ConfirmDialog` (danger button "นำออก" above "ยกเลิก") with the board's wording, not an inline box. It names the saved name, not unsaved typing.
+- **Add-medicine step 1 `QuickAddMember`**: kept as the owner approved. It already calls `addPerson`, so it gets the same rules (name, relation, colour pick); it does not ask birth year or insurance.
+- **Error text** `person_not_found` no longer says "ในขั้นแรก" (it is now also used on member pages). "ใช้อยู่ N คน" in add medicine still counts a removed member's medicine (it is the same medicine name).
+- Removed `BlankPage` ("หน้านี้กำลังสร้าง"): every tab is a real page now.

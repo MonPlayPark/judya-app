@@ -214,3 +214,9 @@ export const StorageIcon = () => (
     <path d="M5 12v6c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8v-6" />
   </Icon>
 );
+
+export const ShieldIcon = () => (
+  <Icon>
+    <path d="M12 3l7.5 3v5.5c0 4.5-3 8-7.5 9.5-4.5-1.5-7.5-5-7.5-9.5V6z" />
+  </Icon>
+);

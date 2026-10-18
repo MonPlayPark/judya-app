@@ -141,6 +141,21 @@
   line-height: var(--text-secondary-line);
   color: var(--color-ink-muted);
 }
+.fieldError {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-1);
+  margin: 0;
+  font-size: var(--text-secondary-size);
+  line-height: var(--text-secondary-line);
+  font-weight: 600;
+  color: var(--color-error-ink);
+}
+.fieldError svg {
+  flex: none;
+  width: 22px;
+  height: 22px;
+}
 .input {
   width: 100%;
   min-height: 56px;
@@ -152,6 +167,9 @@
   font-family: inherit;
   font-size: var(--text-label-size);
   line-height: var(--text-label-line);
+}
+.input[aria-invalid='true'] {
+  border-color: var(--color-error-solid);
 }
 .textarea {
   min-height: 96px;

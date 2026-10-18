@@ -9,7 +9,7 @@ import { App } from './App';
 import { makeSample } from './domain/sample';
 import { NOW } from './domain/fixtures';
 import { emptyRoot } from './domain/schema';
-import { PREV_KEY, saveRoot, STORAGE_KEY } from './domain/storage';
+import { PREV_KEY, STORAGE_KEY } from './domain/storage';
 import { todayDoses } from './domain/today';
 
 const SUNDAY = '2026-10-18';
@@ -76,18 +76,5 @@ describe('sample house on a Sunday', () => {
     openSample('#/');
     const title = screen.queryByRole('heading', { name: /ถึงรอบซื้อเติมสต๊อก/ });
     if (title) expect(title.closest('a, button')).toBeNull();
-  });
-});
-
-describe('tabs that have no screen yet', () => {
-  it.each([['#/members', 'สมาชิก']])('%s shows a short "being built" note with a way back home', (hash, title) => {
-    expect(saveRoot(emptyRoot(NOW)).ok).toBe(true);
-    window.location.hash = '#/';
-    render(<App getToday={() => SUNDAY} />);
-    go(hash);
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(title);
-    expect(screen.getByText('หน้านี้กำลังสร้าง')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'กลับหน้าแรก' }));
-    expect(window.location.hash).toBe('#/');
   });
 });

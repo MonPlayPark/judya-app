@@ -7,7 +7,10 @@ import type {
   AddPersonError,
   AdjustDoseError,
   EditMedicineError,
+  EditPersonError,
+  RemovePersonError,
   ResumeMedicineError,
+  RestorePersonError,
   StopMedicineError,
 } from './medicine';
 
@@ -17,7 +20,10 @@ export type MedicineErrorCode =
   | AdjustDoseError
   | StopMedicineError
   | ResumeMedicineError
-  | EditMedicineError;
+  | EditMedicineError
+  | EditPersonError
+  | RemovePersonError
+  | RestorePersonError;
 
 /** Added by the data layer when the change was valid but could not be written to the phone. */
 export type ActionErrorCode = MedicineErrorCode | 'save_failed';
@@ -27,7 +33,12 @@ const TEXT: Record<ActionErrorCode, string> = {
   sample_present: 'ตอนนี้เป็นข้อมูลตัวอย่าง ต้องลบตัวอย่างก่อนจึงจะเพิ่มข้อมูลจริงได้',
   invalid_name: 'ชื่อสั้นหรือยาวเกินไป ชื่อสมาชิกใส่ 1–40 ตัวอักษร ชื่อยาใส่ 2–60 ตัวอักษร',
   invalid_relation: 'เลือกความสัมพันธ์ของสมาชิกอีกครั้ง',
-  person_not_found: 'ไม่พบสมาชิกคนนี้ กลับไปเลือกใหม่ในขั้นแรก',
+  person_not_found: 'ไม่พบสมาชิกคนนี้ อาจถูกนำออกจากบ้านแล้ว กลับไปเลือกใหม่',
+  invalid_color: 'เลือกสีโปรไฟล์อีกครั้ง',
+  invalid_birth_year: 'ปีเกิดไม่ถูกต้อง ใส่ปี พ.ศ. 4 หลัก ตั้งแต่ 2400 ถึงปีปัจจุบัน',
+  invalid_insurance: 'ชื่อบริษัทประกันยาวเกิน 60 ตัวอักษร ย่อให้สั้นลงหรือปล่อยว่าง',
+  already_removed: 'นำสมาชิกคนนี้ออกจากบ้านไปแล้ว',
+  not_removed: 'สมาชิกคนนี้ยังอยู่ในบ้าน ไม่ต้องนำกลับ',
   person_removed: 'สมาชิกคนนี้ถูกนำออกจากบ้านแล้ว เลือกสมาชิกคนอื่น',
   invalid_unit: 'ใส่หน่วยนับของยา เช่น เม็ด แคปซูล ซอง',
   invalid_schedule: 'วิธีกินยังไม่ถูกต้อง ตรวจช่วงเวลา จำนวน และวันที่ทานอีกครั้ง',
