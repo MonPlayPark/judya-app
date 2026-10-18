@@ -1,19 +1,9 @@
 // Text for one dose row, shared by the home card and the "ยาวันนี้" screen.
 import { formatPills } from '../domain/format';
 import type { Root } from '../domain/schema';
-import type { DoseSlot, MealTiming, TodayDose } from '../domain/today';
+import type { TodayDose } from '../domain/today';
 
-export const SLOT_LABEL: Record<DoseSlot, string> = {
-  morning: 'เช้า',
-  noon: 'กลางวัน',
-  evening: 'เย็น',
-  bedtime: 'ก่อนนอน',
-};
-export const MEAL_LABEL: Record<MealTiming, string> = {
-  before: 'ก่อนอาหาร',
-  with: 'พร้อมอาหาร',
-  after: 'หลังอาหาร',
-};
+export { MEAL_LABEL, SLOT_LABEL } from '../domain/scheduleForm';
 
 export interface DoseView {
   name: string;
