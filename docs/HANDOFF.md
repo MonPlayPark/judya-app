@@ -194,6 +194,28 @@ Branch `ccr-6b69bc28-mtj3ua`, PR open (not merged). Schema untouched. Choices an
 
 ### Next: 3.2c (members page; it replaces the small add-member form in add-medicine step 1), then 3.3 (shops, prices, order, house medicines, Settings shops + template).
 
+## Status after step 3.2c (18 ต.ค. 2569) — members pages
+
+Branch `ccr-fed68c89-4uxnvy`, PR open (not merged). Schema untouched. Choices and the hidden list: `docs/DECISIONS.md` "Step 3.2c".
+
+### Done
+- Logic (`domain/medicine.ts`, tests in `members.test.ts` = owner's hand examples 1-6): `editPerson`, `removePerson`, `restorePerson`, `checkBirthYear` (2400..this พ.ศ.), insurance rule, `nextPersonColor`; `addPerson` takes birth year / colour / insurance (old behaviour kept). `domain/memberView.ts`, `care.memberStock`. Data layer: `editPerson` / `removePerson` / `restorePerson`.
+- Screens: `#/members`, `#/members/:id`, `#/members/new`, `#/members/:id/edit` (one form; remove + "นำกลับ"); the bottom tab "สมาชิก" is real.
+- `npm test`: 437 pass. `npm run build` passes. Playwright 360px on the production build (3 members + 1 self-managed + 1 removed): list, one member, self-managed member, edit, edit with year error, remove box, new form, not found, removed-done card, home, today, medicines: no text under 15px, no tap target under 48px, no sideways scroll, no console errors.
+- Every place that reads members already skipped removed members; proved by tests (today, home care list, member cards, medicines, detail). Numbers unchanged by remove + restore.
+
+### Owner's S24 test list for 3.2c (after merge and deploy)
+1. Tab สมาชิก: cards with "ยา N รายการ", "ทานวันนี้ N ครั้ง", "ใกล้หมด"/"สต๊อกพอ", "ยังไม่พบการแพ้ยา". A self-managed member says "จัดยาเอง · เราดูแลสต๊อก".
+2. "เพิ่มสมาชิก": fill every box, save -> you land on that member's page; the member is in the list. Name empty -> save is off with the sentence.
+3. Birth year: type 2570 (or 2399) and save -> a Thai message under the box and nothing is saved; 2569 saves.
+4. Edit a member, save, open edit again: values are still there. Clear the birth year: it says "ยังไม่ระบุ".
+5. "นำสมาชิกออก" -> box -> ยกเลิก changes nothing -> นำออก: "นำ… ออกแล้ว". Then check **ยาวันนี้, หน้าแรก, ยาทั้งหมด**: nothing of that member any more. Tab สมาชิก: section "สมาชิกที่นำออก" -> "นำกลับ": everything is back, medicine numbers the same (but stock days keep counting while the member is out, see DECISIONS).
+6. Member page: medicine rows open the medicine page; "จัดยาวันนี้" opens ยาวันนี้; no "สั่งยา" / "แชร์" / "เพิ่มบันทึกแพ้ยา" buttons.
+7. With sample data on: เพิ่มสมาชิก asks to delete the sample first.
+8. Airplane mode: all of the above works.
+
+### Next: 3.3 (shops, prices, order, house medicines, Settings shops + template), 3.4 (share summary).
+
 ## Next after 3.2b-1: 3.2b-2 screens, then 3.2c, 3.2d. (O5 solved: the functions refuse with `sample_present`; the screen clears the sample after asking.)
 Open points from 3.1 still waiting: `settings.expiryWarnDays` must be passed to `expiryStatus` by every screen;
 persist status line in Settings (3.2d); `judya.v2.prev` is now written by "เริ่มใหม่" (restore-from-backup in 3.2d will reuse it).
