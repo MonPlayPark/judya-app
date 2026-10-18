@@ -126,3 +126,37 @@ decisions taken **while building**, and questions the BRIEF does not answer. New
 - **Status word** ("จัดแล้ว" / "ยังไม่จัด") sits in a nowrap span with its "·": on a narrow screen the whole block moves to the next line.
 - **"ถึงรอบซื้อเติมสต๊อก"** is a plain heading (no blue box) until the order page exists (3.3); then it may become a button again.
 - **Member filter chips** are shown only when 2+ members have doses today; with 1 member `?who=` is ignored.
+
+## Step 3.2b-1 (18 ต.ค. 2569) — functions that change medicine data (`src/domain/medicine.ts`, no screens)
+
+### Decided by the owner (18 ต.ค. 2569 "ตามที่แนะนำ")
+- **O4 (answered)**: adjust dose / stop / resume set the stock base automatically as `{ qty: amount before the change, countedOn: today }`;
+  the owner does not recount. The effective date is always today in M3. A medicine without a count gets no count.
+- **O5 (answered)**: `addPerson` and `addMedicine` refuse with `sample_present` while `meta.isSample` is true. They never clear the sample
+  silently; screen 3.2b-2 asks the owner and calls `clearSample` first.
+- **O6 (answered)**: renaming a medicine shared by several members renames it for all of them (one name). `editMedicine` returns `sharedWith`
+  so the screen can warn.
+
+### Decisions taken (BRIEF and the message were silent; easy to change)
+- **Call shape**: `fn(root, …, ctx)` where `ctx = { today, nowIso, newId }` (`MedicineContext`). Extra inputs are one object
+  (`adjustDose(root, id, { schedule, reason, note? }, ctx)`, `stopMedicine(root, id, { reason, note? }, ctx)`,
+  `resumeMedicine(root, id, { note? }, ctx)`), not loose positional arguments, so `ctx` can always be last.
+- **Result**: `{ ok: true, root, … }` or `{ ok: false, error }`. Every ok root is checked with `rootSchema` inside the function; a failure there
+  returns `invalid_data` (should never happen; it means a bug or a bad `ctx`).
+- **Name** is saved trimmed (2–60 characters, counted like the schema). Matching a shared medicine ignores outer spaces and letter case only (Q6).
+- **Unit** is trimmed, must not be blank, and must equal the shared medicine's unit exactly. `unit_mismatch` is checked before `duplicate`.
+- **Duplicate** means the same member and the same medicine that is still `active`. A stopped copy does not block adding it again.
+- **Blank text**: a blank note in `addMedicine` is an error (`invalid_note`), same as a blank note in an edit patch (use `null` to remove).
+  Event notes (adjust / stop / resume) may be left out or blank = no note; more than 200 characters = `invalid_note`. Assignment notes have no length limit (the schema has none).
+- **Edit compares with what the person sees today**: `from.stockQty` is the amount today (`stockNow`, or the frozen count while stopped), not the old base.
+  Typing the same number as today is "no change" (nothing written). A different number is a recount: `stock = { qty, countedOn: today }`.
+  `stockQty: null` removes the count. A stopped medicine can be recounted; the count survives resume.
+- **Shared rename events**: the edited member's event holds all changed fields; every other member using the medicine gets an `edit` event with the name only.
+  `sharedWith` = number of assignments (active or stopped) using the medicine, returned on every ok edit.
+- **Person colour** (`addPerson`): rotates blue, green, yellow, gray by how many members exist (the form has no colour choice yet). `insurance` is `{}`, no birth year.
+- **Not checked** (not asked): editing / stopping a medicine of a removed member is allowed by the functions (screens do not reach them); an empty meal schedule
+  (no slot) passes the schema, so the screen must not offer it; effective date is always `ctx.today`, no back-dating.
+
+### Open question for the owner (does not block this step)
+- None that touch the numbers. If unit editing is wanted later (`editMedicine` does not support it), the owner must decide what happens to prices and shared members.
+
