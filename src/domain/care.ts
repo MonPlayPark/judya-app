@@ -127,23 +127,26 @@ export interface MemberCard {
   status: MemberStatus;
 }
 
+/** How the stock of one member stands: how many active medicines are low, or why nothing can be said. */
+export type MemberStock = { status: 'low'; lowCount: number } | { status: 'ok' | 'noMeds' | 'noStock' };
+
+/** Stock of one member's active medicines (stopped ones are left out). Only medicines with a count are judged. */
+export function memberStock(root: Root, personId: string, today: IsoDate): MemberStock {
+  const active = root.assignments.filter((a) => a.personId === personId && a.status === 'active');
+  const lowCount = active.filter((a) => isLowStock(a, today, root.settings.lowStockDays, root.events)).length;
+  if (lowCount > 0) return { status: 'low', lowCount };
+  if (active.length === 0) return { status: 'noMeds' };
+  return { status: active.some((a) => a.stock !== null) ? 'ok' : 'noStock' };
+}
+
 /** One card per member who is not removed. Low stock is shown even for a self-managed member (a warning is never hidden). */
 export function memberCards(root: Root, today: IsoDate): MemberCard[] {
   return root.persons
     .filter((p) => p.removedAt === undefined)
     .map((p) => {
-      const active = root.assignments.filter((a) => a.personId === p.id && a.status === 'active');
-      const low = active.some((a) => isLowStock(a, today, root.settings.lowStockDays, root.events));
-      const anyCount = active.some((a) => a.stock !== null);
-      const status: MemberStatus = low
-        ? 'low'
-        : p.selfManaged
-          ? 'selfManaged'
-          : active.length === 0
-            ? 'noMeds'
-            : !anyCount
-              ? 'noStock'
-              : 'ok';
-      return { personId: p.id, name: p.name, color: p.color, medCount: active.length, status };
+      const medCount = root.assignments.filter((a) => a.personId === p.id && a.status === 'active').length;
+      const stock = memberStock(root, p.id, today);
+      const status: MemberStatus = stock.status === 'low' ? 'low' : p.selfManaged ? 'selfManaged' : stock.status;
+      return { personId: p.id, name: p.name, color: p.color, medCount, status };
     });
 }

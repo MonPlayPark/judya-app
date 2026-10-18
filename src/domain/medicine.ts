@@ -33,7 +33,25 @@ export type Relation = (typeof RELATIONS)[number];
 type Fail<E extends string> = { ok: false; error: E };
 const fail = <E extends string>(error: E): Fail<E> => ({ ok: false, error });
 
-export type AddPersonError = 'sample_present' | 'invalid_name' | 'invalid_relation' | 'invalid_data';
+export type AddPersonError =
+  | 'sample_present'
+  | 'invalid_name'
+  | 'invalid_relation'
+  | 'invalid_color'
+  | 'invalid_birth_year'
+  | 'invalid_insurance'
+  | 'invalid_data';
+export type EditPersonError =
+  | 'sample_present'
+  | 'person_not_found'
+  | 'invalid_name'
+  | 'invalid_relation'
+  | 'invalid_color'
+  | 'invalid_birth_year'
+  | 'invalid_insurance'
+  | 'invalid_data';
+export type RemovePersonError = 'sample_present' | 'person_not_found' | 'already_removed' | 'invalid_data';
+export type RestorePersonError = 'sample_present' | 'person_not_found' | 'not_removed' | 'invalid_data';
 export type AddMedicineError =
   | 'sample_present'
   | 'person_not_found'
@@ -141,9 +159,63 @@ const rebased = (root: Root, a: Assignment, today: IsoDate): Assignment['stock']
   return qty === null ? null : { qty, countedOn: today };
 };
 
-// ---------- addPerson ----------
+// ---------- members: addPerson, editPerson, removePerson, restorePerson ----------
 
-export type AddPersonInput = { name: string; relation: Relation; selfManaged: boolean };
+export type PersonColor = Person['color'];
+/** What the member functions need from the clock. `MedicineContext` fits, so addPerson keeps its context. */
+export type PersonContext = Pick<MedicineContext, 'today' | 'nowIso'>;
+
+export const MIN_BIRTH_YEAR_BE = 2400;
+export const INSURANCE_MAX = 60;
+
+/** Buddhist-era year of a 'YYYY-MM-DD' date (Gregorian year + 543). */
+export const buddhistYear = (today: IsoDate): number => Number(today.slice(0, 4)) + 543;
+
+/** Birth year (พ.ศ.). Empty / null / undefined = not given (value null). Otherwise 4 digits, 2400 .. this Buddhist year.
+ * Accepts a number or what was typed; "25a0", 2500.5 and 2570 (in 2569) are refused. */
+export function checkBirthYear(raw: number | string | null | undefined, today: IsoDate): { ok: true; value: number | null } | { ok: false } {
+  if (raw === null || raw === undefined) return { ok: true, value: null };
+  let n: number;
+  if (typeof raw === 'string') {
+    const t = raw.trim();
+    if (t === '') return { ok: true, value: null };
+    if (!/^\d{4}$/.test(t)) return { ok: false };
+    n = Number(t);
+  } else {
+    n = raw;
+  }
+  return Number.isInteger(n) && n >= MIN_BIRTH_YEAR_BE && n <= buddhistYear(today) ? { ok: true, value: n } : { ok: false };
+}
+
+/** Insurance company name: trimmed, up to 60 characters; blank / null = not given (value null). */
+export function checkInsurance(raw: string | null | undefined): { ok: true; value: string | null } | { ok: false } {
+  if (raw === null || raw === undefined) return { ok: true, value: null };
+  const t = raw.trim();
+  if (t === '') return { ok: true, value: null };
+  return t.length <= INSURANCE_MAX ? { ok: true, value: t } : { ok: false };
+}
+
+const isColor = (c: unknown): c is PersonColor => PERSON_COLORS.some((x) => x === c);
+const isRelation = (r: unknown): r is Relation => RELATIONS.some((x) => x === r);
+
+/** The colour a new member gets: the first one nobody in the house uses; when all four are used, it starts over from the first.
+ * Members who were taken out of the house do not count. */
+export function nextPersonColor(root: Root): PersonColor {
+  const inHouse = root.persons.filter((p) => p.removedAt === undefined);
+  const free = PERSON_COLORS.find((c) => !inHouse.some((p) => p.color === c));
+  return free ?? PERSON_COLORS[inHouse.length % PERSON_COLORS.length] ?? 'blue';
+}
+
+export type AddPersonInput = {
+  name: string;
+  relation: Relation;
+  selfManaged: boolean;
+  /** Left out / empty = not given. */
+  birthYearBE?: number | string | null;
+  /** Left out = the next colour nobody uses (nextPersonColor). */
+  color?: PersonColor;
+  insurance?: { health?: string | null; accident?: string | null };
+};
 
 export function addPerson(
   root: Root,
@@ -153,17 +225,103 @@ export function addPerson(
   if (root.meta.isSample) return fail('sample_present'); // O5: the screen asks the owner to clear the sample first
   const name = input.name.trim();
   if (name.length < 1 || name.length > 40) return fail('invalid_name');
-  if (!RELATIONS.some((r) => r === input.relation)) return fail('invalid_relation');
+  if (!isRelation(input.relation)) return fail('invalid_relation');
+  if (input.color !== undefined && !isColor(input.color)) return fail('invalid_color');
+  const year = checkBirthYear(input.birthYearBE, ctx.today);
+  if (!year.ok) return fail('invalid_birth_year');
+  const health = checkInsurance(input.insurance?.health);
+  const accident = checkInsurance(input.insurance?.accident);
+  if (!health.ok || !accident.ok) return fail('invalid_insurance');
   const person: Person = {
     id: ctx.newId(),
     name,
     relation: input.relation,
-    color: PERSON_COLORS[root.persons.length % PERSON_COLORS.length] ?? 'blue',
+    ...(year.value === null ? {} : { birthYearBE: year.value }),
+    color: input.color ?? nextPersonColor(root),
     selfManaged: input.selfManaged === true,
-    insurance: {},
+    insurance: {
+      ...(health.value === null ? {} : { health: health.value }),
+      ...(accident.value === null ? {} : { accident: accident.value }),
+    },
   };
   const res = checked({ ...root, persons: [...root.persons, person] });
   return res.ok ? { ok: true, root: res.root, personId: person.id } : res;
+}
+
+/** A field left out (undefined) is not touched. null (or blank text) clears birth year and insurance. */
+export type EditPersonPatch = {
+  name?: string;
+  relation?: Relation;
+  birthYearBE?: number | string | null;
+  color?: PersonColor;
+  insurance?: { health?: string | null; accident?: string | null };
+  selfManaged?: boolean;
+};
+
+/** Changes a member who is still in the house. Nothing but the fields in `patch` changes. A patch that changes
+ * nothing is ok and returns the same root. Members and medicines are never added or removed here. */
+export function editPerson(
+  root: Root,
+  personId: string,
+  patch: EditPersonPatch,
+  ctx: PersonContext,
+): { ok: true; root: Root } | Fail<EditPersonError> {
+  if (root.meta.isSample) return fail('sample_present');
+  const current = root.persons.find((p) => p.id === personId);
+  if (!current || current.removedAt !== undefined) return fail('person_not_found');
+
+  let next: Person = { ...current, insurance: { ...current.insurance } };
+  if (patch.name !== undefined) {
+    const name = patch.name.trim();
+    if (name.length < 1 || name.length > 40) return fail('invalid_name');
+    next = { ...next, name };
+  }
+  if (patch.relation !== undefined) {
+    if (!isRelation(patch.relation)) return fail('invalid_relation');
+    next = { ...next, relation: patch.relation };
+  }
+  if (patch.color !== undefined) {
+    if (!isColor(patch.color)) return fail('invalid_color');
+    next = { ...next, color: patch.color };
+  }
+  if (patch.birthYearBE !== undefined) {
+    const year = checkBirthYear(patch.birthYearBE, ctx.today);
+    if (!year.ok) return fail('invalid_birth_year');
+    const { birthYearBE: _old, ...rest } = next;
+    next = year.value === null ? rest : { ...rest, birthYearBE: year.value };
+  }
+  for (const field of ['health', 'accident'] as const) {
+    const raw = patch.insurance?.[field];
+    if (raw === undefined) continue;
+    const value = checkInsurance(raw);
+    if (!value.ok) return fail('invalid_insurance');
+    const { [field]: _old, ...rest } = next.insurance;
+    next = { ...next, insurance: value.value === null ? rest : { ...rest, [field]: value.value } };
+  }
+  if (patch.selfManaged !== undefined) next = { ...next, selfManaged: patch.selfManaged === true };
+
+  if (sameJson(next, current)) return { ok: true, root };
+  return checked({ ...root, persons: root.persons.map((p) => (p.id === personId ? next : p)) });
+}
+
+/** Takes a member out of the house: only `removedAt` is set. The member, the medicines and the history stay (append-only),
+ * so putting the member back brings everything back with the same numbers. */
+export function removePerson(root: Root, personId: string, ctx: PersonContext): { ok: true; root: Root } | Fail<RemovePersonError> {
+  if (root.meta.isSample) return fail('sample_present');
+  const current = root.persons.find((p) => p.id === personId);
+  if (!current) return fail('person_not_found');
+  if (current.removedAt !== undefined) return fail('already_removed');
+  return checked({ ...root, persons: root.persons.map((p) => (p.id === personId ? { ...p, removedAt: ctx.nowIso } : p)) });
+}
+
+/** Puts a removed member back (deletes `removedAt`). */
+export function restorePerson(root: Root, personId: string, _ctx: PersonContext): { ok: true; root: Root } | Fail<RestorePersonError> {
+  if (root.meta.isSample) return fail('sample_present');
+  const current = root.persons.find((p) => p.id === personId);
+  if (!current) return fail('person_not_found');
+  if (current.removedAt === undefined) return fail('not_removed');
+  const { removedAt: _removed, ...rest } = current;
+  return checked({ ...root, persons: root.persons.map((p) => (p.id === personId ? rest : p)) });
 }
 
 // ---------- addMedicine ----------
