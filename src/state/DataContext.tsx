@@ -3,6 +3,7 @@
 // A change that cannot be saved is NOT shown as done: the screen keeps the old data and a "save failed" bar appears.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import * as actions from '../domain/actions';
+import type { SettingsError, SettingsPatch } from '../domain/actions';
 import * as medicine from '../domain/medicine';
 import type {
   AddMedicineError,
@@ -19,7 +20,7 @@ import type {
 } from '../domain/medicine';
 import type { Schedule } from '../domain/schema';
 import { emptyRoot, type Root } from '../domain/schema';
-import { loadRoot, saveRoot, startFresh, type LoadResult, type SaveResult } from '../domain/storage';
+import { loadRoot, restoreRoot, saveRoot, startFresh, type LoadResult, type SaveResult } from '../domain/storage';
 import type { IsoDate } from '../domain/calc';
 import { todayInBangkok } from '../domain/today';
 import { requestPersistence } from './persist';
@@ -58,6 +59,13 @@ export interface DataApi {
   stopMedicine: (assignmentId: string, input: { reason: EventReason; note?: string }) => ActionResult<object, StopMedicineError>;
   resumeMedicine: (assignmentId: string, input: { note?: string }) => ActionResult<object, ResumeMedicineError>;
   editMedicine: (assignmentId: string, patch: EditMedicinePatch) => ActionResult<{ sharedWith: number }, EditMedicineError>;
+  /** Backup/restore (step 3.2d). Works also on the problem screen. Replaces all data with an already checked root; the old
+   * text is kept in `judya.v2.prev`. On any failure nothing changes (memory and disk keep the current data). */
+  replaceAll: (root: Root) => ActionResult<object, 'invalid_data'>;
+  /** Records that a backup file was shared / downloaded at `nowIso` (the same time stamped into the file). */
+  markBackedUp: (nowIso: string) => ActionResult<object, never>;
+  /** The two warning thresholds (apply at once, no save button). A refused or unsaved value changes nothing. */
+  setSettings: (patch: SettingsPatch) => ActionResult<object, SettingsError>;
 }
 
 const nowIso = (): string => new Date().toISOString();
@@ -136,6 +144,18 @@ export function DataProvider({ children, getToday = todayInBangkok }: { children
     [commit, getToday],
   );
 
+  const replaceAll = useCallback(
+    (root: Root): ActionResult<object, 'invalid_data'> => {
+      const result = restoreRoot(root);
+      if (!result.ok) return { ok: false, error: result.reason === 'invalid' ? 'invalid_data' : 'save_failed' };
+      pending.current = null;
+      setSaveFailure(null);
+      commit({ kind: 'ready', root });
+      return { ok: true };
+    },
+    [commit],
+  );
+
   const api = useMemo<DataApi>(
     () => ({
       state,
@@ -155,13 +175,21 @@ export function DataProvider({ children, getToday = todayInBangkok }: { children
       loadSample: () => apply((r) => actions.loadSample(r, getToday(), nowIso())),
       clearSample: () => apply(actions.clearSample),
       addPerson: (input) => mutate((r, ctx) => medicine.addPerson(r, input, ctx)),
-      addMedicine: (input) => mutate((r, ctx) => medicine.addMedicine(r, input, ctx)),
+      addMedicine: (input) => {
+        const wasEmpty = stateRef.current.kind === 'ready' && stateRef.current.root.assignments.length === 0;
+        const res = mutate((r, ctx) => medicine.addMedicine(r, input, ctx));
+        if (res.ok && wasEmpty) void requestPersistence(undefined, { again: true }); // BRIEF 3.2: ask again after the first medicine
+        return res;
+      },
       adjustDose: (id, input) => mutate((r, ctx) => medicine.adjustDose(r, id, input, ctx)),
       stopMedicine: (id, input) => mutate((r, ctx) => medicine.stopMedicine(r, id, input, ctx)),
       resumeMedicine: (id, input) => mutate((r, ctx) => medicine.resumeMedicine(r, id, input, ctx)),
       editMedicine: (id, patch) => mutate((r, ctx) => medicine.editMedicine(r, id, patch, ctx)),
+      replaceAll,
+      markBackedUp: (at) => mutate((r) => ({ ok: true as const, root: actions.markBackedUp(r, at) })),
+      setSettings: (patch) => mutate((r) => actions.setSettings(r, patch)),
     }),
-    [state, saveFailure, apply, commit, getToday, mutate],
+    [state, saveFailure, apply, commit, getToday, mutate, replaceAll],
   );
 
   return <DataContext.Provider value={api}>{children}</DataContext.Provider>;

@@ -1,5 +1,7 @@
 // Thai text for every error code of the medicine-changing functions (medicine.ts, step 3.2b-1) plus the one the
 // data layer adds itself ('save_failed'). Short, and each one says what to do. The screens show these as they are.
+import type { BackupError } from './backup';
+import type { SettingsError } from './actions';
 import type {
   AddMedicineError,
   AddPersonError,
@@ -50,3 +52,30 @@ export const errorText = (code: ActionErrorCode): string => TEXT[code];
 
 /** Every code that has a text (used by the completeness test). */
 export const ERROR_CODES = Object.keys(TEXT) as ActionErrorCode[];
+
+// --- Backup / restore / settings (step 3.2d). Every restore text says the current data was not touched. ---
+
+/** Why a chosen backup file was refused, or why restoring it failed after the check ('save_failed'). */
+export type RestoreErrorCode = BackupError | 'save_failed';
+
+const RESTORE_TEXT: Record<RestoreErrorCode, string> = {
+  not_json: 'อ่านไฟล์นี้ไม่ได้ ไม่ใช่ไฟล์สำรองของ JudYa ข้อมูลปัจจุบันไม่ถูกแตะ',
+  wrong_version: 'ไฟล์นี้เป็นข้อมูลคนละรุ่นกับแอพ จึงนำกลับไม่ได้ ข้อมูลปัจจุบันไม่ถูกแตะ',
+  invalid: 'ไฟล์สำรองนี้ข้อมูลไม่ครบหรือเสียหาย นำกลับไม่ได้ ข้อมูลปัจจุบันไม่ถูกแตะ',
+  too_big: 'ไฟล์ใหญ่เกิน 5 MB ไม่น่าใช่ไฟล์สำรองของ JudYa ข้อมูลปัจจุบันไม่ถูกแตะ',
+  save_failed: 'บันทึกข้อมูลจากไฟล์ลงเครื่องไม่ได้ (พื้นที่เก็บอาจเต็ม) ข้อมูลปัจจุบันไม่ถูกแตะ',
+};
+
+export const restoreErrorText = (code: RestoreErrorCode): string => RESTORE_TEXT[code];
+export const RESTORE_ERROR_CODES = Object.keys(RESTORE_TEXT) as RestoreErrorCode[];
+
+export type SettingsErrorCode = SettingsError | 'save_failed';
+
+const SETTINGS_TEXT: Record<SettingsErrorCode, string> = {
+  invalid_expiry_days: 'จำนวนวันต้องเป็นเลขเต็ม 1 ถึง 365 ค่าเดิมยังอยู่',
+  invalid_low_stock_days: 'จำนวนวันต้องเป็นเลขเต็ม 1 ถึง 60 ค่าเดิมยังอยู่',
+  save_failed: 'บันทึกไม่ได้ ค่าเดิมยังอยู่ (พื้นที่เก็บข้อมูลในเครื่องอาจเต็ม)',
+};
+
+export const settingsErrorText = (code: SettingsErrorCode): string => SETTINGS_TEXT[code];
+export const SETTINGS_ERROR_CODES = Object.keys(SETTINGS_TEXT) as SettingsErrorCode[];
