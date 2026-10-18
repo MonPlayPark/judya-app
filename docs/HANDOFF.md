@@ -118,7 +118,38 @@ c. "ถึงรอบซื้อเติมสต๊อก" is a plain headin
 `npm test`: 175 pass. `npm run build` passes. Playwright 360px (sample, Sunday 18 ต.ค. 2569): `#/today` 4 rows / 4, no chips, no text under 15px,
 no sideways scroll, no console errors; `#/` all done = "ดูทั้งหมด" only; the 3 blank tabs show the note and the button goes home.
 
-## Next: step 3.2b (add medicine + medicine detail), then 3.2c, 3.2d. Add-data actions must clear `meta.isSample` (O5).
+## Status after step 3.2b-1 (18 ต.ค. 2569) — functions that change medicine data (no screens)
+
+Branch `ccr-4cf532e7-4aq45a`, PR open (not merged). Only `src/domain/medicine.ts` + `medicine.test.ts` and docs changed; schema, DataContext and screens untouched.
+
+### Functions (all `fn(root, …, ctx) → { ok: true, root, … } | { ok: false, error }`, `ctx = { today, nowIso, newId }`)
+| Function | Input | Extra ok fields | Error codes the screen must turn into Thai |
+|---|---|---|---|
+| `findMedicationByName(root, name)` | name | returns `Medication \| undefined` | — |
+| `addPerson(root, { name, relation, selfManaged }, ctx)` | | `personId` | `sample_present` `invalid_name` `invalid_relation` `invalid_data` |
+| `addMedicine(root, { personId, name, unit, schedule, stockQty?, expiry?, note? }, ctx)` | | `assignmentId` `medicationId` `reusedMedication` | `sample_present` `person_not_found` `person_removed` `invalid_name` `invalid_unit` `invalid_schedule` `invalid_qty` `invalid_expiry` `invalid_note` `unit_mismatch` `duplicate` `invalid_data` |
+| `adjustDose(root, id, { schedule, reason, note? }, ctx)` | | — | `assignment_not_found` `stopped` `reason_required` `invalid_note` `invalid_schedule` `no_change` `invalid_data` |
+| `stopMedicine(root, id, { reason, note? }, ctx)` | | — | `assignment_not_found` `already_stopped` `reason_required` `invalid_note` `invalid_data` |
+| `resumeMedicine(root, id, { note? }, ctx)` | | — | `assignment_not_found` `not_stopped` `invalid_note` `invalid_data` |
+| `editMedicine(root, id, { name?, stockQty?, expiry?, note? }, ctx)` (`null` removes; left out = untouched) | | `sharedWith` | `assignment_not_found` `medication_not_found` `invalid_name` `invalid_qty` `invalid_expiry` `invalid_note` `name_taken` `no_change` `invalid_data` |
+
+`invalid_data` should never be seen by the owner (means a bug); show a general "บันทึกไม่ได้" message.
+
+### Rules the screens (3.2b-2) must follow
+- On `sample_present`: ask the owner, then call `clearSample` and try again (never clear silently, O5). Only `addPerson` / `addMedicine` check this.
+- After `editMedicine` with a new name and `sharedWith > 1`: warn that the name changes for everyone using the medicine (O6), ideally before saving.
+- Adjust / stop / resume rebase the count to today (O4); edit's `stockQty` is a recount from the number shown today. The screen shows the number from `stockNow`, not the stored base.
+- The reason list is `EVENT_REASONS` in `schema.ts`; adjust and stop must offer it and cannot save without one.
+- Save the returned `root` through `DataContext` (`saveRoot` path); the functions never touch storage.
+
+### Checks
+- Owner's hand examples A–G are tests (numbers unchanged: A 14 → 10/6/2/0, wrong-if-not-rebased 4; B stop 10, resume 10 then 6; C 7; D shared medicine/rename/name_taken;
+  E sample refusal then add; F invalid values; G schema-valid + events only appended). 29 new tests. Every ok result is checked with `rootSchema` and the old events are compared.
+- `npm test`: 204 pass. `npm run build` passes. No `any`.
+
+### Next: 3.2b-2 (add-medicine screens S4/S5/S5b + medicine detail S6), then 3.2c, 3.2d.
+
+## Next after 3.2b-1: 3.2b-2 screens, then 3.2c, 3.2d. (O5 solved: the functions refuse with `sample_present`; the screen clears the sample after asking.)
 Open points from 3.1 still waiting: `settings.expiryWarnDays` must be passed to `expiryStatus` by every screen;
 persist status line in Settings (3.2d); `judya.v2.prev` is now written by "เริ่มใหม่" (restore-from-backup in 3.2d will reuse it).
 
