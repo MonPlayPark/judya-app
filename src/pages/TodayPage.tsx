@@ -3,6 +3,7 @@ import { thaiDate } from '../domain/format';
 import { intervalDay, todayDoses, todayProgress, type DoseSlot, type MealTiming, type TodayDose } from '../domain/today';
 import type { Root } from '../domain/schema';
 import { Card, CardTitle, Pill } from '../components/Card';
+import { SubLine } from '../components/SubLine';
 import {
   BackIcon,
   CheckCircleIcon,
@@ -41,8 +42,9 @@ export function TodayPage() {
   const all = todayDoses(root, today);
   const { done, total, percent } = todayProgress(all);
   const people = root.persons.filter((p) => all.some((d) => d.personId === p.id));
+  const showChips = people.length > 1; // a filter with one member in it has nothing to choose
   const requested = query.get('who');
-  const who = people.some((p) => p.id === requested) ? requested : null; // unknown or finished-with filter = everyone
+  const who = showChips && people.some((p) => p.id === requested) ? requested : null; // unknown or finished-with filter = everyone
   const doses = who ? all.filter((d) => d.personId === who) : all;
   const selfManaged = root.persons.filter(
     (p) => p.selfManaged && p.removedAt === undefined && root.assignments.some((a) => a.personId === p.id && a.status === 'active'),
@@ -104,16 +106,18 @@ export function TodayPage() {
               </div>
             </Card>
 
-            <div role="group" aria-label="กรองตามสมาชิก" className={styles.chips}>
-              <Chip on={who === null} to={whoHref(null)}>
-                ทั้งหมด
-              </Chip>
-              {people.map((p) => (
-                <Chip key={p.id} on={who === p.id} to={whoHref(p.id)}>
-                  {p.name}
+            {showChips && (
+              <div role="group" aria-label="กรองตามสมาชิก" className={styles.chips}>
+                <Chip on={who === null} to={whoHref(null)}>
+                  ทั้งหมด
                 </Chip>
-              ))}
-            </div>
+                {people.map((p) => (
+                  <Chip key={p.id} on={who === p.id} to={whoHref(p.id)}>
+                    {p.name}
+                  </Chip>
+                ))}
+              </div>
+            )}
 
             <IntervalSection root={root} doses={doses} today={today} onToggle={toggle} />
             <MealSections root={root} doses={doses} onToggle={toggle} />
@@ -145,7 +149,7 @@ function Chip({ on, to, children }: { on: boolean; to: string; children: ReactNo
 }
 
 /** One tick row: a 64px-high checkbox. Done = filled circle with a tick AND the word "จัดแล้ว". */
-function DoseRow({ title, sub, done, onToggle }: { title: string; sub: string; done: boolean; onToggle: () => void }) {
+function DoseRow({ title, sub, done, onToggle }: { title: string; sub: ReactNode; done: boolean; onToggle: () => void }) {
   return (
     <button type="button" role="checkbox" aria-checked={done} className={styles.row} onClick={onToggle}>
       <span className={`${styles.ring} ${done ? styles.ringOn : ''}`}>{done && <CheckIcon />}</span>
@@ -246,7 +250,7 @@ function MealSections({ root, doses, onToggle }: { root: Root; doses: TodayDose[
                       <DoseRow
                         key={d.key}
                         title={v.name}
-                        sub={`${v.who} · ${v.amount} · ${statusText(d.done)}`}
+                        sub={<SubLine text={`${v.who} · ${v.amount}`} status={statusText(d.done)} />}
                         done={d.done}
                         onToggle={() => onToggle(d)}
                       />
