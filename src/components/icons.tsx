@@ -151,3 +151,35 @@ export const MoonIcon = () => (
     <path d="M20 14.5A8 8 0 019.5 4 8 8 0 1020 14.5z" />
   </Icon>
 );
+
+export const PlusIcon = () => (
+  <Icon>
+    <path d="M12 5v14M5 12h14" />
+  </Icon>
+);
+
+export const EditIcon = () => (
+  <Icon>
+    <path d="M4 20l4-1 11-11a2.5 2.5 0 00-4-4L4 15z" />
+  </Icon>
+);
+
+export const StopIcon = () => (
+  <Icon>
+    <circle cx="12" cy="12" r="9" />
+    <rect x="9" y="9" width="6" height="6" rx="1" />
+  </Icon>
+);
+
+export const PlayIcon = () => (
+  <Icon>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M10 8.5l5 3.5-5 3.5z" />
+  </Icon>
+);
+
+export const MinusIcon = () => (
+  <Icon>
+    <path d="M5 12h14" />
+  </Icon>
+);

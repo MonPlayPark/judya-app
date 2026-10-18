@@ -59,6 +59,10 @@
   background: var(--color-warning-tint);
   color: var(--color-warning-ink);
 }
+.danger {
+  background: var(--color-error-tint);
+  color: var(--color-error-ink);
+}
 .neutral {
   background: var(--color-background);
   color: var(--color-ink-muted);
