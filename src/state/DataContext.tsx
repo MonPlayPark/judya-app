@@ -13,9 +13,13 @@ import type {
   AdjustDoseError,
   EditMedicineError,
   EditMedicinePatch,
+  EditPersonError,
+  EditPersonPatch,
   EventReason,
   MedicineContext,
+  RemovePersonError,
   ResumeMedicineError,
+  RestorePersonError,
   StopMedicineError,
 } from '../domain/medicine';
 import type { Schedule } from '../domain/schema';
@@ -59,6 +63,11 @@ export interface DataApi {
   stopMedicine: (assignmentId: string, input: { reason: EventReason; note?: string }) => ActionResult<object, StopMedicineError>;
   resumeMedicine: (assignmentId: string, input: { note?: string }) => ActionResult<object, ResumeMedicineError>;
   editMedicine: (assignmentId: string, patch: EditMedicinePatch) => ActionResult<{ sharedWith: number }, EditMedicineError>;
+  /** Members (step 3.2c). Same rules as the medicine methods: a refused or unsaved change shows nothing new on screen. */
+  editPerson: (personId: string, patch: EditPersonPatch) => ActionResult<object, EditPersonError>;
+  /** Takes a member out of the house (hides them; nothing is deleted). */
+  removePerson: (personId: string) => ActionResult<object, RemovePersonError>;
+  restorePerson: (personId: string) => ActionResult<object, RestorePersonError>;
   /** Backup/restore (step 3.2d). Works also on the problem screen. Replaces all data with an already checked root; the old
    * text is kept in `judya.v2.prev`. On any failure nothing changes (memory and disk keep the current data). */
   replaceAll: (root: Root) => ActionResult<object, 'invalid_data'>;
@@ -185,6 +194,9 @@ export function DataProvider({ children, getToday = todayInBangkok }: { children
       stopMedicine: (id, input) => mutate((r, ctx) => medicine.stopMedicine(r, id, input, ctx)),
       resumeMedicine: (id, input) => mutate((r, ctx) => medicine.resumeMedicine(r, id, input, ctx)),
       editMedicine: (id, patch) => mutate((r, ctx) => medicine.editMedicine(r, id, patch, ctx)),
+      editPerson: (id, patch) => mutate((r, ctx) => medicine.editPerson(r, id, patch, ctx)),
+      removePerson: (id) => mutate((r, ctx) => medicine.removePerson(r, id, ctx)),
+      restorePerson: (id) => mutate((r, ctx) => medicine.restorePerson(r, id, ctx)),
       replaceAll,
       markBackedUp: (at) => mutate((r) => ({ ok: true as const, root: actions.markBackedUp(r, at) })),
       setSettings: (patch) => mutate((r) => actions.setSettings(r, patch)),

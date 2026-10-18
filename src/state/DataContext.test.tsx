@@ -106,3 +106,68 @@ describe('medicine methods of the data layer', () => {
     expect(root().assignments).toHaveLength(1);
   });
 });
+
+describe('member methods of the data layer', () => {
+  const addA = () => {
+    const p = run(() => api.addPerson({ name: 'สมาชิกทดสอบ ก', relation: 'แม่', selfManaged: false, birthYearBE: 2510, insurance: { health: 'บริษัททดสอบ 1' } }));
+    if (!p.ok) throw new Error(p.error);
+    return p.personId;
+  };
+
+  it('editPerson, removePerson and restorePerson save, and screen data and storage agree', () => {
+    mount();
+    const id = addA();
+    expect(root().persons[0]).toMatchObject({ birthYearBE: 2510, insurance: { health: 'บริษัททดสอบ 1' } });
+    expect(run(() => api.editPerson(id, { name: 'สมาชิกทดสอบ ข', birthYearBE: null }))).toEqual({ ok: true });
+    expect(root().persons[0]?.name).toBe('สมาชิกทดสอบ ข');
+    expect('birthYearBE' in (root().persons[0] ?? {})).toBe(false);
+    expect(run(() => api.removePerson(id))).toEqual({ ok: true });
+    expect(root().persons[0]?.removedAt).toBeDefined();
+    expect(stored()).toEqual(root());
+    expect(run(() => api.restorePerson(id))).toEqual({ ok: true });
+    expect(root().persons[0]?.removedAt).toBeUndefined();
+    expect(stored()).toEqual(root());
+  });
+
+  it('a refused change comes back as the error code and changes nothing', () => {
+    mount();
+    const id = addA();
+    const before = root();
+    expect(run(() => api.editPerson(id, { birthYearBE: 2570 }))).toEqual({ ok: false, error: 'invalid_birth_year' });
+    expect(run(() => api.editPerson('nope', { name: 'x' }))).toEqual({ ok: false, error: 'person_not_found' });
+    expect(run(() => api.restorePerson(id))).toEqual({ ok: false, error: 'not_removed' });
+    expect(root()).toBe(before);
+  });
+
+  it('with the sample in the house all three are refused with sample_present', () => {
+    expect(saveRoot(loadSample(emptyRoot(NOW), TODAY, NOW)).ok).toBe(true);
+    mount();
+    const before = root();
+    const id = root().persons[0]?.id ?? '';
+    expect(run(() => api.editPerson(id, { name: 'ใหม่' }))).toEqual({ ok: false, error: 'sample_present' });
+    expect(run(() => api.removePerson(id))).toEqual({ ok: false, error: 'sample_present' });
+    expect(run(() => api.restorePerson(id))).toEqual({ ok: false, error: 'sample_present' });
+    expect(root()).toBe(before);
+  });
+
+  it('a save that fails is save_failed for all three; memory and storage keep the old data', () => {
+    mount();
+    const id = addA();
+    const removedId = (() => {
+      const p = run(() => api.addPerson({ name: 'สมาชิกทดสอบ ข', relation: 'ลูก', selfManaged: false }));
+      if (!p.ok) throw new Error(p.error);
+      expect(run(() => api.removePerson(p.personId)).ok).toBe(true);
+      return p.personId;
+    })();
+    const beforeMemory = root();
+    const beforeDisk = localStorage.getItem(STORAGE_KEY);
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('full', 'QuotaExceededError');
+    });
+    expect(run(() => api.editPerson(id, { name: 'ใหม่' }))).toEqual({ ok: false, error: 'save_failed' });
+    expect(run(() => api.removePerson(id))).toEqual({ ok: false, error: 'save_failed' });
+    expect(run(() => api.restorePerson(removedId))).toEqual({ ok: false, error: 'save_failed' });
+    expect(root()).toBe(beforeMemory);
+    expect(localStorage.getItem(STORAGE_KEY)).toBe(beforeDisk);
+  });
+});
