@@ -124,9 +124,12 @@
   background: var(--color-error-tint);
   color: var(--color-error-ink);
 }
-.bannerBlue {
-  background: var(--color-primary-tint);
-  color: var(--color-primary-ink);
+.groupTitle {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-label-size);
+  line-height: var(--text-label-line);
+  font-weight: 600;
+  color: var(--color-ink);
 }
 .bannerAmber {
   background: var(--color-warning-tint);
