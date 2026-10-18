@@ -118,3 +118,11 @@ decisions taken **while building**, and questions the BRIEF does not answer. New
 - **Clock**: `DataProvider` / `App` take an optional `getToday` (tests only). Screens re-read today on visibility change, focus and every 60 s.
   A tap made after midnight but before the screen noticed is dropped (the screen refreshes), so a tick never lands on the wrong day.
 - **Avatar initial**: first letter of the name, skipping Thai leading vowels (เ แ โ ใ ไ).
+
+## Step 3.2a-3 (18 ต.ค. 2569) — fixes after the owner's S24 test
+- **Tabs ยา / สมาชิก / ตั้งค่า** (no screen yet) used to open an empty page. Now: title + card "หน้านี้กำลังสร้าง" + button "กลับหน้าแรก"
+  (chosen over hiding the tabs because the menu order is fixed by the board; remove the note when each page is built).
+- **Home "ดูทั้งหมด (อีก N รายการ)"**: N counts only doses not yet prepared (before, it counted prepared ones too). Nothing left = just "ดูทั้งหมด".
+- **Status word** ("จัดแล้ว" / "ยังไม่จัด") sits in a nowrap span with its "·": on a narrow screen the whole block moves to the next line.
+- **"ถึงรอบซื้อเติมสต๊อก"** is a plain heading (no blue box) until the order page exists (3.3); then it may become a button again.
+- **Member filter chips** are shown only when 2+ members have doses today; with 1 member `?who=` is ignored.
