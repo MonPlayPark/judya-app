@@ -85,7 +85,8 @@ export function MedsPage() {
   );
 }
 
-function MedRow({ root, a, today }: { root: Root; a: Assignment; today: string }) {
+/** One medicine row (name, how it is taken, badges) linking to its detail. Also used on the member page. */
+export function MedRow({ root, a, today }: { root: Root; a: Assignment; today: string }) {
   const med = root.medications.find((m) => m.id === a.medicationId);
   if (!med) return null;
   return (

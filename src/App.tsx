@@ -1,11 +1,13 @@
-import { BottomNav, TABS } from './components/BottomNav';
+import { BottomNav } from './components/BottomNav';
 import { SaveErrorBar } from './components/SaveErrorBar';
 import { UpdateBar } from './components/UpdateBar';
 import { AddMedicineStep1, AddMedicineStep2, AddMedicineStep3 } from './pages/AddMedicine';
-import { BlankPage } from './pages/BlankPage';
 import { HomePage } from './pages/HomePage';
 import { MedDetailPage } from './pages/MedDetail';
 import { MedsPage } from './pages/MedsPage';
+import { MemberDetailPage } from './pages/MemberDetail';
+import { EditMemberPage, NewMemberPage } from './pages/MemberForm';
+import { MembersPage } from './pages/MembersPage';
 import { NotFound } from './pages/NotFound';
 import { ProblemPage } from './pages/ProblemPage';
 import { SettingsPage } from './pages/SettingsPage';
@@ -50,8 +52,11 @@ function Shell() {
 }
 
 const MED_PATH = /^\/meds\/([^/]+)$/;
+const MEMBER_PATH = /^\/members\/([^/]+)$/;
+const MEMBER_EDIT_PATH = /^\/members\/([^/]+)\/edit$/;
 
-/** The screen for a route. `/meds/new...` is checked before `/meds/:id`, so "new" is never read as an id. */
+/** The screen for a route. `/meds/new...` and `/members/new` are checked before `/meds/:id` and `/members/:id`,
+ * so "new" is never read as an id. */
 function Screen({ path }: { path: string }) {
   switch (path) {
     case '/':
@@ -66,13 +71,20 @@ function Screen({ path }: { path: string }) {
       return <AddMedicineStep2 />;
     case '/meds/new/stock':
       return <AddMedicineStep3 />;
+    case '/members':
+      return <MembersPage />;
+    case '/members/new':
+      return <NewMemberPage />;
     case '/settings':
       return <SettingsPage />;
   }
   const med = MED_PATH.exec(path);
   if (med?.[1]) return <MedDetailPage id={safeDecode(med[1])} />;
-  const tab = TABS.find((t) => t.path === path);
-  return tab ? <BlankPage title={tab.label} /> : <NotFound />;
+  const member = MEMBER_PATH.exec(path);
+  if (member?.[1]) return <MemberDetailPage id={safeDecode(member[1])} />;
+  const edit = MEMBER_EDIT_PATH.exec(path);
+  if (edit?.[1]) return <EditMemberPage id={safeDecode(edit[1])} />;
+  return <NotFound />;
 }
 
 const safeDecode = (s: string): string => {

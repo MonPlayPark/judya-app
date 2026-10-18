@@ -103,30 +103,41 @@ export function InfoBox({ tone = 'info', children }: { tone?: 'info' | 'warn' | 
   );
 }
 
-/** Label + control (+ hint). The control gets the id through the render function. */
+/** Label + control (+ hint, + error). The control gets the id through the render function.
+ * An error is read out as an alert and has an icon and words (never colour alone). */
 export function Field({
   label,
   optional,
   hint,
+  error,
   children,
 }: {
   label: string;
   optional?: boolean;
   hint?: string;
+  error?: string;
   children: (props: { id: string; 'aria-describedby'?: string }) => ReactNode;
 }) {
   const id = useId();
   const hintId = hint ? `${id}-hint` : undefined;
+  const errorId = error ? `${id}-error` : undefined;
+  const describedBy = [hintId, errorId].filter(Boolean).join(' ');
   return (
     <div className={styles.field}>
       <label htmlFor={id} className={styles.label}>
         {label}
         {optional && <span className={styles.optional}> (ไม่บังคับ)</span>}
       </label>
-      {children(hintId ? { id, 'aria-describedby': hintId } : { id })}
+      {children(describedBy ? { id, 'aria-describedby': describedBy } : { id })}
       {hint && (
         <p id={hintId} className={styles.hint}>
           {hint}
+        </p>
+      )}
+      {error && (
+        <p id={errorId} role="alert" className={styles.fieldError}>
+          <XCircleIcon />
+          {error}
         </p>
       )}
     </div>

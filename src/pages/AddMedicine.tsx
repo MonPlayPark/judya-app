@@ -8,7 +8,7 @@ import { houseSuggestions } from '../domain/suggest';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { CheckCircleIcon, PillIcon } from '../components/icons';
-import { ConfirmDialog } from '../components/ConfirmDialog';
+import { ClearSampleDialog } from '../components/ClearSampleDialog';
 import { Actions, AddChip, Chip, ChipGroup, Field, InfoBox, StepHeader, inputClass } from '../components/form';
 import { MedicineNameField } from '../components/MedicineNameField';
 import { QuickAddMember } from '../components/QuickAddMember';
@@ -64,7 +64,6 @@ function MedHead({ name, who, sub }: { name: string; who: string; sub?: string }
 
 export function AddMedicineStep1() {
   const root = useRoot();
-  const { clearSample } = useData();
   const { draft, update, clearSaved } = useDraft();
   const { query } = useRoute();
   const [adding, setAdding] = useState(false);
@@ -76,14 +75,7 @@ export function AddMedicineStep1() {
     return (
       <>
         <StepHeader title="เพิ่มยา" sub={`ขั้น 1 จาก ${TOTAL_STEPS}`} backTo="/meds" backLabel="กลับหน้ายาทั้งหมด" />
-        <ConfirmDialog
-          title="ต้องลบข้อมูลตัวอย่างก่อน"
-          confirmLabel="ลบตัวอย่างแล้วเริ่ม"
-          onConfirm={clearSample}
-          onCancel={() => go('/meds')}
-        >
-          ตอนนี้เป็นข้อมูลตัวอย่าง ต้องลบตัวอย่างก่อนจึงจะเพิ่มข้อมูลจริงได้
-        </ConfirmDialog>
+        <ClearSampleDialog onCancel={() => go('/meds')} />
       </>
     );
   }
