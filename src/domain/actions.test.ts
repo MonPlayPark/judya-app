@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { clearSample, isBlank, loadSample, tickDose, untickDose } from './actions';
+import { clearSample, isBlank, loadSample, markBackedUp, setSettings, tickDose, untickDose } from './actions';
+import { careItems } from './care';
+import { assignment, dailyMeal, person } from './helpers.test-util';
+import { listBadges } from './medView';
 import { NOW, sampleRoot } from './fixtures';
 import { TODAY, rootWith } from './helpers.test-util';
 import { addDays } from './calc';
@@ -96,5 +99,76 @@ describe('sample data', () => {
   it('clearSample never deletes data that is not sample data', () => {
     const real = sampleRoot();
     expect(clearSample(real)).toBe(real);
+  });
+});
+
+describe('markBackedUp', () => {
+  it('sets meta.lastBackupAt and changes nothing else', () => {
+    const root = rootWith({});
+    const out = markBackedUp(root, '2026-10-18T20:40:00+07:00');
+    expect(out.meta).toEqual({ ...root.meta, lastBackupAt: '2026-10-18T20:40:00+07:00' });
+    expect({ ...out, meta: root.meta }).toEqual(root);
+    expect(root.meta.lastBackupAt).toBeUndefined();
+    expect(rootSchema.safeParse(out).success).toBe(true);
+  });
+});
+
+describe('setSettings (example 6, today 2026-10-18)', () => {
+  const T = '2026-10-18';
+  const apply = (patch: Parameters<typeof setSettings>[1]) => {
+    const r = setSettings(rootWith({}), patch);
+    if (!r.ok) throw new Error(r.error);
+    return r.root;
+  };
+
+  it('expiryWarnDays: 0 and 366 are refused, 15 and 30 pass (and 1, 365 are the edges)', () => {
+    expect(setSettings(rootWith({}), { expiryWarnDays: 0 })).toEqual({ ok: false, error: 'invalid_expiry_days' });
+    expect(setSettings(rootWith({}), { expiryWarnDays: 366 })).toEqual({ ok: false, error: 'invalid_expiry_days' });
+    for (const n of [1, 15, 30, 365]) expect(apply({ expiryWarnDays: n }).settings.expiryWarnDays).toBe(n);
+  });
+  it('lowStockDays: 61 is refused, 0 too, 1 and 60 pass', () => {
+    expect(setSettings(rootWith({}), { lowStockDays: 61 })).toEqual({ ok: false, error: 'invalid_low_stock_days' });
+    expect(setSettings(rootWith({}), { lowStockDays: 0 })).toEqual({ ok: false, error: 'invalid_low_stock_days' });
+    for (const n of [1, 7, 60]) expect(apply({ lowStockDays: n }).settings.lowStockDays).toBe(n);
+  });
+  it('only whole numbers: 1.5, NaN and Infinity are refused', () => {
+    for (const n of [1.5, Number.NaN, Number.POSITIVE_INFINITY, -3]) {
+      expect(setSettings(rootWith({}), { expiryWarnDays: n }).ok).toBe(false);
+      expect(setSettings(rootWith({}), { lowStockDays: n }).ok).toBe(false);
+    }
+  });
+  it('if one value is refused nothing is changed; a left-out value stays; the other settings stay', () => {
+    const root = rootWith({});
+    expect(setSettings(root, { expiryWarnDays: 30, lowStockDays: 99 }).ok).toBe(false);
+    const out = apply({ lowStockDays: 14 });
+    expect(out.settings).toEqual({ ...root.settings, lowStockDays: 14 });
+    expect(root.settings.lowStockDays).toBe(7);
+    expect(rootSchema.safeParse(apply({ expiryWarnDays: 30, lowStockDays: 14 })).success).toBe(true);
+  });
+
+  const withExpiring = (expiryWarnDays: number) => {
+    const root = rootWith({
+      persons: [person()],
+      medications: [{ id: 'm1', name: 'Sample Med 5 mg', unit: 'เม็ด' }],
+      assignments: [assignment({ schedule: dailyMeal({ morning: { pills: 1, meal: 'after' } }), expiry: '2026-11-01' })],
+    });
+    return apply2(root, expiryWarnDays);
+  };
+  const apply2 = (root: ReturnType<typeof rootWith>, days: number) => {
+    const r = setSettings(root, { expiryWarnDays: days });
+    if (!r.ok) throw new Error(r.error);
+    return r.root;
+  };
+
+  it('after changing to 30 the home list shows the medicine expiring 2026-11-01 as "อีก 14 วัน"', () => {
+    const root = withExpiring(30);
+    expect(careItems(root, T).expirySoon.map((i) => i.right)).toEqual(['อีก 14 วัน']);
+    expect(listBadges(root, root.assignments[0]!, T)).toContain('soon');
+  });
+  it('the new value is used at once: 7 days = not listed, 14 days = listed (the edge), 30 days = listed', () => {
+    expect(careItems(withExpiring(7), T).expirySoon).toHaveLength(0);
+    expect(listBadges(withExpiring(7), withExpiring(7).assignments[0]!, T)).not.toContain('soon');
+    expect(careItems(withExpiring(14), T).expirySoon).toHaveLength(1);
+    expect(careItems(withExpiring(13), T).expirySoon).toHaveLength(0);
   });
 });
