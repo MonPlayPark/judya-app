@@ -81,7 +81,6 @@ describe('sample house on a Sunday', () => {
 
 describe('tabs that have no screen yet', () => {
   it.each([
-    ['#/meds', 'ยา'],
     ['#/members', 'สมาชิก'],
     ['#/settings', 'ตั้งค่า'],
   ])('%s shows a short "being built" note with a way back home', (hash, title) => {
