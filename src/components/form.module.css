@@ -46,11 +46,14 @@
   gap: 12px;
 }
 .stepLabel {
+  flex: 1;
+  min-width: 0;
   font-size: var(--text-body-size);
   line-height: var(--text-body-line);
 }
 .stepControls {
   display: flex;
+  flex: none;
   align-items: center;
   gap: 12px;
 }
@@ -77,7 +80,7 @@
   cursor: not-allowed;
 }
 .stepText {
-  min-width: 112px;
+  min-width: 72px;
   text-align: center;
   font-size: var(--text-label-size);
   line-height: var(--text-label-line);
