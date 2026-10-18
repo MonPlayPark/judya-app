@@ -1,0 +1,112 @@
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3) var(--space-4);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.question {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-body-size);
+  line-height: 24px;
+}
+
+.stepRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+.stepBtn {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+  cursor: pointer;
+}
+.stepBtn svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 2.4;
+}
+.stepBtn:disabled {
+  color: var(--color-border-strong);
+  cursor: not-allowed;
+}
+.value {
+  text-align: center;
+}
+.number {
+  font-size: var(--text-display-size);
+  line-height: var(--text-display-line);
+  font-weight: 700;
+}
+.unit {
+  font-size: var(--text-heading-size);
+  line-height: var(--text-heading-line);
+  font-weight: 600;
+}
+
+.hint {
+  margin: 0;
+  font-size: var(--text-secondary-size);
+  line-height: var(--text-secondary-line);
+  color: var(--color-ink-muted);
+}
+
+.last {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-body-size);
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.statusLine {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-body-size);
+  line-height: 24px;
+}
+.statusWord {
+  font-weight: 700;
+}
+
+.divider {
+  height: 1px;
+  margin: var(--space-1) 0;
+  background: var(--color-border);
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0 var(--space-1);
+  font-size: var(--text-secondary-size);
+  line-height: var(--text-secondary-line);
+  color: var(--color-ink-muted);
+  text-align: center;
+}
+.footer p {
+  margin: 0;
+}

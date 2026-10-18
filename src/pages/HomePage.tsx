@@ -1,4 +1,5 @@
 import { isBlank } from '../domain/actions';
+import { backupAge, needsBackupWarning } from '../domain/backup';
 import { careItems, memberCards, type CareItem, type MemberCard, type MemberStatus } from '../domain/care';
 import { thaiDate } from '../domain/format';
 import { todayDoses, todayProgress } from '../domain/today';
@@ -59,6 +60,7 @@ export function HomePage() {
                 </Button>
               </Card>
             )}
+            <BackupReminder />
             <TodayCard />
             <CareCard />
             <MembersCard />
@@ -66,6 +68,26 @@ export function HomePage() {
         )}
       </div>
     </>
+  );
+}
+
+/** Quiet one-line reminder (no pop-up): never backed up, or the last backup is more than 14 days old.
+ * Not shown for a blank house or the sample (needsBackupWarning). Links to Settings, where the backup button is. */
+function BackupReminder() {
+  const root = useRoot();
+  const { today } = useToday();
+  if (!needsBackupWarning(root, today)) return null;
+  const age = backupAge(root, today);
+  return (
+    <p className={styles.backupNote}>
+      <WarningIcon />
+      <span>
+        {age === null ? 'ยังไม่เคยสำรองข้อมูล' : `ไม่ได้สำรองข้อมูลมา ${age.daysAgo} วันแล้ว`} ·{' '}
+        <a className={styles.backupLink} href={href('/settings')}>
+          สำรองข้อมูล
+        </a>
+      </span>
+    </p>
   );
 }
 

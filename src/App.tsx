@@ -8,6 +8,7 @@ import { MedDetailPage } from './pages/MedDetail';
 import { MedsPage } from './pages/MedsPage';
 import { NotFound } from './pages/NotFound';
 import { ProblemPage } from './pages/ProblemPage';
+import { SettingsPage } from './pages/SettingsPage';
 import { TodayPage } from './pages/TodayPage';
 import type { IsoDate } from './domain/calc';
 import { useRoute } from './router';
@@ -65,6 +66,8 @@ function Screen({ path }: { path: string }) {
       return <AddMedicineStep2 />;
     case '/meds/new/stock':
       return <AddMedicineStep3 />;
+    case '/settings':
+      return <SettingsPage />;
   }
   const med = MED_PATH.exec(path);
   if (med?.[1]) return <MedDetailPage id={safeDecode(med[1])} />;

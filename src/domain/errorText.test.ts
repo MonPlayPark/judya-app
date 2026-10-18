@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { ERROR_CODES, errorText } from './errorText';
+import { ERROR_CODES, RESTORE_ERROR_CODES, SETTINGS_ERROR_CODES, errorText, restoreErrorText, settingsErrorText } from './errorText';
 
 // Every code that medicine.ts can return is found in its source: `fail('code')` calls and the exported error types.
 const source = readFileSync(resolve(process.cwd(), 'src/domain/medicine.ts'), 'utf8');
@@ -37,5 +37,24 @@ describe('Thai error texts', () => {
 
   it('the O5 text says the sample must be deleted first', () => {
     expect(errorText('sample_present')).toBe('ตอนนี้เป็นข้อมูลตัวอย่าง ต้องลบตัวอย่างก่อนจึงจะเพิ่มข้อมูลจริงได้');
+  });
+});
+
+describe('restore and settings texts (step 3.2d)', () => {
+  it('every restore error has a Thai text, and each says the current data was not touched', () => {
+    expect([...RESTORE_ERROR_CODES].sort()).toEqual(['invalid', 'not_json', 'save_failed', 'too_big', 'wrong_version']);
+    for (const code of RESTORE_ERROR_CODES) {
+      const t = restoreErrorText(code);
+      expect(t).toMatch(/[฀-๿]/);
+      expect(t).toContain('ข้อมูลปัจจุบันไม่ถูกแตะ');
+    }
+  });
+  it('every settings error has a Thai text that says the old value stays', () => {
+    expect([...SETTINGS_ERROR_CODES].sort()).toEqual(['invalid_expiry_days', 'invalid_low_stock_days', 'save_failed']);
+    for (const code of SETTINGS_ERROR_CODES) {
+      const t = settingsErrorText(code);
+      expect(t).toMatch(/[฀-๿]/);
+      expect(t).toContain('ค่าเดิมยังอยู่');
+    }
   });
 });

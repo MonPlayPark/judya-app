@@ -216,3 +216,26 @@
   color: var(--color-ink-muted);
   border: 2px solid var(--color-border-strong);
 }
+
+.backupNote {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--touch-min);
+  margin: 0;
+  padding: 0 var(--space-1);
+  font-size: var(--text-secondary-size);
+  line-height: var(--text-secondary-line);
+  color: var(--color-warning-ink);
+}
+.backupNote svg {
+  flex: none;
+}
+.backupLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-min);
+  font-weight: 600;
+  color: var(--color-primary-ink);
+  text-decoration: underline;
+}

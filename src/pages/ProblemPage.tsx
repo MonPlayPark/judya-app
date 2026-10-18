@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from '../components/Button';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { WarningIcon } from '../components/icons';
+import { RestorePanel } from '../components/RestorePanel';
 import { useData, type ProblemKind } from '../state/DataContext';
 import styles from './ProblemPage.module.css';
 
@@ -50,6 +51,12 @@ export function ProblemPage({ problem }: { problem: ProblemKind }) {
             </Button>
           )}
         </div>
+        {problem !== 'unavailable' && (
+          <div className={styles.restore}>
+            <p className={styles.body}>มีไฟล์สำรองข้อมูล (judya-backup-….json) อยู่ในเครื่อง? นำกลับได้เลย</p>
+            <RestorePanel current={null} />
+          </div>
+        )}
       </div>
       {confirming && (
         <ConfirmDialog

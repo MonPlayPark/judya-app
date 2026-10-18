@@ -183,3 +183,34 @@ export const MinusIcon = () => (
     <path d="M5 12h14" />
   </Icon>
 );
+
+export const BellIcon = () => (
+  <Icon>
+    <path d="M6 9a6 6 0 0112 0c0 5 2 6.5 2 6.5H4S6 14 6 9z" />
+    <path d="M10 19a2 2 0 004 0" />
+  </Icon>
+);
+
+/** Arrow down into a tray: save a file. */
+export const SaveFileIcon = () => (
+  <Icon>
+    <path d="M12 4v10M8 10.5l4 4 4-4" />
+    <path d="M4.5 15v3.5a1 1 0 001 1h13a1 1 0 001-1V15" />
+  </Icon>
+);
+
+/** Arrow up out of a tray: pick a file. */
+export const OpenFileIcon = () => (
+  <Icon>
+    <path d="M12 15V5M8 8.5l4-4 4 4" />
+    <path d="M4.5 15v3.5a1 1 0 001 1h13a1 1 0 001-1V15" />
+  </Icon>
+);
+
+export const StorageIcon = () => (
+  <Icon>
+    <ellipse cx="12" cy="6" rx="7" ry="2.8" />
+    <path d="M5 6v6c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8V6" />
+    <path d="M5 12v6c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8v-6" />
+  </Icon>
+);
