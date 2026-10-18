@@ -171,6 +171,29 @@ Branch `ccr-d4f6ddc2-2t2963`, PR open (not merged). Schema and the functions in 
 
 ### Next: 3.2c (members), 3.2d (settings / backup), 3.3. The members page should replace the small add-member form in add-medicine step 1.
 
+## Status after step 3.2d (18 ต.ค. 2569) — backup / restore + Settings page
+
+Branch `ccr-6b69bc28-mtj3ua`, PR open (not merged). Schema untouched. Choices and the hidden list: `docs/DECISIONS.md` "Step 3.2d".
+
+### Done
+- `domain/backup.ts` (makeBackup, summarizeBackup, needsBackupWarning, backupAge; pure, tests = owner's hand examples 1-4), `storage.restoreRoot` (the only code that writes `judya.v2.prev` for a restore; both keys roll back on failure),
+  `actions.setSettings` / `markBackedUp` (example 6), `errorText.ts` (restore + settings texts), `state/persist.ts` (status + second ask after first medicine), `state/backupFile.ts` (share sheet or download).
+- Data layer: `replaceAll`, `markBackedUp`, `setSettings` on `DataContext` (screens never call saveRoot / restoreRoot / localStorage).
+- Screens: `#/settings` (expiry days, low-stock days, backup, restore, storage promise, version + privacy line), quiet backup line on home, restore button on the problem screen (`components/RestorePanel.tsx`).
+- `npm test`: 360 pass. `npm run build` passes. Playwright 360px on the production build: no text under 15px, no tap target under 48px, no sideways scroll, no console errors on home, settings, after-backup, restore error / summary, problem screen. Real flow in Chromium: backup (download path, no share sheet in desktop Chromium) -> clear localStorage -> restore -> data identical to the file; bad file leaves storage untouched.
+- Not run: Web Share on a real phone (only mocked in tests). Not built: Settings shops / order template (3.3), members page (3.2c).
+
+### Owner's S24 test list for 3.2d (after merge and deploy)
+1. Tab ตั้งค่า: two day settings; tap a chip or − / +: the number changes at once, no save button; go home: "เตือนก่อนหมดอายุ N วัน" shows the new number.
+2. Add a real medicine, then open Settings: the line says "ยังไม่เคยสำรอง" with a warning; home shows the quiet line with a link.
+3. Tap "สำรองข้อมูล": the Android share sheet opens. Close it without choosing: it says "ยกเลิกแล้ว ยังไม่ได้สำรอง", date unchanged. Tap again and save to Drive / LINE Keep / Files: "แชร์ไฟล์ … แล้ว", date = today, warning and home line gone.
+4. **Backup -> clear Chrome web data -> restore:** with that file saved, in Chrome clear this site's data (Settings > Site settings > JudYa > Clear & reset), open the app (blank house), Settings > "นำกลับจากไฟล์สำรอง", pick the file: the summary shows "สมาชิก N คน ยา M รายการ" and "จะแทนที่ข้อมูลปัจจุบันทั้งหมด"; confirm. Members, medicines, stock numbers, expiry dates and thresholds must be exactly as before.
+5. Pick a wrong file (a photo or any non-backup file): a Thai message says the current data was not touched.
+6. Storage: "เบราว์เซอร์รับปากจะไม่ลบข้อมูล" shows ใช่ / ไม่; if "ไม่", keep backing up.
+7. Bottom of Settings: version with a short code; "แอพนี้ไม่ส่งข้อมูลออกนอกเครื่องยกเว้นคุณกดแชร์เอง".
+
+### Next: 3.2c (members page; it replaces the small add-member form in add-medicine step 1), then 3.3 (shops, prices, order, house medicines, Settings shops + template).
+
 ## Next after 3.2b-1: 3.2b-2 screens, then 3.2c, 3.2d. (O5 solved: the functions refuse with `sample_present`; the screen clears the sample after asking.)
 Open points from 3.1 still waiting: `settings.expiryWarnDays` must be passed to `expiryStatus` by every screen;
 persist status line in Settings (3.2d); `judya.v2.prev` is now written by "เริ่มใหม่" (restore-from-backup in 3.2d will reuse it).

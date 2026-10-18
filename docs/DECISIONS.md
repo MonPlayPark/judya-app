@@ -190,3 +190,32 @@ decisions taken **while building**, and questions the BRIEF does not answer. New
 - List: badges are the warnings (expired, low, expiring); if none, "สต๊อกพอ" or "ไม่ได้ใส่จำนวน"; stopped rows show only "หยุดใช้แล้ว". "ยา N รายการ" counts active medicines. Members without medicines are listed with "ยังไม่มียา". The board's link "ไปที่ยาวันนี้" is kept.
 - Page not found for a medicine of a removed member too.
 - The draft of the add flow is in memory only (`DraftContext`); the list's "เพิ่มยา" button starts from an empty draft.
+
+## Step 3.2d (18 ต.ค. 2569) — backup / restore, Settings page, storage promise
+
+Done before 3.2c because the owner already enters real data that lives only in Chrome's localStorage.
+
+### Hidden because the part is not built yet (Q12) — show in step 3.3
+- Settings board section "ร้านค้า" (shop list + shop form + delete shop).
+- Settings board section "ข้อความสั่งยาไปร้าน" (order template, tokens, preview).
+- Home "เปลี่ยนเกณฑ์" link (the Settings page now exists, but it was not asked for in this step; add it when wanted).
+
+### Extra proposals by the team lead (owner has not seen them on screen; easy to cut, each is small)
+1. Settings: "เตือนยาใกล้หมด" (`settings.lowStockDays` 1–60, default 7). Same form as the expiry one; chips 3 / 7 / 14 / 30.
+2. Home: one quiet line "ไม่ได้สำรองข้อมูลมา N วันแล้ว / ยังไม่เคยสำรองข้อมูล · สำรองข้อมูล" (link to `#/settings`). Plain text + icon, no pop-up. Cut = delete `BackupReminder` in `HomePage.tsx`.
+3. Problem screen (corrupt / other version): button "นำกลับจากไฟล์สำรอง". The page already existed, so it only got the button (same `RestorePanel`). Not shown for "unavailable" (nothing could be written).
+
+### Decisions taken (BRIEF / board / message silent; easy to change)
+- **Board**: it has only the expiry section (− / + and chips 7 / 15 / 30 / 60, no text field), so "custom value" = the − / + buttons. The backup, restore and storage sections have no board; they use the same cards, chips, info boxes and buttons. The board's footer disclaimer "ข้อมูลตัวอย่างเพื่อดูหน้าจอ · ไม่ใช่คำแนะนำทางการแพทย์" is not on the Settings board, so it is not shown (this page does not talk about doses).
+- **5 MB** = 5 × 1024 × 1024 bytes, counted in bytes of the file (a Thai letter = 3 bytes). A chosen file is checked by `File.size` before it is read.
+- **Error codes**: a file that has no `version` key (or is not an object, e.g. `[]`, `42`) is `invalid`, not `wrong_version` (it does not claim to be another version). `wrong_version` = has `version` and it is not 2.
+- **Summary "ยา M รายการ"** = every assignment (stopped included), also those of a removed member; members = not removed. If the owner wants removed members' medicines left out, change `summarizeRoot` only.
+- **File** = the root as compact JSON (same text as stored) with `meta.lastBackupAt` = the time of the tap. The same time is saved in the app by `markBackedUp`, only after sharing / download succeeded. `meta.isSample` is kept if the house is the sample.
+- **Share**: `navigator.share({ files })` only when `canShare({ files })` is true. Closing the sheet (`AbortError`) = nothing saved, text "ยกเลิกแล้ว ยังไม่ได้สำรอง". Any other share error = download instead. If the file was handed over but the date cannot be saved: an error says so, no "done" message.
+- **Restore** copies the current text of `judya.v2` to `judya.v2.prev` (also when it is unreadable), saves, reads back; on any failure both keys return to what they were. The screen does not mention `.prev` (there is no screen to use it yet).
+- **Storage promise**: asked on every app open until the browser has promised, and once more after the first medicine is saved (Chrome decides by its own rules, so a later ask can succeed). Settings shows ใช่ / ไม่ / ไม่รองรับ by reading `persisted()`; "ไม่" = not promised yet. The text never says the data is safe; even "ใช่" says clearing web data still removes it.
+- **App version** at the bottom of Settings = `package.json` version + short git commit (`__APP_VERSION__`, set in `vite.config.ts`), so the owner can tell which build runs.
+- **Saving settings** writes on every tap (no debounce); a refused or unsaved value never changes the number on screen and shows the reason under the chips.
+
+### Note on the owner's example 6
+`2026-11-01` is 14 days after `2026-10-18`, so it already shows as "อีก 14 วัน" with the default 15. The numbers are right and tested as written; the test also uses 7 (not listed), 13 (not listed), 14 and 30 (listed) to show the new value is used at once.
