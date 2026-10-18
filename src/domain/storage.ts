@@ -138,3 +138,51 @@ export function startFresh(nowIso: string, store: KeyValueStore | null = browser
   }
   return saveRoot(emptyRoot(nowIso), store);
 }
+
+const putBack = (store: KeyValueStore, key: string, value: string | null): void => {
+  try {
+    if (value === null) store.removeItem(key);
+    else store.setItem(key, value);
+  } catch {
+    // Nothing more can be done; the caller already reports the failure.
+  }
+};
+
+/** "Restore from a backup file": replaces `judya.v2` with an already checked root. First the text now in `judya.v2`
+ * is copied to `judya.v2.prev` (read back to be sure), then the new root is saved with saveRoot (write, read back,
+ * validate). If anything fails, both keys go back to what they held before, so the current data is untouched.
+ * An older `judya.v2.prev` is overwritten. No other key is read or written. */
+export function restoreRoot(root: Root, store: KeyValueStore | null = browserStore()): SaveResult {
+  if (!store) return { ok: false, reason: 'unavailable' };
+  const checked = rootSchema.safeParse(root);
+  if (!checked.success) return { ok: false, reason: 'invalid', detail: checked.error.message };
+
+  let oldMain: string | null;
+  let oldPrev: string | null;
+  try {
+    oldMain = store.getItem(STORAGE_KEY);
+    oldPrev = store.getItem(PREV_KEY);
+  } catch {
+    return { ok: false, reason: 'unavailable' };
+  }
+
+  if (oldMain !== null) {
+    try {
+      store.setItem(PREV_KEY, oldMain);
+      if (store.getItem(PREV_KEY) !== oldMain) {
+        putBack(store, PREV_KEY, oldPrev);
+        return { ok: false, reason: 'verify-failed', detail: 'safety copy' };
+      }
+    } catch (e) {
+      putBack(store, PREV_KEY, oldPrev);
+      return { ok: false, reason: isQuotaError(e) ? 'quota' : 'unavailable', detail: 'safety copy' };
+    }
+  }
+
+  const saved = saveRoot(checked.data, store); // puts judya.v2 back by itself when it fails
+  if (!saved.ok) {
+    putBack(store, STORAGE_KEY, oldMain);
+    putBack(store, PREV_KEY, oldPrev);
+  }
+  return saved;
+}
