@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { EXPIRY_DAYS_RANGE, LOW_STOCK_DAYS_RANGE } from '../domain/actions';
+import { EXPIRY_DAYS_RANGE, LOW_STOCK_DAYS_RANGE, ORDER_DAYS_RANGE } from '../domain/actions';
 import { backupAge, makeBackup, needsBackupWarning } from '../domain/backup';
 import { settingsErrorText, type SettingsErrorCode } from '../domain/errorText';
 import { thaiDateShort } from '../domain/format';
@@ -7,6 +7,7 @@ import { Card, CardTitle } from '../components/Card';
 import { Button } from '../components/Button';
 import { Chip, ChipGroup, InfoBox } from '../components/form';
 import {
+  BagIcon,
   BellIcon,
   CheckCircleIcon,
   InfoIcon,
@@ -19,6 +20,7 @@ import {
 } from '../components/icons';
 import { PageHeader } from '../components/PageHeader';
 import { RestorePanel } from '../components/RestorePanel';
+import { OrderMessageCard } from './OrderMessageCard';
 import { ShopsCard } from './ShopsCard';
 import { useData, useRoot } from '../state/DataContext';
 import { handOffBackup } from '../state/backupFile';
@@ -26,12 +28,12 @@ import { refreshPersistStatus, usePersistStatus, type PersistStatus } from '../s
 import { useToday } from '../state/useToday';
 import styles from './SettingsPage.module.css';
 
-/** Settings (board Settings). Warning thresholds apply at once (no save button), then backup / restore and where the
- * data lives. Hidden for now (Q12, step 3.3b): the order-message template. */
+/** Settings (board Settings). Warning thresholds and the order days apply at once (no save button), then the shops, the
+ * order-message text (it has its own save button), backup / restore and where the data lives. */
 export function SettingsPage() {
   const root = useRoot();
   const { setSettings } = useData();
-  const { expiryWarnDays, lowStockDays } = root.settings;
+  const { expiryWarnDays, lowStockDays, orderDays } = root.settings;
 
   return (
     <>
@@ -57,7 +59,18 @@ export function SettingsPage() {
           chips={[3, 7, 14, 30]}
           onChange={(n) => setSettings({ lowStockDays: n })}
         />
+        <DaysSetting
+          icon={<BagIcon />}
+          title="จำนวนวันที่สั่งยา"
+          question="สั่งยาให้พอใช้กี่วัน"
+          hint="ใช้คำนวณจำนวนยาที่ต้องสั่งในหน้าสั่งยา ปรับแล้วใช้ทันที ไม่ต้องกดบันทึก"
+          value={orderDays}
+          range={ORDER_DAYS_RANGE}
+          chips={[7, 14, 30, 60, 90]}
+          onChange={(n) => setSettings({ orderDays: n })}
+        />
         <ShopsCard />
+        <OrderMessageCard />
         <BackupCard />
         <StorageCard />
         <footer className={styles.footer}>

@@ -76,11 +76,12 @@ describe('thresholds apply at once, with no save button', () => {
     expect(screen.getByRole('heading', { name: 'เตือนยาใกล้หมด' })).toBeInTheDocument();
     expect(screen.getByText(/หมดอายุภายใน 15 วัน/)).toBeInTheDocument();
     expect(screen.getByText(/เหลือพอกินไม่เกิน 7 วัน/)).toBeInTheDocument();
-    expect(screen.getAllByText(/ไม่ต้องกดบันทึก/)).toHaveLength(2);
-    expect(screen.queryByRole('button', { name: /^บันทึก/ })).not.toBeInTheDocument();
-    // shops exist since step 3.3a; the order-message template stays hidden until step 3.3b
+    expect(screen.getAllByText(/ไม่ต้องกดบันทึก/)).toHaveLength(3); // expiry, low stock, order days
+    expect(screen.queryByRole('button', { name: /^บันทึก(?!ข้อความ)/ })).not.toBeInTheDocument(); // only the text box has its own button
+    // shops (3.3a), order days and the order-message text (3.3b-2)
     expect(screen.getByRole('heading', { name: 'ร้านค้า' })).toBeInTheDocument();
-    expect(screen.queryByText('ข้อความสั่งยาไปร้าน')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'จำนวนวันที่สั่งยา' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'ข้อความสั่งยาไปร้าน' })).toBeInTheDocument();
   });
 
   it('a chip changes the value at once, saves it, and the chosen chip says so (tick + aria-checked)', () => {
