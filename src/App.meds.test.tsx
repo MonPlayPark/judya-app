@@ -141,7 +141,7 @@ describe('all medicines (#/meds)', () => {
 });
 
 describe('medicine detail (#/meds/:id)', () => {
-  it('example 1: name, whose it is, badges, how it is taken, 14 left for 7 days, no expiry, nothing hidden-but-promised', () => {
+  it('example 1: name, whose it is, badges, how it is taken, 14 left for 7 days, no expiry, prices are there since 3.3b-2, nothing hidden-but-promised', () => {
     open('#/meds/a1');
     expect(screen.getByRole('heading', { name: 'ยาตัวอย่าง ก' })).toBeInTheDocument();
     expect(screen.getByText('กำลังใช้')).toBeInTheDocument();
@@ -151,7 +151,7 @@ describe('medicine detail (#/meds/:id)', () => {
     expect(stock.getByText('14 เม็ด')).toBeInTheDocument();
     expect(stock.getByText('พอทาน 7 วัน (ถึง 24 ต.ค. 2569)')).toBeInTheDocument();
     expect(within(group('หมดอายุ')).getByText('ไม่ระบุ')).toBeInTheDocument();
-    for (const hidden of [/ราคาตามร้าน/, /แชร์ให้แพทย์/, /กำลังจะมา/]) expect(screen.queryByText(hidden)).not.toBeInTheDocument();
+    for (const hidden of [/แชร์ให้แพทย์/, /กำลังจะมา/]) expect(screen.queryByText(hidden)).not.toBeInTheDocument();
   });
 
   it('no count is "ไม่ได้ใส่จำนวนคงเหลือ", never 0', () => {

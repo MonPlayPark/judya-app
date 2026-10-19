@@ -159,14 +159,14 @@ describe('add a house medicine (#/house/new)', () => {
 });
 
 describe('edit, cut stock, delete and bring back (#/house/:id)', () => {
-  it('shows the saved values and no price section', () => {
+  it('shows the saved values and the price section', () => {
     open('#/house/h1', withHouse(para));
     expect(h1()).toHaveTextContent('แก้ไขยาสามัญประจำบ้าน');
     expect(field('ชื่อยา')).toHaveValue('ยาสามัญทดสอบ ก');
     expect(field(/^จำนวนคงเหลือ/)).toHaveValue(10);
     expect(field(/^เตือนเมื่อเหลือไม่เกิน/)).toHaveValue(5);
     expect(field(/^วันหมดอายุ/)).toHaveValue('2027-09-30');
-    expect(screen.queryByText(/ราคาตามร้าน/)).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'ราคาตามร้าน' })).toBeInTheDocument(); // opened in step 3.3b-2
   });
 
   it('editing saves the new values; a line "บันทึกแล้ว" appears', () => {
@@ -286,11 +286,11 @@ describe('shops in Settings', () => {
     perSellUnit: 1,
   });
 
-  it('empty: says so and has the add button; the order template stays hidden', () => {
+  it('empty: says so and has the add button; the order-message card is there (step 3.3b-2)', () => {
     open('#/settings');
     expect(screen.getByText('ยังไม่มีร้านค้า')).toBeInTheDocument();
     expect(button('เพิ่มร้านค้า')).toBeInTheDocument();
-    expect(screen.queryByText(/ข้อความสั่งยาไปร้าน/)).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'ข้อความสั่งยาไปร้าน' })).toBeInTheDocument();
   });
 
   it('add a shop that delivers: the form checks as you type, the list shows the words', () => {
