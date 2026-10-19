@@ -7,10 +7,11 @@ import { describeSchedule } from './scheduleForm';
 import type { Assignment, MedEvent, Person, Root } from './schema';
 import { daysLeft, isLowStock, stockNow } from './stock';
 
-export type BadgeKind = 'expired' | 'low' | 'soon' | 'ok' | 'noStock' | 'stopped' | 'active';
+export type BadgeKind = 'expired' | 'out' | 'low' | 'soon' | 'ok' | 'noStock' | 'stopped' | 'active';
 
 export const BADGE_TEXT: Record<BadgeKind, string> = {
   expired: 'หมดอายุแล้ว',
+  out: 'หมดแล้ว',
   low: 'ใกล้หมด',
   soon: 'ใกล้หมดอายุ',
   ok: 'สต๊อกพอ',
