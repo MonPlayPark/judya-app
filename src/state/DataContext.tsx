@@ -7,15 +7,18 @@ import type {
   AddHouseItemError,
   AddShopError,
   CutHouseStockError,
+  DeletePriceError,
   DeleteShopError,
   EditHouseItemError,
   EditHouseItemPatch,
   EditShopError,
   RemoveHouseItemError,
   RestoreHouseItemError,
+  SetPriceError,
   SettingsError,
   SettingsPatch,
 } from '../domain/actions';
+import type { PriceInput } from '../domain/price';
 import type { HouseItemInput } from '../domain/house';
 import type { ShopInput } from '../domain/shop';
 import * as medicine from '../domain/medicine';
@@ -36,7 +39,7 @@ import type {
   RestorePersonError,
   StopMedicineError,
 } from '../domain/medicine';
-import type { Schedule } from '../domain/schema';
+import type { Price, Schedule } from '../domain/schema';
 import { emptyRoot, type Root } from '../domain/schema';
 import { loadRoot, restoreRoot, saveRoot, startFresh, type LoadResult, type SaveResult } from '../domain/storage';
 import type { IsoDate } from '../domain/calc';
@@ -93,12 +96,15 @@ export interface DataApi {
   editShop: (id: string, input: ShopInput) => ActionResult<object, EditShopError>;
   /** Deletes the shop and all its prices. */
   deleteShop: (id: string) => ActionResult<{ pricesRemoved: number }, DeleteShopError>;
+  /** Prices per shop (step 3.3b-1). One price per (shop, medicine): setting it again changes the old one. */
+  setPrice: (input: { shopId: string; item: Price['item'] } & PriceInput) => ActionResult<{ priceId: string }, SetPriceError>;
+  deletePrice: (priceId: string) => ActionResult<object, DeletePriceError>;
   /** Backup/restore (step 3.2d). Works also on the problem screen. Replaces all data with an already checked root; the old
    * text is kept in `judya.v2.prev`. On any failure nothing changes (memory and disk keep the current data). */
   replaceAll: (root: Root) => ActionResult<object, 'invalid_data'>;
   /** Records that a backup file was shared / downloaded at `nowIso` (the same time stamped into the file). */
   markBackedUp: (nowIso: string) => ActionResult<object, never>;
-  /** The two warning thresholds (apply at once, no save button). A refused or unsaved value changes nothing. */
+  /** The settings (apply at once, no save button): warning thresholds, order days, order text. A refused or unsaved value changes nothing. */
   setSettings: (patch: SettingsPatch) => ActionResult<object, SettingsError>;
 }
 
@@ -230,6 +236,8 @@ export function DataProvider({ children, getToday = todayInBangkok }: { children
       addShop: (input) => mutate((r, ctx) => actions.addShop(r, input, ctx)),
       editShop: (id, input) => mutate((r, ctx) => actions.editShop(r, id, input, ctx)),
       deleteShop: (id) => mutate((r, ctx) => actions.deleteShop(r, id, ctx)),
+      setPrice: (input) => mutate((r, ctx) => actions.setPrice(r, input, ctx)),
+      deletePrice: (priceId) => mutate((r, ctx) => actions.deletePrice(r, priceId, ctx)),
       replaceAll,
       markBackedUp: (at) => mutate((r) => ({ ok: true as const, root: actions.markBackedUp(r, at) })),
       setSettings: (patch) => mutate((r) => actions.setSettings(r, patch)),
