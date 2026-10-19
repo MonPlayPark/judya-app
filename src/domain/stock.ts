@@ -25,6 +25,15 @@ export function stockNow(a: Assignment, today: IsoDate, events: MedEvent[] = [])
   return Math.max(a.stock.qty - used, 0);
 }
 
+/** Units to take from `today` through `today + orderDays - 1`, day by day with the real schedule and the same stop / resume
+ * rule as `stockNow` (never an average). A stopped medicine needs nothing (0). The order page asks for this many. */
+export function targetDoses(a: Assignment, today: IsoDate, orderDays: number, events: MedEvent[] = []): number {
+  if (a.status === 'stopped') return 0;
+  let total = 0;
+  for (let i = 0; i < orderDays; i++) total += dosesTaken(a, addDays(today, i), events);
+  return total;
+}
+
 export type DaysLeft =
   | { status: 'unknown' } // no count, or stopped
   | { status: 'ok'; days: number; depletionDate: IsoDate } // days from today to the first day that cannot be covered
