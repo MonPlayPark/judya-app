@@ -260,6 +260,28 @@ Branch `ccr-c619ff02-9al1jn`, PR open (not merged). Schema untouched (old backup
 ### Owner test on the S24
 Nothing in this step: no screen changed. The whole 3.3 (3.3a + 3.3b) is tested together at the end of 3.3b-2.
 
+## Status after step 3.3b-2 (19 ต.ค. 2569) — screens: prices per shop, order days + message text, deleted house medicines
+
+Branch `ccr-b85f36da-fzu3w7`, PR open (not merged). Schema untouched; no new localStorage key. Choices: `docs/DECISIONS.md` "Step 3.3b-2".
+
+### Done
+- "ราคาตามร้าน" on `#/meds/:id` (shared-price sentence when 2+ active users) and `#/house/:id` (`components/PriceSection.tsx`, logic in `domain/priceView.ts`; saving only through `DataContext.setPrice` / `deletePrice`).
+- Settings: "จำนวนวันที่สั่งยา" (7–90) and "ข้อความสั่งยาไปร้าน" (box + save, default text, live preview from `buildOrderMessage`).
+- House tab: fold-away "ยาสามัญที่ลบแล้ว (N)" with "นำกลับ".
+- `npm test`: 745 pass (684 before, +61; 4 old "is hidden" assertions updated, listed in DECISIONS). `npm run build` passes. No `any`. Playwright 360px on the production build (medicine page with 2 users, price form with errors, house page + form, Settings, deleted list open): no text under 15px, no tap target under 48px, no sideways scroll, no console errors.
+- Still hidden: the order page and every "สั่งยา" button / link (3.3b-3), share summary (3.4).
+
+### Owner's S24 test list for 3.3b-2 (test together at the end of 3.3b-3)
+1. Settings → ร้านค้า: add 2 shops. ยา → a medicine → "ราคาตามร้าน": "ใส่ราคา" for shop 1: 290, กล่อง, "1 กล่อง มีกี่ เม็ด" 60 → row says "฿290 ต่อ 1 กล่อง (60 เม็ด)". Try price 0, and leave "มีกี่" empty: red messages, nothing saved. Change 290 → 300: still one row. "ลบราคานี้" asks first.
+2. Same medicine used by 2 members: both pages say "ราคานี้ใช้ร่วมกับทุกคนที่ใช้ยานี้ (2 คน)" and show the same prices. With 1 user (or one member taken out): no sentence.
+3. ยาสามัญ → open one → "ราคาตามร้าน": 35 per ขวด → "฿35 ต่อ 1 ขวด"; no "มีกี่" box. Delete a shop that has prices: its prices go from both pages.
+4. Settings: จำนวนวันที่สั่งยา: chips / − / +, stops at 7 and 90, no save button.
+5. Settings → ข้อความสั่งยาไปร้าน: box shows the default text; the preview is the 5 lines "สวัสดีค่ะ ร้านตัวอย่าง … ขอบคุณค่ะ". Edit → preview changes, "บันทึกข้อความ" → "บันทึกแล้ว", leave and return: text is kept. "ใช้ข้อความตั้งต้น" + save returns to the default. Try the buttons "ใส่ {ร้าน}" / "ใส่ {รายการ}".
+6. ยาสามัญ → delete one → tab "ยาสามัญที่ลบแล้ว (1)" → open → "นำกลับ": it is back with the same numbers and the price you put before.
+7. Nothing says "สั่งยา" as a button or link anywhere. Airplane mode: all works.
+
+### Next: 3.3b-3 (order page `#/order`, price comparison, LINE message, open the hidden "สั่งยา" buttons), then 3.4.
+
 ## Next after 3.2b-1: 3.2b-2 screens, then 3.2c, 3.2d. (O5 solved: the functions refuse with `sample_present`; the screen clears the sample after asking.)
 Open points from 3.1 still waiting: `settings.expiryWarnDays` must be passed to `expiryStatus` by every screen;
 persist status line in Settings (3.2d); `judya.v2.prev` is now written by "เริ่มใหม่" (restore-from-backup in 3.2d will reuse it).

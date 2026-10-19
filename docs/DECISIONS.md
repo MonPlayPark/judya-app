@@ -299,3 +299,28 @@ Done before 3.2c because the owner already enters real data that lives only in C
 
 ### Hidden / not built here (all screens are 3.3b-2)
 Order page, price boxes, "ข้อความสั่งยาไปร้าน" and order-days fields in Settings, the list of deleted house medicines (O7), and 3.4.
+
+## Step 3.3b-2 (19 ต.ค. 2569) — screens: prices per shop, order days + order message text, deleted house medicines
+
+### Decided by the owner (19 ต.ค. 2569)
+- A regular medicine's price must give "1 sell unit = how many medicine units" (required). O7 solved: there is a list "ยาสามัญที่ลบแล้ว" with "นำกลับ". O8: editing / cutting a sample house medicine without asking to clear the sample is fine. Closing word of the default text is "ค่ะ"; default low-stock warning stays 7.
+- Everything else below: "ตามข้อเสนอของทีม" (board / BRIEF, easy to change).
+
+### Opened in this step (were hidden)
+- `MedDetail.tsx` and `HousePages.tsx`: section "ราคาตามร้าน" (one shared component `components/PriceSection.tsx`). `SettingsPage.tsx`: "จำนวนวันที่สั่งยา" and "ข้อความสั่งยาไปร้าน" (`OrderMessageCard.tsx`). `MedsPage.tsx` house tab: "ยาสามัญที่ลบแล้ว (N)".
+
+### Still hidden (step 3.3b-3 and 3.4)
+- The order page `#/order` and every "สั่งยา" button / link (home, member page, all medicines). A test checks no `a[href="#/order"]` and no "สั่งยา" link or button on 7 pages. "แชร์ให้แพทย์" and the allergy button (3.4).
+
+### Decisions taken by the team
+- **Price section**: shown on the medicine page only in the normal view (not while adjust / stop / edit is open, as the board's `showActions`); on the house page after the form and before "ลบยานี้"; not shown for a deleted house medicine (its page is the "ลบแล้ว" card).
+- **Intro sentences** are cut down so they do not promise a comparison page that does not exist: medicine "ใส่ราคายานี้ของแต่ละร้าน", house "ใส่ราคาต่อ 1 หน่วยที่ร้านขาย" (the board adds "หน้าสั่งยาจะเทียบให้"). Add that back in 3.3b-3.
+- **Delete a price**: the button "ลบราคานี้" is inside the open price form (as on the board), then a ConfirmDialog, then `deletePrice`. The row itself has one button (ใส่ราคา / แก้ไข).
+- **Form**: the save button is always on; pressing it checks with `validatePrice` and shows every wrong box at once under the box (a message goes away when that box is typed in). Only a passing form calls `setPrice`. New price starts with sell unit "กล่อง" (board). Own sell unit max 12 letters (board). Numbers are not changed: 12.5 is stored and shown as 12.5; amounts are shown without thousands separators (฿1500).
+- **Shared price sentence** counts assignments with `status: 'active'` of members who are not taken out (`priceSharedCount`), shown when N > 1.
+- **Sample**: a NEW price with sample data asks (ClearSampleDialog); cancelling keeps the form as typed; changing an existing price never asks.
+- **Order days**: same `DaysSetting` card (− / +, chips 7 14 30 60 90, applies at once). The − / + buttons stop at 7 and 90, so 6 / 91 can only come from code; the refusal is tested through `DataContext.setSettings`.
+- **Order message card**: the box has its own "บันทึกข้อความ"; "ใช้ข้อความตั้งต้น" only fills the box (save is a second step, as asked). Extra (not asked, small): two buttons "ใส่ {ร้าน}" / "ใส่ {รายการ}" that insert at the cursor, because curly brackets are hard to type on a phone keyboard; a yellow note when the text has no {รายการ} (the list is then added at the end, as `buildOrderMessage` does). Stored: `''` only when the box is exactly empty or exactly `DEFAULT_ORDER_TEMPLATE`; a text of only spaces is stored as typed (the builder treats it as default). After saving an empty box the box shows the default text again.
+- **Preview sample**: "ยาตัวอย่าง เอ" x 2 กล่อง with 30 เม็ด per กล่อง (so the line reads "(60 เม็ด)" as in the owner's example) and "ยาสามัญตัวอย่าง" x 1 ขวด; no member names anywhere.
+- **Deleted house list**: folded by default, a button bar with `aria-expanded`; "นำกลับ" has the item name in its accessible name; the bar stays open while more remain. Its prices were never erased, so they come back with the item.
+- **Old tests changed** (they only checked "this part is hidden"): `App.house.test.tsx` (price section now present; order-message card present), `App.meds.test.tsx` ("ราคาตามร้าน" no longer in the hidden list), `App.settings.test.tsx` (three "ไม่ต้องกดบันทึก" lines, the text box has its own save button, new headings). No other old test touched. No schema change, no new localStorage key.
