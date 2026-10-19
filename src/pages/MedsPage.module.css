@@ -222,3 +222,57 @@
   height: 20px;
   stroke-width: 2.6;
 }
+
+.removed {
+  margin-top: var(--space-2);
+  padding-top: var(--space-1);
+  border-top: 1px solid var(--color-border);
+}
+.removedBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1);
+  width: 100%;
+  min-height: var(--touch-min);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink-muted);
+  font-family: inherit;
+  font-size: var(--text-label-size);
+  line-height: var(--text-label-line);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.removedChevron {
+  display: flex;
+  flex: none;
+}
+.removedChevronOpen {
+  transform: rotate(90deg);
+}
+.removedRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1);
+  min-height: 64px;
+  border-top: 1px solid var(--color-border);
+}
+.restoreBtn {
+  flex: none;
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
+  padding: 0 var(--space-2);
+  border: 2px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-primary-ink);
+  font-family: inherit;
+  font-size: var(--text-label-size);
+  line-height: var(--text-label-line);
+  font-weight: 600;
+  cursor: pointer;
+}
