@@ -3,7 +3,21 @@
 // A change that cannot be saved is NOT shown as done: the screen keeps the old data and a "save failed" bar appears.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import * as actions from '../domain/actions';
-import type { SettingsError, SettingsPatch } from '../domain/actions';
+import type {
+  AddHouseItemError,
+  AddShopError,
+  CutHouseStockError,
+  DeleteShopError,
+  EditHouseItemError,
+  EditHouseItemPatch,
+  EditShopError,
+  RemoveHouseItemError,
+  RestoreHouseItemError,
+  SettingsError,
+  SettingsPatch,
+} from '../domain/actions';
+import type { HouseItemInput } from '../domain/house';
+import type { ShopInput } from '../domain/shop';
 import * as medicine from '../domain/medicine';
 import type {
   AddMedicineError,
@@ -68,6 +82,17 @@ export interface DataApi {
   /** Takes a member out of the house (hides them; nothing is deleted). */
   removePerson: (personId: string) => ActionResult<object, RemovePersonError>;
   restorePerson: (personId: string) => ActionResult<object, RestorePersonError>;
+  /** House medicines and shops (step 3.3a). Same rules as the medicine methods: a refused or unsaved change shows nothing new. */
+  addHouseItem: (input: HouseItemInput) => ActionResult<{ houseItemId: string }, AddHouseItemError>;
+  editHouseItem: (id: string, patch: EditHouseItemPatch) => ActionResult<object, EditHouseItemError>;
+  /** Takes `n` off the quantity. More than is left is refused (`cut_over_stock`) and nothing changes. */
+  cutHouseStock: (id: string, n: number) => ActionResult<{ left: number }, CutHouseStockError>;
+  removeHouseItem: (id: string) => ActionResult<object, RemoveHouseItemError>;
+  restoreHouseItem: (id: string) => ActionResult<object, RestoreHouseItemError>;
+  addShop: (input: ShopInput) => ActionResult<{ shopId: string }, AddShopError>;
+  editShop: (id: string, input: ShopInput) => ActionResult<object, EditShopError>;
+  /** Deletes the shop and all its prices. */
+  deleteShop: (id: string) => ActionResult<{ pricesRemoved: number }, DeleteShopError>;
   /** Backup/restore (step 3.2d). Works also on the problem screen. Replaces all data with an already checked root; the old
    * text is kept in `judya.v2.prev`. On any failure nothing changes (memory and disk keep the current data). */
   replaceAll: (root: Root) => ActionResult<object, 'invalid_data'>;
@@ -197,6 +222,14 @@ export function DataProvider({ children, getToday = todayInBangkok }: { children
       editPerson: (id, patch) => mutate((r, ctx) => medicine.editPerson(r, id, patch, ctx)),
       removePerson: (id) => mutate((r, ctx) => medicine.removePerson(r, id, ctx)),
       restorePerson: (id) => mutate((r, ctx) => medicine.restorePerson(r, id, ctx)),
+      addHouseItem: (input) => mutate((r, ctx) => actions.addHouseItem(r, input, ctx)),
+      editHouseItem: (id, patch) => mutate((r, ctx) => actions.editHouseItem(r, id, patch, ctx)),
+      cutHouseStock: (id, n) => mutate((r, ctx) => actions.cutHouseStock(r, id, n, ctx)),
+      removeHouseItem: (id) => mutate((r, ctx) => actions.removeHouseItem(r, id, ctx)),
+      restoreHouseItem: (id) => mutate((r, ctx) => actions.restoreHouseItem(r, id, ctx)),
+      addShop: (input) => mutate((r, ctx) => actions.addShop(r, input, ctx)),
+      editShop: (id, input) => mutate((r, ctx) => actions.editShop(r, id, input, ctx)),
+      deleteShop: (id) => mutate((r, ctx) => actions.deleteShop(r, id, ctx)),
       replaceAll,
       markBackedUp: (at) => mutate((r) => ({ ok: true as const, root: actions.markBackedUp(r, at) })),
       setSettings: (patch) => mutate((r) => actions.setSettings(r, patch)),

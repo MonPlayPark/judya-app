@@ -40,6 +40,30 @@ describe('Thai error texts', () => {
   });
 });
 
+// Step 3.3a: the codes of house medicines and shops live in house.ts, shop.ts and (the new part of) actions.ts.
+const houseSources = ['house.ts', 'shop.ts', 'actions.ts'].map((f) => readFileSync(resolve(process.cwd(), 'src/domain', f), 'utf8'));
+const houseDeclared = new Set<string>();
+for (const src of houseSources) {
+  for (const block of src.matchAll(/export type (\w+Error) =([^;]+);/g)) {
+    if (block[1] === 'SettingsError') continue; // has its own texts below
+    for (const m of (block[2] as string).matchAll(/'([a-z_]+)'/g)) houseDeclared.add(m[1] as string);
+  }
+}
+
+describe('Thai error texts for house medicines and shops (step 3.3a)', () => {
+  it('finds the codes (guard against the scan matching nothing)', () => {
+    for (const code of ['invalid_house_name', 'low_at_needs_stock', 'cut_over_stock', 'house_item_removed', 'invalid_phone', 'shop_not_found']) {
+      expect(houseDeclared.has(code), code).toBe(true);
+    }
+  });
+  it('every code has a Thai text', () => {
+    for (const code of houseDeclared) expect(ERROR_CODES, `missing text for ${code}`).toContain(code);
+  });
+  it('the over-cut text says the quantity stays', () => {
+    expect(errorText('cut_over_stock')).toContain('จำนวนยังเท่าเดิม');
+  });
+});
+
 describe('restore and settings texts (step 3.2d)', () => {
   it('every restore error has a Thai text, and each says the current data was not touched', () => {
     expect([...RESTORE_ERROR_CODES].sort()).toEqual(['invalid', 'not_json', 'save_failed', 'too_big', 'wrong_version']);

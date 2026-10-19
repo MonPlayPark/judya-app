@@ -216,6 +216,28 @@ Branch `ccr-fed68c89-4uxnvy`, PR open (not merged). Schema untouched. Choices an
 
 ### Next: 3.3 (shops, prices, order, house medicines, Settings shops + template), 3.4 (share summary).
 
+## Status after step 3.3a (19 ต.ค. 2569) — house medicines + shops (no prices, no order)
+
+Branch `ccr-cb7c2178-istwny`, PR open (not merged). Schema untouched (old backups restore; a test proves house items, shops and prices round-trip). Choices and open questions O7–O8: `docs/DECISIONS.md` "Step 3.3a".
+
+### Done
+- Logic with tests (the owner's hand examples are tests, numbers unchanged): `domain/house.ts`, `domain/shop.ts`, `domain/houseView.ts`, `domain/houseForm.ts`, eight actions in `domain/actions.ts` (addHouseItem, editHouseItem, cutHouseStock, removeHouseItem, restoreHouseItem, addShop, editShop, deleteShop), Thai error texts, `DataContext` methods. Screens never write storage.
+- Screens: tab ยาสามัญประจำบ้าน (`#/meds?tab=house`), add (`#/house/new`), edit / cut / delete / bring back (`#/house/:id`), shops in Settings (list, form, delete confirm that says the prices go too), house rows on home open their page.
+- `npm test`: all pass (566 before the new files were counted; run it for the current number). `npm run build` passes. Playwright 360px on the production build (tab, add, edit with notices, edit empty / out, Settings with the shop form open, home): no text under 15px, no tap target under 48px, no sideways scroll, no console errors.
+- Not built (3.3b): prices per shop, order page, price comparison, LINE message, order-days field, order template. Nothing says "สั่งยา" anywhere. No schema change.
+
+### Owner's S24 test list for 3.3a (test together at the end of 3.3)
+1. ยา → tab "ยาสามัญประจำบ้าน" → "เพิ่มยาสามัญประจำบ้าน": name, quantity 10, unit, warn level 5, expiry date → บันทึก → "เพิ่ม … แล้ว". Back: it is in the tab with "สต๊อกพอ".
+2. Open it, cut 3 → "ตัดออก 3 … แล้ว เหลือ 7". Raise the cut number above what is left (e.g. 8 of 7) → press → a warning, the quantity stays 7.
+3. Cut to the warn level (7 → cut 2 → 5): the row says "ใกล้หมด" with a warning icon, and the home page "ยาที่ต้องดูแล" lists it; tap it → opens the page. Cut everything → "หมดแล้ว".
+4. Put an expiry date in the past / within the warning days: "หมดอายุแล้ว" / "ใกล้หมดอายุ" on the row and on home.
+5. ลบยานี้ → box → ยกเลิก changes nothing; ลบ → "ลบ … แล้ว" → นำกลับ → it is back with the same numbers. Gone from the tab and home while deleted.
+6. ตั้งค่า → ร้านค้า → เพิ่มร้านค้า: name, phone (try "12": refused), ไปรับเองที่ร้าน / ให้ร้านส่ง with fee 0 and with a free-over amount (0 refused) → list shows the words. แก้ไข changes; ลบร้านนี้ shows the box "ราคาที่ใส่ไว้ของร้านนี้จะหายไปด้วย".
+7. With sample data on: adding a house medicine or a shop asks to delete the sample first.
+8. Airplane mode: everything works. Settings "เตือนยาใกล้หมด" stays whatever you set (code default is still 7).
+
+### Next: 3.3b (prices per shop, order page, comparison, LINE message, order days, template), then 3.4.
+
 ## Next after 3.2b-1: 3.2b-2 screens, then 3.2c, 3.2d. (O5 solved: the functions refuse with `sample_present`; the screen clears the sample after asking.)
 Open points from 3.1 still waiting: `settings.expiryWarnDays` must be passed to `expiryStatus` by every screen;
 persist status line in Settings (3.2d); `judya.v2.prev` is now written by "เริ่มใหม่" (restore-from-backup in 3.2d will reuse it).

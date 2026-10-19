@@ -26,7 +26,8 @@ import styles from './HomePage.module.css';
 const PREVIEW_ROWS = 3;
 
 /** Home screen (board Main). Greeting, today's medicines, what needs care, the members.
- * Hidden for now (Q12, pages not built yet): the bell, add medicine, order, change threshold, member pages. */
+ * Hidden for now (Q12, pages not built yet): the bell, add medicine, order, change threshold, member pages.
+ * Rows of house medicines in "ยาที่ต้องดูแล" open their edit page (step 3.3a). */
 export function HomePage() {
   const root = useRoot();
   const { today } = useToday();
@@ -164,15 +165,29 @@ function TodayCard() {
 function CareRows({ items }: { items: CareItem[] }) {
   return (
     <ul className={styles.careList}>
-      {items.map((i) => (
-        <li key={`${i.group}-${i.id}`} className={styles.careRow}>
-          <div>
-            <div className={styles.medName}>{i.name}</div>
-            <div className={styles.sub}>{i.sub}</div>
-          </div>
-          <span className={`${styles.right} ${i.group === 'expired' ? styles.rightRed : styles.rightAmber}`}>{i.right}</span>
-        </li>
-      ))}
+      {items.map((i) => {
+        const inner = (
+          <>
+            <div>
+              <div className={styles.medName}>{i.name}</div>
+              <div className={styles.sub}>{i.sub}</div>
+            </div>
+            <span className={`${styles.right} ${i.group === 'expired' ? styles.rightRed : styles.rightAmber}`}>{i.right}</span>
+          </>
+        );
+        return (
+          <li key={`${i.group}-${i.id}`} className={styles.careRow}>
+            {/* A house medicine opens its edit page (step 3.3a); the rows of members' medicines are not links yet. */}
+            {i.kind === 'house' ? (
+              <a className={styles.careLink} href={href(`/house/${encodeURIComponent(i.id)}`)}>
+                {inner}
+              </a>
+            ) : (
+              inner
+            )}
+          </li>
+        );
+      })}
     </ul>
   );
 }

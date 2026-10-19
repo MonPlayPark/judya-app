@@ -1,22 +1,31 @@
 import { describeSchedule } from '../domain/scheduleForm';
+import { houseRows } from '../domain/houseView';
 import { listBadges, medsByMember } from '../domain/medView';
 import type { Assignment, Root } from '../domain/schema';
 import { Avatar } from '../components/Avatar';
 import { Card } from '../components/Card';
-import { ChevronRightIcon, InfoIcon, PillIcon, PlusIcon } from '../components/icons';
+import { CheckIcon, ChevronRightIcon, InfoIcon, PillIcon, PlusIcon } from '../components/icons';
+import { InfoBox } from '../components/form';
 import { StatusBadge } from '../components/StatusBadge';
-import { href } from '../router';
+import { href, useRoute } from '../router';
 import { useRoot } from '../state/DataContext';
 import { useDraft } from '../state/DraftContext';
 import { useToday } from '../state/useToday';
 import styles from './MedsPage.module.css';
 
-/** "ยาทั้งหมด" (board Medicines). One card per member who is still in the house. The tab "ยาสามัญประจำบ้าน", the add-house-medicine
- * button and the price sections are hidden until step 3.3 (Q12). */
+const TABS = [
+  { id: 'mine', label: 'ยาประจำตัว' },
+  { id: 'house', label: 'ยาสามัญประจำบ้าน' },
+] as const;
+
+/** "ยาทั้งหมด" (board Medicines) with the two tabs `#/meds` (ยาประจำตัว) and `#/meds?tab=house` (ยาสามัญประจำบ้าน).
+ * Hidden until step 3.3b: the price sections and the order link. */
 export function MedsPage() {
   const root = useRoot();
   const { today } = useToday();
   const { reset } = useDraft();
+  const { query } = useRoute();
+  const tab = query.get('tab') === 'house' ? 'house' : 'mine';
   const members = medsByMember(root);
   const startAdding = () => reset(); // a new "add medicine" starts from an empty form
 
@@ -36,7 +45,26 @@ export function MedsPage() {
       </header>
 
       <div className={styles.body}>
-        {members.length === 0 ? (
+        <div role="group" aria-label="เลือกประเภทยา" className={styles.segments}>
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              aria-pressed={tab === t.id}
+              className={`${styles.segment} ${tab === t.id ? styles.segmentOn : ''}`}
+              onClick={() => {
+                window.location.hash = href(t.id === 'house' ? '/meds?tab=house' : '/meds');
+              }}
+            >
+              {tab === t.id && <CheckIcon />}
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {tab === 'house' ? (
+          <HouseTab />
+        ) : members.length === 0 ? (
           <Card className={styles.emptyCard}>
             <p className={styles.emptyLine}>
               <InfoIcon />
@@ -82,6 +110,51 @@ export function MedsPage() {
         </a>
       </div>
     </>
+  );
+}
+
+/** The tab "ยาสามัญประจำบ้าน": shared by everyone in the house, no times, no ticks. Tap an item to edit, cut, delete. */
+function HouseTab() {
+  const root = useRoot();
+  const { today } = useToday();
+  const rows = houseRows(root, today);
+  return (
+    <Card>
+      <div className={styles.memberTop}>
+        <span className={styles.iconBadge} aria-hidden="true">
+          <PillIcon />
+        </span>
+        <div>
+          <h2 className={styles.memberName}>ยาสามัญประจำบ้าน</h2>
+          <div className={styles.sub}>ใช้ร่วมกันทุกคน · {rows.length} รายการ</div>
+        </div>
+      </div>
+      <p className={styles.houseNote}>ไม่มีเวลากินและไม่ต้องติ๊ก แตะที่ยาเพื่อแก้ไขหรือลบ</p>
+      <div className={styles.houseInfo}>
+        <InfoBox>ยาที่ไม่ใส่จำนวนคงเหลือ แอปจะไม่นับสต๊อกและไม่เตือนให้ซื้อเติม แต่ยังเตือนวันหมดอายุถ้าใส่วันไว้</InfoBox>
+      </div>
+      {rows.length === 0 && <p className={styles.empty}>ยังไม่มียาสามัญในบ้าน</p>}
+      {rows.map((r) => (
+        <a key={r.id} className={styles.row} href={href(`/house/${encodeURIComponent(r.id)}`)}>
+          <div className={styles.rowText}>
+            <div className={styles.medName}>{r.name}</div>
+            <div className={styles.sub}>{r.sub}</div>
+            <div className={styles.badges}>
+              {r.badges.map((kind) => (
+                <StatusBadge key={kind} kind={kind} />
+              ))}
+            </div>
+          </div>
+          <span className={styles.chevron} aria-hidden="true">
+            <ChevronRightIcon />
+          </span>
+        </a>
+      ))}
+      <a className={styles.addRow} href={href('/house/new')}>
+        <PlusIcon />
+        เพิ่มยาสามัญประจำบ้าน
+      </a>
+    </Card>
   );
 }
 

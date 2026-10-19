@@ -244,3 +244,33 @@ Done before 3.2c because the owner already enters real data that lives only in C
 - **Add-medicine step 1 `QuickAddMember`**: kept as the owner approved. It already calls `addPerson`, so it gets the same rules (name, relation, colour pick); it does not ask birth year or insurance.
 - **Error text** `person_not_found` no longer says "ในขั้นแรก" (it is now also used on member pages). "ใช้อยู่ N คน" in add medicine still counts a removed member's medicine (it is the same medicine name).
 - Removed `BlankPage` ("หน้านี้กำลังสร้าง"): every tab is a real page now.
+
+## Step 3.3a (19 ต.ค. 2569) — house medicines and shops (no prices, no order page)
+
+### Decided by the owner (19 ต.ค. 2569)
+- The owner's phone has "เตือนใกล้หมด" set to 14 days by hand; the default in code stays **7** (`DEFAULT_SETTINGS.lowStockDays`, unchanged).
+- Step 3.3b (not built here): the order page ticks only low items automatically; a regular medicine with unknown stock is shown but not ticked; the price of a regular medicine must ask "1 sell unit = how many medicine units". The data model already has `perSellUnit` and needed no change, so nothing here conflicts.
+- The LINE message never contains a member's name (3.3b).
+
+### Hidden because the part is not built yet (Q12) — show in step 3.3b
+- House medicine edit page: "ราคาตามร้าน". Home / meds: any "สั่งยา" button or link. Settings: "ข้อความสั่งยาไปร้าน" and the order-days field.
+
+### Decisions taken (BRIEF / board / message silent; easy to change)
+- **Where the code lives**: the eight actions are in `domain/actions.ts` as asked (same shape as `medicine.ts`: `fn(root, …, ctx) → { ok, root } | { ok:false, error }`, checked with `rootSchema`); the pure checks are `domain/house.ts` (`validateHouseItem`, `cutHouseStock`) and `domain/shop.ts` (`validateShop`). `houseStatus` stayed in `stock.ts` (it already existed and matches the rules: out beats low, `qty <= lowAt`, no stock = untracked). Words: `HOUSE_STATUS_TEXT` = ไม่นับ / ปกติ / ใกล้หมด / หมดแล้ว.
+- **Sample rule (O5)**: only the two *adds* (`addHouseItem`, `addShop`) refuse with `sample_present` and the screen asks before clearing. Editing, cutting, deleting or bringing back an item that is already in the sample is allowed, because it cannot mix real data into the sample (the house stays flagged as sample). The members functions are stricter; change here if the owner wants the same.
+- **Cut over the stock**: `cutHouseStock` (pure) returns status `warn` and the very same item; the action turns it into the error `cut_over_stock`; the screen shows "ตัดไม่ได้ … จำนวนยังเท่าเดิม". The cut button stays enabled for that (only "no count" and "0 left" switch it off, with a sentence). The cut works on the **saved** quantity (shown as "เหลือในแอปตอนนี้ N"), saves at once, then puts the new number into the quantity box.
+- **Numbers**: stock quantity and warn level accept any number >= 0 (the BRIEF has no upper limit and no whole-number rule for them); a cut must be a whole number >= 1. Names: house medicine 2–60, shop 2–40, both trimmed. Duplicate names are allowed for house medicines and shops (BRIEF has no rule).
+- **Edit patch**: `null` takes a field away; taking `stock` away while `lowAt` stays is refused (`low_at_needs_stock`), the form sends `lowAt: null` together. A patch / form that changes nothing is ok and writes nothing.
+- **Delete / bring back** = `removedAt` (hidden, never erased; its prices stay). As on the board, "นำกลับ" is offered on the page right after deleting, and `#/house/:id` of a hidden item shows the same card. There is **no list of deleted medicines** (see O7).
+- **Shops**: deleting really deletes the shop and all prices with that shop (BRIEF section 2). The confirm box says so and, if prices exist, how many. Delivery shop needs a fee (0 = free); free-delivery limit is optional but > 0; a pick-up shop keeps no fee. Phone is trimmed.
+- **Badges** on house rows can be several at once (like members' medicines): หมดอายุแล้ว, หมดแล้ว, ใกล้หมด, ใกล้หมดอายุ; none = สต๊อกพอ / ไม่ได้ใส่จำนวน. New badge kind `out` ("หมดแล้ว", danger colour + warning icon + word). The list line always shows the expiry date when there is one (the board showed it only when expired / soon).
+- **Notices** at the top of the edit page use `settings.expiryWarnDays` (the board hard-coded 15).
+- **Navigation**: tab = `#/meds?tab=house`; the bottom tab "ยา" also stays lit on `#/house/...`. After saving an add the form clears and shows "เพิ่ม X แล้ว" (as on the board); after saving an edit it says "บันทึกแล้ว".
+- **Home**: "ยาที่ต้องดูแล" already included house medicines (care.ts); their rows are now links to the edit page. Rows of members' medicines are still not links.
+- **Settings order**: the shops card sits after the two day settings and before backup (the board has no backup section).
+
+### Open questions for the owner
+| # | Question | Needed by | What was done meanwhile |
+|---|---|---|---|
+| O7 | Should there be a list "ยาสามัญที่ลบแล้ว" with "นำกลับ" (like members taken out)? The board only offers bring-back right after deleting. | any time (low) | Followed the board; the data is kept, `#/house/:id` still offers "นำกลับ". |
+| O8 | Should editing / cutting a *sample* house medicine ask to delete the sample first (like members do)? | any time (low) | Allowed without asking, so the owner can try the sample. |

@@ -1,7 +1,17 @@
 // Thai text for every error code of the medicine-changing functions (medicine.ts, step 3.2b-1) plus the one the
 // data layer adds itself ('save_failed'). Short, and each one says what to do. The screens show these as they are.
 import type { BackupError } from './backup';
-import type { SettingsError } from './actions';
+import type {
+  AddHouseItemError,
+  AddShopError,
+  CutHouseStockError,
+  DeleteShopError,
+  EditHouseItemError,
+  EditShopError,
+  RemoveHouseItemError,
+  RestoreHouseItemError,
+  SettingsError,
+} from './actions';
 import type {
   AddMedicineError,
   AddPersonError,
@@ -23,7 +33,15 @@ export type MedicineErrorCode =
   | EditMedicineError
   | EditPersonError
   | RemovePersonError
-  | RestorePersonError;
+  | RestorePersonError
+  | AddHouseItemError
+  | EditHouseItemError
+  | CutHouseStockError
+  | RemoveHouseItemError
+  | RestoreHouseItemError
+  | AddShopError
+  | EditShopError
+  | DeleteShopError;
 
 /** Added by the data layer when the change was valid but could not be written to the phone. */
 export type ActionErrorCode = MedicineErrorCode | 'save_failed';
@@ -56,6 +74,24 @@ const TEXT: Record<ActionErrorCode, string> = {
   reason_required: 'เลือกเหตุผลก่อนบันทึก',
   no_change: 'ยังไม่ได้เปลี่ยนอะไร แก้ข้อมูลก่อนแล้วค่อยบันทึก',
   name_taken: 'มียาชื่อนี้อยู่ในบ้านแล้ว ใช้ชื่ออื่น หรือเพิ่มยานี้ให้สมาชิกจากหน้าเพิ่มยา',
+  // house medicines and shops (step 3.3a)
+  invalid_house_name: 'ชื่อยาต้องยาว 2–60 ตัวอักษร',
+  invalid_house_qty: 'จำนวนคงเหลือต้องเป็นตัวเลข 0 ขึ้นไป หรือปล่อยว่างถ้าไม่ต้องการนับสต๊อก',
+  invalid_house_unit: 'เลือกหรือพิมพ์หน่วยนับของจำนวนคงเหลือ',
+  invalid_low_at: 'จำนวนที่ให้เตือนต้องเป็นตัวเลข 0 ขึ้นไป หรือปล่อยว่าง',
+  low_at_needs_stock: 'ต้องใส่จำนวนคงเหลือก่อน จึงตั้งเตือนใกล้หมดได้',
+  house_item_not_found: 'ไม่พบยาสามัญตัวนี้ กลับไปหน้ายาแล้วเลือกใหม่',
+  house_item_removed: 'ยาตัวนี้ถูกลบไปแล้ว กด “นำกลับ” ก่อนจึงจะแก้ไขได้',
+  house_already_removed: 'ยาตัวนี้ถูกลบไปแล้ว',
+  house_not_removed: 'ยาตัวนี้ยังอยู่ในรายการ ไม่ต้องนำกลับ',
+  no_stock: 'ใส่จำนวนคงเหลือก่อน จึงตัดจำนวนได้',
+  invalid_cut: 'จำนวนที่ตัดต้องเป็นเลขเต็ม ตั้งแต่ 1 ขึ้นไป',
+  cut_over_stock: 'ตัดไม่ได้ เพราะมากกว่าจำนวนที่เหลือ จำนวนยังเท่าเดิม',
+  invalid_shop_name: 'ชื่อร้านต้องยาว 2–40 ตัวอักษร',
+  invalid_phone: 'เบอร์โทรใช้ได้แค่ตัวเลข เว้นวรรค - และ + ยาว 6–20 ตัว หรือปล่อยว่าง',
+  invalid_fee: 'ใส่ค่าส่งเป็นตัวเลข 0 ขึ้นไป (0 = ส่งฟรี)',
+  invalid_free_over: 'ยอดส่งฟรีต้องมากกว่า 0 หรือเว้นว่าง',
+  shop_not_found: 'ไม่พบร้านนี้ อาจถูกลบไปแล้ว',
   save_failed: 'บันทึกไม่ได้ ข้อมูลเดิมยังอยู่ ลองใหม่อีกครั้ง (พื้นที่เก็บข้อมูลในเครื่องอาจเต็ม)',
 };
 

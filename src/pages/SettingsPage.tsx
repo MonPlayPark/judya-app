@@ -19,6 +19,7 @@ import {
 } from '../components/icons';
 import { PageHeader } from '../components/PageHeader';
 import { RestorePanel } from '../components/RestorePanel';
+import { ShopsCard } from './ShopsCard';
 import { useData, useRoot } from '../state/DataContext';
 import { handOffBackup } from '../state/backupFile';
 import { refreshPersistStatus, usePersistStatus, type PersistStatus } from '../state/persist';
@@ -26,7 +27,7 @@ import { useToday } from '../state/useToday';
 import styles from './SettingsPage.module.css';
 
 /** Settings (board Settings). Warning thresholds apply at once (no save button), then backup / restore and where the
- * data lives. Hidden for now (Q12, step 3.3): the shops list and the order-message template. */
+ * data lives. Hidden for now (Q12, step 3.3b): the order-message template. */
 export function SettingsPage() {
   const root = useRoot();
   const { setSettings } = useData();
@@ -56,6 +57,7 @@ export function SettingsPage() {
           chips={[3, 7, 14, 30]}
           onChange={(n) => setSettings({ lowStockDays: n })}
         />
+        <ShopsCard />
         <BackupCard />
         <StorageCard />
         <footer className={styles.footer}>

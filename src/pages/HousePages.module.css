@@ -1,0 +1,82 @@
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3) var(--space-4);
+}
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.lead {
+  margin: 0;
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-line);
+  color: var(--color-ink-muted);
+}
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.sectionTitle {
+  margin: 0;
+  font-size: var(--text-heading-size);
+  line-height: var(--text-heading-line);
+  font-weight: 600;
+}
+.cutBox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+}
+.cutLeft {
+  margin: 0;
+  font-size: var(--text-secondary-size);
+  line-height: var(--text-secondary-line);
+  color: var(--color-ink-muted);
+}
+.saveBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.doneHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--color-success-ink);
+}
+.doneHead h2 {
+  color: var(--color-ink);
+}
+.backLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--button-h);
+  border: 2px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  color: var(--color-primary-ink);
+  font-size: var(--text-label-size);
+  line-height: var(--text-label-line);
+  font-weight: 600;
+}
+.noticeTitle {
+  font-weight: 700;
+}
+
+/* the stepper inside the cut box: title on its own line, − / + centred under it (a 360px screen is too narrow for a row) */
+.cutBox > div:first-child {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-1);
+}
+.cutBox > div:first-child > div {
+  justify-content: center;
+}
