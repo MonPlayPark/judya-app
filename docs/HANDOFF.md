@@ -238,6 +238,28 @@ Branch `ccr-cb7c2178-istwny`, PR open (not merged). Schema untouched (old backup
 
 ### Next: 3.3b (prices per shop, order page, comparison, LINE message, order days, template), then 3.4.
 
+## Status after step 3.3b-1 (19 ต.ค. 2569) — order logic + prices + data layer (no screens)
+
+Branch `ccr-c619ff02-9al1jn`, PR open (not merged). Schema untouched (old backups restore; tests prove shops / prices / the new settings go through a backup file). Choices: `docs/DECISIONS.md` "Step 3.3b-1".
+
+### Done
+- `domain/price.ts` `validatePrice`; `domain/actions.ts` `setPrice`, `deletePrice`, `setSettings` with `orderDays` (7–90) and `orderTemplate`; `domain/stock.ts` `targetDoses`; `domain/order.ts` `orderLines(root, today)` and `compareShops(lines, shops, prices, includeShipping)`; `domain/orderMessage.ts` `DEFAULT_ORDER_TEMPLATE`, `orderLineText`, `messageLines`, `buildOrderMessage`.
+- Data layer: `DataContext.setPrice`, `deletePrice`, `setSettings` with the new fields (a save that fails returns `save_failed` and memory + disk keep the old data). Thai texts for every new code (`errorText.ts`, `settingsErrorText`), completeness tests.
+- The owner's hand examples A, B, C, W, H, the 7-days/14-days case, the shop comparison (ก 650, ข 840/800, ค 810, ง 650, จ missing `house:Y`), the cents case (0.1 + 0.2 = 0.3), the ceil edges (60 → 1, 60.5 → 2) and the exact message texts are tests. Numbers not changed.
+- The old `compareShops` / `lineCost` / `purchasePlan` in `calc.ts` and their 18 tests are untouched and not imported.
+- `npm test`: 684 pass (566 before, +118). `npm run build` passes (strict type check). No `any`. No screen was added, no button shown or hidden, no other localStorage key touched.
+
+### What 3.3b-2 (screens) must know
+- Build the order page from `orderLines(root, today)`; keep the owner's +/− as a local `qty` per line; pass the ticked lines to `compareShops`. Show a "missing price" link per key in `missing` (`med:<id>` → medicine page, `house:<id>` → `#/house/:id`).
+- The message: `row = comparison.rows[0] ?? null` (or the shop the owner picked), then `buildOrderMessage(settings.orderTemplate, row?.shopName ?? null, messageLines(lines, row))`. Empty string = nothing ticked.
+- Regular medicine price form must ask "1 {sell unit} = how many {unit}" and pass `perSellUnit`; a house price form passes none.
+- `setPrice` on a sample house: refuses a NEW price with `sample_present` (ask to clear the sample first, as for shops); `deletePrice` takes the price id.
+- Settings fields: `setSettings({ orderDays })` (error `invalid_order_days`), `setSettings({ orderTemplate })` (any text, empty = default).
+- Open product points from the DECISIONS list that the owner may want to see on screen: a line with qty 0 stays listed but unticked; `buyMore` is shown whatever the shipping switch says.
+
+### Owner test on the S24
+Nothing in this step: no screen changed. The whole 3.3 (3.3a + 3.3b) is tested together at the end of 3.3b-2.
+
 ## Next after 3.2b-1: 3.2b-2 screens, then 3.2c, 3.2d. (O5 solved: the functions refuse with `sample_present`; the screen clears the sample after asking.)
 Open points from 3.1 still waiting: `settings.expiryWarnDays` must be passed to `expiryStatus` by every screen;
 persist status line in Settings (3.2d); `judya.v2.prev` is now written by "เริ่มใหม่" (restore-from-backup in 3.2d will reuse it).

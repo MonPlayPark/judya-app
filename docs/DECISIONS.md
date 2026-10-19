@@ -274,3 +274,28 @@ Done before 3.2c because the owner already enters real data that lives only in C
 |---|---|---|---|
 | O7 | Should there be a list "ยาสามัญที่ลบแล้ว" with "นำกลับ" (like members taken out)? The board only offers bring-back right after deleting. | any time (low) | Followed the board; the data is kept, `#/house/:id` still offers "นำกลับ". |
 | O8 | Should editing / cutting a *sample* house medicine ask to delete the sample first (like members do)? | any time (low) | Allowed without asking, so the owner can try the sample. |
+
+## Step 3.3b-1 (19 ต.ค. 2569) — order logic, prices, data layer, error texts (no screens)
+
+### Decided by the owner (19 ต.ค. 2569)
+- The price of a regular medicine must give "1 sell unit = how many medicine units" (`perSellUnit`), required.
+- Order list: only items that are low are ticked by themselves; a regular medicine with unknown stock is shown but not ticked.
+- The LINE message never has a member's name; the closing word of the default text is "ค่ะ"; the default low-stock warning stays 7.
+
+### Decided by the team following the BRIEF ("ตามข้อเสนอของทีม") — easy to change
+- **Files**: `domain/price.ts` (`validatePrice`), `domain/order.ts` (`orderLines`, `compareShops`), `domain/orderMessage.ts` (`DEFAULT_ORDER_TEMPLATE`, `orderLineText`, `buildOrderMessage`, plus `messageLines` which turns the ticked lines and the chosen shop's row into message lines), `targetDoses` in `domain/stock.ts`, `setPrice` / `deletePrice` / the two new settings in `domain/actions.ts`. Nothing of the old `compareShops` / `lineCost` / `purchasePlan` in `calc.ts` is changed or imported (its 18 tests are untouched).
+- **Error codes**: `invalid_price`, `invalid_sell_unit`, `per_sell_unit_required`, `invalid_per_sell_unit` (price form, all wrong fields reported by `validatePrice`; `setPrice` returns the first in that order), `price_not_found` (deletePrice), `invalid_order_days` (7–90). Reused with their old Thai texts: `shop_not_found`, `medication_not_found`, `house_item_not_found`, `house_item_removed`, `sample_present`.
+- **`setPrice` check order**: shop exists → medicine exists (house: exists and not deleted) → sample (only for a NEW price) → the field checks. Changing an existing price while the house is the sample is allowed (same idea as editing a sample item in 3.3a, O8). Setting the same values again returns the same root and the same id.
+- **`deletePrice(root, priceId)`** deletes by price id (the screen has the id from the list). It also works for the price of a deleted house medicine.
+- **Prices of deleted house medicines** stay untouched when the medicine is deleted and brought back; but `setPrice` refuses a deleted house medicine (also to change its old price).
+- **`targetDoses`** (stock.ts) = sum of the real doses over `today … today+orderDays−1` with the same pause rule as `stockNow`; an assignment with `status: 'stopped'` gives 0. Not an average.
+- **`orderLines`**: an assignment is skipped when its member or its medication does not exist (broken data) as well as when the member is taken out or the assignment is stopped. A house medicine without a stock count is never listed; "หมดแล้ว" (0 left) is listed. A line whose need is 0 (low, but the target is already covered) stays on the list with qty 0 and is not ticked. A regular line carries `assignmentIds` only — no member name.
+- **`compareShops` input**: it takes the lines from `orderLines` (with the owner's changed `qty`) and itself ignores lines that are not ticked or have qty ≤ 0. Result: `{ rows, missing }`. `rows` = shops with every price, cheapest first (total rounded to the satang; same total → shop name, `localeCompare 'th'`). `missing` = every other shop with the keys it lacks (also a shop with no price at all). A row holds items total, shipping, total (shipping only counted when `includeShipping`), the priced lines (sell units, sell unit, per sell unit, price, cost) and `buyMore`. `buyMore` = free-over − items total, only for a delivery shop with fee > 0 and a free-over amount not reached yet; it does not depend on the shipping switch.
+- **Money** is rounded to the satang at every line, at the items total, and at the final total. The free-delivery test uses the rounded items total (`>=`).
+- **Sell units**: regular medicine `max(1, ceil(qty / perSellUnit − 1e-9))`; house medicine = qty.
+- **Message**: a blank shop name counts as "no shop" (→ "ร้านยา"). The list is built in one pass over the template, so `$&`, `$1` or the text `{ร้าน}` inside a medicine or shop name stays as typed. The text of the bracket in a regular line is the bought pills (`sell units × perSellUnit`, shown with ½ like everywhere else). A house line without a shop uses the unit of its stock.
+- **`orderTemplate`** is stored exactly as typed (no trim, no length limit; empty = default text is used when the message is built).
+- **Old error test updated**: `errorText.test.ts` listed the exact settings codes; it now also lists `invalid_order_days`. No other old test was changed.
+
+### Hidden / not built here (all screens are 3.3b-2)
+Order page, price boxes, "ข้อความสั่งยาไปร้าน" and order-days fields in Settings, the list of deleted house medicines (O7), and 3.4.
