@@ -400,7 +400,7 @@ describe('home screen', () => {
 
   it('buttons for pages that are not built yet stay hidden', () => {
     open('#/');
-    for (const name of [/เพิ่มยา/, /สั่งยา/, /เปลี่ยนเกณฑ์/, /เพิ่มสมาชิก/]) {
+    for (const name of [/เพิ่มยา/, /เปลี่ยนเกณฑ์/, /เพิ่มสมาชิก/]) {
       expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
       expect(screen.queryByRole('link', { name })).not.toBeInTheDocument();
     }

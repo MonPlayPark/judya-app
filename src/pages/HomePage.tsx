@@ -1,5 +1,6 @@
 import { isBlank } from '../domain/actions';
 import { backupAge, needsBackupWarning } from '../domain/backup';
+import { orderLines } from '../domain/order';
 import { careItems, memberCards, type CareItem, type MemberCard, type MemberStatus } from '../domain/care';
 import { thaiDate } from '../domain/format';
 import { todayDoses, todayProgress } from '../domain/today';
@@ -26,7 +27,9 @@ import styles from './HomePage.module.css';
 const PREVIEW_ROWS = 3;
 
 /** Home screen (board Main). Greeting, today's medicines, what needs care, the members.
- * Hidden for now (Q12, pages not built yet): the bell, add medicine, order, change threshold, member pages.
+ * Hidden for now (Q12, pages not built yet): the bell, add medicine, change threshold, member pages.
+ * The "สั่งยา" button (inside the care card, as on the board) is always shown and opens #/order (step 3.3b-3); the order page has
+ * its own empty state.
  * Rows of house medicines in "ยาที่ต้องดูแล" open their edit page (step 3.3a). */
 export function HomePage() {
   const root = useRoot();
@@ -197,6 +200,7 @@ function CareCard() {
   const { today } = useToday();
   const care = careItems(root, today);
   const warnDays = root.settings.expiryWarnDays;
+  const orderCount = orderLines(root, today).length; // the lines the order page lists
 
   return (
     <Card>
@@ -230,13 +234,16 @@ function CareCard() {
       )}
       {care.lowStock.length > 0 && (
         <>
-          {/* Plain heading, not a banner: the order page does not exist yet, so nothing here may look tappable. */}
+          {/* A plain heading: the way to the order page is the button below the list. */}
           <h3 className={styles.groupTitle}>
             ถึงรอบซื้อเติมสต๊อก · {care.lowStock.length} รายการ
           </h3>
           <CareRows items={care.lowStock} />
         </>
       )}
+      <a className={styles.orderBtn} href={href('/order')}>
+        {orderCount > 0 ? `สั่งยา ${orderCount} รายการ` : 'สั่งยา'}
+      </a>
       {care.expirySoon.length > 0 && (
         <>
           <div className={`${styles.banner} ${styles.bannerAmber}`}>

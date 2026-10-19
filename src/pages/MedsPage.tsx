@@ -21,7 +21,7 @@ const TABS = [
 ] as const;
 
 /** "ยาทั้งหมด" (board Medicines) with the two tabs `#/meds` (ยาประจำตัว) and `#/meds?tab=house` (ยาสามัญประจำบ้าน).
- * Hidden until step 3.3b-3: the order link. */
+ * The "สั่งยา" link under both tabs opens #/order (step 3.3b-3; the Medicines board has no order link, it sits above "ไปที่ยาวันนี้"). */
 export function MedsPage() {
   const root = useRoot();
   const { today } = useToday();
@@ -106,6 +106,10 @@ export function MedsPage() {
           ))
         )}
 
+        <a className={styles.link} href={href('/order')}>
+          <span>สั่งยา</span>
+          <ChevronRightIcon />
+        </a>
         <a className={styles.link} href={href('/today')}>
           <span>ไปที่ยาวันนี้</span>
           <ChevronRightIcon />

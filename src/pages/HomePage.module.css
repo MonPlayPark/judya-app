@@ -131,6 +131,22 @@
   font-weight: 600;
   color: var(--color-ink);
 }
+.orderBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--button-h);
+  margin-top: var(--space-1);
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: #fff;
+  font-size: var(--text-label-size);
+  line-height: var(--text-label-line);
+  font-weight: 600;
+}
+.orderBtn:active {
+  background: var(--color-primary-pressed);
+}
 .bannerAmber {
   background: var(--color-warning-tint);
   color: var(--color-warning-ink);
