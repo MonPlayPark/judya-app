@@ -88,9 +88,9 @@ describe('tab "ยาสามัญประจำบ้าน"', () => {
     expect(screen.getByRole('link', { name: /ยาสามัญทดสอบ ก/ })).toHaveAttribute('href', '#/house/h1');
   });
 
-  it('the order button and price sections stay hidden (step 3.3b)', () => {
+  it('the "สั่งยา" link opens the order page (step 3.3b-3); the price sections are not in the list', () => {
     open('#/meds?tab=house', withHouse(para));
-    expect(screen.queryByText(/สั่งยา/)).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'สั่งยา' })).toHaveAttribute('href', '#/order');
     expect(screen.queryByText(/ราคาตามร้าน/)).not.toBeInTheDocument();
   });
 });

@@ -112,10 +112,10 @@
   color: var(--color-ink-muted);
 }
 
-/* The board has four buttons in two columns; only this one is built, so it takes the full width. */
+/* The board has four buttons in two columns; two are built (the other two come in 3.4). */
 .quick {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
 .quickBtn {

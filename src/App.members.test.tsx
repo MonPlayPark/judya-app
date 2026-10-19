@@ -170,9 +170,15 @@ describe('one member (#/members/:id)', () => {
     expect(within(info).getByText('จัดยาทานเอง').nextSibling).toHaveTextContent('ปิด');
   });
 
-  it('hides what is not built yet: order, share to doctor, doctor summary, add allergy note', () => {
+  it('"สั่งยา" opens the order page of the whole house (step 3.3b-3)', () => {
     open('#/members/pA');
-    for (const text of [/สั่งยา/, /แชร์ให้แพทย์/, /สรุปพบแพทย์/, /เพิ่มบันทึกแพ้ยา/, /เร็ว ๆ นี้/]) {
+    expect(screen.getByRole('link', { name: 'สั่งยา' })).toHaveAttribute('href', '#/order');
+    expect(screen.getByRole('link', { name: 'จัดยาวันนี้' })).toBeInTheDocument();
+  });
+
+  it('hides what is not built yet: share to doctor, doctor summary, add allergy note', () => {
+    open('#/members/pA');
+    for (const text of [/แชร์ให้แพทย์/, /สรุปพบแพทย์/, /เพิ่มบันทึกแพ้ยา/, /เร็ว ๆ นี้/]) {
       expect(screen.queryByText(text)).not.toBeInTheDocument();
     }
     expect(screen.queryByRole('button', { name: /แพ้ยา/ })).not.toBeInTheDocument();

@@ -326,7 +326,7 @@ describe('deleted house medicines', () => {
   });
 });
 
-describe('still hidden: the order page and every "สั่งยา" button or link (step 3.3b-3)', () => {
+describe('the "สั่งยา" buttons and links (step 3.3b-3)', () => {
   const root = (): Root =>
     rootWith({
       persons: [person({ id: 'p1' })],
@@ -335,15 +335,36 @@ describe('still hidden: the order page and every "สั่งยา" button or 
       houseItems: [{ id: 'h1', name: 'ยาสามัญทดสอบ ก', stock: { qty: 0, unit: 'ขวด' }, lowAt: 1 }],
     });
 
-  it.each(['#/', '#/meds', '#/meds?tab=house', '#/members/p1', '#/meds/a1', '#/house/h1', '#/settings'])('%s has no order link or button', (hash) => {
+  it.each(['#/', '#/meds', '#/meds?tab=house', '#/members/p1'])('%s has one link "สั่งยา" to #/order', (hash) => {
     open(hash, root());
-    expect(document.querySelector('a[href="#/order"]')).toBeNull();
-    expect(screen.queryByRole('link', { name: /สั่งยา/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /^สั่งยา/ })).not.toBeInTheDocument();
+    const links = document.querySelectorAll('a[href="#/order"]');
+    expect(links).toHaveLength(1);
+    expect(links[0]?.textContent).toMatch(/^สั่งยา/);
   });
 
-  it('there is no order page: #/order is not found', () => {
+  it('the home button is always there: with nothing to order it just says "สั่งยา"', () => {
+    open('#/', rootWith({ persons: [person({ id: 'p1' })], medications: [{ id: 'm1', name: 'ยาตัวอย่าง เอ', unit: 'เม็ด' }], assignments: [assignment({ id: 'a1', schedule: dailyMeal({ morning: { pills: 1, meal: 'after' } }), stock: { qty: 500, countedOn: TODAY } })] }));
+    expect(screen.getByRole('link', { name: 'สั่งยา' })).toHaveAttribute('href', '#/order');
+  });
+
+  it('the home button counts the lines of the order page (1 regular + 1 house = 2 รายการ)', () => {
+    open('#/', root());
+    expect(screen.getByRole('link', { name: 'สั่งยา 2 รายการ' })).toHaveAttribute('href', '#/order');
+  });
+
+  it.each(['#/meds/a1', '#/house/h1', '#/settings'])('%s has no order link (not asked)', (hash) => {
+    open(hash, root());
+    expect(document.querySelector('a[href="#/order"]')).toBeNull();
+  });
+
+  it('the links lead to the order page', () => {
+    open('#/meds', root());
+    nav(screen.getByRole('link', { name: 'สั่งยา' }).getAttribute('href') ?? '');
+    expect(screen.getByRole('heading', { level: 1, name: 'สั่งยา' })).toBeInTheDocument();
+  });
+
+  it('there is an order page: #/order opens it', () => {
     open('#/order', root());
-    expect(screen.queryByRole('heading', { level: 1, name: /สั่งยา/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'สั่งยา' })).toBeInTheDocument();
   });
 });

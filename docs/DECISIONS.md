@@ -324,3 +324,25 @@ Order page, price boxes, "ข้อความสั่งยาไปร้า
 - **Preview sample**: "ยาตัวอย่าง เอ" x 2 กล่อง with 30 เม็ด per กล่อง (so the line reads "(60 เม็ด)" as in the owner's example) and "ยาสามัญตัวอย่าง" x 1 ขวด; no member names anywhere.
 - **Deleted house list**: folded by default, a button bar with `aria-expanded`; "นำกลับ" has the item name in its accessible name; the bar stays open while more remain. Its prices were never erased, so they come back with the item.
 - **Old tests changed** (they only checked "this part is hidden"): `App.house.test.tsx` (price section now present; order-message card present), `App.meds.test.tsx` ("ราคาตามร้าน" no longer in the hidden list), `App.settings.test.tsx` (three "ไม่ต้องกดบันทึก" lines, the text box has its own save button, new headings). No other old test touched. No schema change, no new localStorage key.
+
+## Step 3.3b-3 (19 ต.ค. 2569) — the order page `#/order` and the "สั่งยา" buttons
+
+### Decided by the owner (19 ต.ค. 2569)
+- +/−: one sell unit of the chosen shop (one pill when no shop has every price); house medicine one at a time, at least 1. The LINE text on this page is shown only (edited in Settings); buttons copy / open LINE / call. A regular medicine with unknown stock is shown but not ticked; only low items are ticked by themselves.
+
+### Opened (were hidden)
+- Home: button "สั่งยา N รายการ" (just "สั่งยา" when the order page lists nothing) inside the care card, always shown. Member page: quick buttons "จัดยาวันนี้" + "สั่งยา" in two columns (opens the whole-house order page). All medicines: a link "สั่งยา" above "ไปที่ยาวันนี้", under both tabs.
+- Old tests turned around (only the "hidden" part): `App.ordersettings.test.tsx` (block "still hidden…" is now "the สั่งยา buttons and links"; `#/order` opens the page), `App.house.test.tsx` ("the order button and price sections stay hidden" -> link is there, price text still not in the list), `App.members.test.tsx` ("hides what is not built yet" no longer lists สั่งยา; new test for the link), `App.screens.test.tsx` (home "buttons … stay hidden" no longer lists สั่งยา).
+
+### Decisions taken by the team (easy to change)
+- **Order of the cards** follows the task, not the board: list -> comparison -> shops missing a price -> message -> buttons. (The board puts the message above the comparison; the message depends on the chosen shop, so it comes after it.)
+- **The Medicines board has no order link**; it was put above "ไปที่ยาวันนี้" in the same style.
+- **stepQty at quantity 0**: + gives the first sell unit (or 1 pill / 1 unit); − stays 0. The − button is switched off whenever − would not lower the number (0, or already one sell unit), so it never raises a quantity. Quantities are not capped.
+- **perSellUnit** comes from the chosen row's lines only. A medicine that is not ticked (so not in the row) steps by 1 pill.
+- **Small line** under a regular medicine with a chosen shop: "= 2 กล่อง (กล่องละ 60 เม็ด)". A house medicine's quantity shows the shop's sell unit when there is one.
+- **Shop cards**: radio buttons; name, total (follows the switch), "รับเอง" / "ส่งถึงบ้าน", for delivery "ส่งฟรี" / "ค่าส่ง ฿40", "ซื้อเพิ่มอีก ฿200 ส่งฟรี" (not tied to the switch), "ถูกที่สุด" on the first row (also when it is the only one), "สั่งร้านนี้" on the chosen one. A pick-up shop has no fee line.
+- **Chosen shop** is kept as `chosenId`; when that shop leaves the list the cheapest is used again (the id stays, so the shop returns if it comes back).
+- **Copy note** belongs to the text that was copied and disappears when the message changes. No clipboard in the browser = the "copy failed" text.
+- **Call button**: only when the chosen shop has a phone; spaces and hyphens removed, `+` kept. No "add phone" variant (the board has one; not asked).
+- **Missing prices**: links go to `#/meds/<first assignment id>` (the price is shared by every user) or `#/house/<id>`.
+- The page writes nothing (a test spies `setItem` / `removeItem` and compares keys and the stored text). Two icons added: copy, phone.

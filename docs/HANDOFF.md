@@ -282,6 +282,29 @@ Branch `ccr-b85f36da-fzu3w7`, PR open (not merged). Schema untouched; no new loc
 
 ### Next: 3.3b-3 (order page `#/order`, price comparison, LINE message, open the hidden "สั่งยา" buttons), then 3.4.
 
+## Status after step 3.3b-3 (19 ต.ค. 2569) — order page + the "สั่งยา" buttons (end of 3.3)
+
+Branch `ccr-6a77acfd-7mikxv`, PR open (not merged). Schema, `order.ts`, `orderMessage.ts`, `price.ts` untouched; the page writes nothing to storage. Choices: `docs/DECISIONS.md` "Step 3.3b-3".
+
+### Done
+- `domain/orderPage.ts` (`stepQty`, `effectiveLines`, `pickShop`) + `orderPage.test.ts` (26 tests, owner's examples A–D). Example data: `domain/orderExample.test-util.ts`.
+- `pages/OrderPage.tsx` (+ css): list with tick / − / + / reason word, shop comparison with the shipping switch, shops missing a price (links), message (shown only), copy / open LINE / call, the three empty states and "nothing ticked". `App.order.test.tsx` (33 tests) covers A–H, copy, phone, empty states, no storage writes.
+- Buttons "สั่งยา" opened on home, member page, all medicines (both tabs).
+- `npm test`: 808 pass. `npm run build` passes (strict). Playwright 360px on the production build (A, B +, B −, C with / without shipping, D, copy note, E, nothing to order, no shops): no console errors, no sideways scroll, no text under 15px, no tap target under 48px; totals and messages equal the owner's numbers.
+- Not done: 3.4 (share summary to the doctor).
+
+### Owner's S24 test list for ALL of 3.3 — back up first (Settings → สำรองข้อมูล)
+Lists of 3.3a and 3.3b-2 above still apply (house medicines, shops, prices per shop, order days, message text, deleted list). New for 3.3b-3:
+1. Home: the blue "สั่งยา N รายการ" button is there (just "สั่งยา" when nothing is listed); tap → page "สั่งยา". Same from a member page (two buttons, whole house) and from ยา (link under both tabs).
+2. With 2 shops priced for a low medicine and a low house medicine: both are listed ticked with "ใกล้หมด". Check the totals by hand; "ถูกที่สุด" is on the first shop; tap another shop → "สั่งร้านนี้" moves and the message names it.
+3. + / − on a regular medicine move by one box of the chosen shop ("= N กล่อง (กล่องละ … เม็ด)"); − stops at one box. With no shop priced they move by one pill.
+4. Switch "รวมค่าส่ง" off / on: totals change, "ซื้อเพิ่มอีก ฿… ส่งฟรี" stays.
+5. Untick a medicine: shops that lacked its price join. A shop without a price is under "ร้านที่ยังไม่มีราคาครบ"; the medicine name opens its page to add the price.
+6. Unknown stock: "ไม่ทราบสต๊อก", not ticked. Enough stock: "ของที่มีอยู่พอแล้ว…", cannot be ticked until + is pressed.
+7. "คัดลอกข้อความ" → "คัดลอกแล้ว"; paste in LINE: text right, no member name. "เปิด LINE" opens LINE with the text. "โทรหาร้าน" opens the dial pad (only if the shop has a phone).
+8. Leave and come back: the page starts again from the list; nothing is saved.
+9. Airplane mode: the page works.
+
 ## Next after 3.2b-1: 3.2b-2 screens, then 3.2c, 3.2d. (O5 solved: the functions refuse with `sample_present`; the screen clears the sample after asking.)
 Open points from 3.1 still waiting: `settings.expiryWarnDays` must be passed to `expiryStatus` by every screen;
 persist status line in Settings (3.2d); `judya.v2.prev` is now written by "เริ่มใหม่" (restore-from-backup in 3.2d will reuse it).
