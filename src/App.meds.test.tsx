@@ -131,11 +131,11 @@ describe('all medicines (#/meds)', () => {
     expect(within(screen.getByRole('heading', { name: 'Test Person B' }).closest('section') as HTMLElement).getByText('ยังไม่มียา')).toBeInTheDocument();
   });
 
-  it('an empty house has a lead-in sentence and an add button; the hidden parts (house medicines tab, prices) are not there', () => {
+  it('an empty house has a lead-in sentence and an add button; the hidden part (prices, step 3.3b) is not there', () => {
     open('#/meds', emptyRoot(NOW));
     expect(screen.getByText('ยังไม่มียาในบ้าน')).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: 'เพิ่มยา' }).length).toBeGreaterThanOrEqual(1);
-    expect(screen.queryByText(/ยาสามัญ/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'ยาสามัญประจำบ้าน' })).toBeInTheDocument(); // the tab exists since step 3.3a
     expect(screen.queryByText(/ราคา/)).not.toBeInTheDocument();
   });
 });

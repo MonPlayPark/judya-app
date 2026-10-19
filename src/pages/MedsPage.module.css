@@ -156,3 +156,69 @@
   line-height: var(--text-label-line);
   font-weight: 600;
 }
+
+/* tabs: ยาประจำตัว / ยาสามัญประจำบ้าน (board Medicines) */
+.segments {
+  display: flex;
+  gap: var(--space-1);
+}
+.segment {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  min-height: var(--touch-min);
+  padding: 0 var(--space-1);
+  border: 2px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: inherit;
+  font-size: var(--text-label-size);
+  line-height: var(--text-label-line);
+  font-weight: 600;
+  cursor: pointer;
+}
+.segment svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.6;
+}
+.segmentOn {
+  border-color: var(--color-primary);
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+}
+.houseNote {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-secondary-size);
+  line-height: var(--text-secondary-line);
+  color: var(--color-ink-muted);
+}
+.houseInfo {
+  margin: 0 0 var(--space-1);
+}
+.rowLink {
+  text-decoration: none;
+  color: inherit;
+}
+.addRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  min-height: var(--button-h);
+  margin-top: var(--space-1);
+  border: 2px dashed var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  color: var(--color-primary-ink);
+  font-size: var(--text-label-size);
+  line-height: var(--text-label-line);
+  font-weight: 600;
+}
+.addRow svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.6;
+}

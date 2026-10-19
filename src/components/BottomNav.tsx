@@ -17,8 +17,11 @@ export const TABS: Tab[] = [
   { path: '/settings', label: 'ตั้งค่า', icon: <SettingsIcon /> },
 ];
 
+// The house-medicine pages (/house/...) belong to the "ยา" tab.
 const isActive = (tabPath: string, current: string): boolean =>
-  tabPath === '/' ? current === '/' : current === tabPath || current.startsWith(`${tabPath}/`);
+  tabPath === '/'
+    ? current === '/'
+    : current === tabPath || current.startsWith(`${tabPath}/`) || (tabPath === '/meds' && current.startsWith('/house/'));
 
 export function BottomNav() {
   const { path } = useRoute();

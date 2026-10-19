@@ -5,6 +5,7 @@ import { CalendarWarnIcon, CheckCircleIcon, InfoIcon, StopIcon, WarningIcon, XCi
 
 const VIEW: Record<BadgeKind, { tone: 'info' | 'success' | 'warning' | 'danger' | 'neutral'; icon: ReactNode }> = {
   expired: { tone: 'danger', icon: <XCircleIcon /> },
+  out: { tone: 'danger', icon: <WarningIcon /> },
   low: { tone: 'warning', icon: <WarningIcon /> },
   soon: { tone: 'warning', icon: <CalendarWarnIcon /> },
   ok: { tone: 'success', icon: <CheckCircleIcon /> },

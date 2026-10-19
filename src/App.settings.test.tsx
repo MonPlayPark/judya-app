@@ -78,8 +78,8 @@ describe('thresholds apply at once, with no save button', () => {
     expect(screen.getByText(/เหลือพอกินไม่เกิน 7 วัน/)).toBeInTheDocument();
     expect(screen.getAllByText(/ไม่ต้องกดบันทึก/)).toHaveLength(2);
     expect(screen.queryByRole('button', { name: /^บันทึก/ })).not.toBeInTheDocument();
-    // the hidden parts (step 3.3): no shops, no order-message template
-    expect(screen.queryByText('ร้านค้า')).not.toBeInTheDocument();
+    // shops exist since step 3.3a; the order-message template stays hidden until step 3.3b
+    expect(screen.getByRole('heading', { name: 'ร้านค้า' })).toBeInTheDocument();
     expect(screen.queryByText('ข้อความสั่งยาไปร้าน')).not.toBeInTheDocument();
   });
 

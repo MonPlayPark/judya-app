@@ -3,6 +3,7 @@ import { SaveErrorBar } from './components/SaveErrorBar';
 import { UpdateBar } from './components/UpdateBar';
 import { AddMedicineStep1, AddMedicineStep2, AddMedicineStep3 } from './pages/AddMedicine';
 import { HomePage } from './pages/HomePage';
+import { AddHousePage, EditHousePage } from './pages/HousePages';
 import { MedDetailPage } from './pages/MedDetail';
 import { MedsPage } from './pages/MedsPage';
 import { MemberDetailPage } from './pages/MemberDetail';
@@ -53,9 +54,10 @@ function Shell() {
 
 const MED_PATH = /^\/meds\/([^/]+)$/;
 const MEMBER_PATH = /^\/members\/([^/]+)$/;
+const HOUSE_PATH = /^\/house\/([^/]+)$/;
 const MEMBER_EDIT_PATH = /^\/members\/([^/]+)\/edit$/;
 
-/** The screen for a route. `/meds/new...` and `/members/new` are checked before `/meds/:id` and `/members/:id`,
+/** The screen for a route. `/meds/new...`, `/house/new` and `/members/new` are checked before `/meds/:id`, `/house/:id` and `/members/:id`,
  * so "new" is never read as an id. */
 function Screen({ path }: { path: string }) {
   switch (path) {
@@ -71,6 +73,8 @@ function Screen({ path }: { path: string }) {
       return <AddMedicineStep2 />;
     case '/meds/new/stock':
       return <AddMedicineStep3 />;
+    case '/house/new':
+      return <AddHousePage />;
     case '/members':
       return <MembersPage />;
     case '/members/new':
@@ -80,6 +84,8 @@ function Screen({ path }: { path: string }) {
   }
   const med = MED_PATH.exec(path);
   if (med?.[1]) return <MedDetailPage id={safeDecode(med[1])} />;
+  const house = HOUSE_PATH.exec(path);
+  if (house?.[1]) return <EditHousePage id={safeDecode(house[1])} />;
   const member = MEMBER_PATH.exec(path);
   if (member?.[1]) return <MemberDetailPage id={safeDecode(member[1])} />;
   const edit = MEMBER_EDIT_PATH.exec(path);

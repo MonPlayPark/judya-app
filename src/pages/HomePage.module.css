@@ -149,6 +149,15 @@
   gap: var(--space-1);
   min-height: 64px;
 }
+.careLink {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1);
+  min-height: 64px;
+  color: inherit;
+}
 .careRow + .careRow {
   border-top: 1px solid var(--color-border);
 }
