@@ -41,7 +41,7 @@ describe('Thai error texts', () => {
 });
 
 // Step 3.3a: the codes of house medicines and shops live in house.ts, shop.ts and (the new part of) actions.ts.
-const houseSources = ['house.ts', 'shop.ts', 'actions.ts'].map((f) => readFileSync(resolve(process.cwd(), 'src/domain', f), 'utf8'));
+const houseSources = ['house.ts', 'shop.ts', 'price.ts', 'actions.ts'].map((f) => readFileSync(resolve(process.cwd(), 'src/domain', f), 'utf8'));
 const houseDeclared = new Set<string>();
 for (const src of houseSources) {
   for (const block of src.matchAll(/export type (\w+Error) =([^;]+);/g)) {
@@ -64,6 +64,23 @@ describe('Thai error texts for house medicines and shops (step 3.3a)', () => {
   });
 });
 
+// Step 3.3b-1: price codes. The price checks export a field-error type; setPrice / deletePrice declare their own in actions.ts.
+describe('Thai error texts for prices (step 3.3b-1)', () => {
+  it('finds the price codes and every one has a Thai text', () => {
+    for (const code of ['invalid_price', 'invalid_sell_unit', 'per_sell_unit_required', 'invalid_per_sell_unit', 'price_not_found']) {
+      expect(houseDeclared.has(code), code).toBe(true);
+      expect(ERROR_CODES, `missing text for ${code}`).toContain(code);
+    }
+  });
+  it('the per-sell-unit texts tell what to type', () => {
+    expect(errorText('per_sell_unit_required')).toContain('1 กล่องมี 60 เม็ด');
+    expect(errorText('invalid_per_sell_unit')).toContain('มากกว่า 0');
+  });
+  it('the order-days text names the range and says the old value stays', () => {
+    expect(settingsErrorText('invalid_order_days')).toContain('7 ถึง 90');
+  });
+});
+
 describe('restore and settings texts (step 3.2d)', () => {
   it('every restore error has a Thai text, and each says the current data was not touched', () => {
     expect([...RESTORE_ERROR_CODES].sort()).toEqual(['invalid', 'not_json', 'save_failed', 'too_big', 'wrong_version']);
@@ -74,7 +91,7 @@ describe('restore and settings texts (step 3.2d)', () => {
     }
   });
   it('every settings error has a Thai text that says the old value stays', () => {
-    expect([...SETTINGS_ERROR_CODES].sort()).toEqual(['invalid_expiry_days', 'invalid_low_stock_days', 'save_failed']);
+    expect([...SETTINGS_ERROR_CODES].sort()).toEqual(['invalid_expiry_days', 'invalid_low_stock_days', 'invalid_order_days', 'save_failed']);
     for (const code of SETTINGS_ERROR_CODES) {
       const t = settingsErrorText(code);
       expect(t).toMatch(/[฀-๿]/);

@@ -5,11 +5,13 @@ import type {
   AddHouseItemError,
   AddShopError,
   CutHouseStockError,
+  DeletePriceError,
   DeleteShopError,
   EditHouseItemError,
   EditShopError,
   RemoveHouseItemError,
   RestoreHouseItemError,
+  SetPriceError,
   SettingsError,
 } from './actions';
 import type {
@@ -41,7 +43,9 @@ export type MedicineErrorCode =
   | RestoreHouseItemError
   | AddShopError
   | EditShopError
-  | DeleteShopError;
+  | DeleteShopError
+  | SetPriceError
+  | DeletePriceError;
 
 /** Added by the data layer when the change was valid but could not be written to the phone. */
 export type ActionErrorCode = MedicineErrorCode | 'save_failed';
@@ -92,6 +96,12 @@ const TEXT: Record<ActionErrorCode, string> = {
   invalid_fee: 'ใส่ค่าส่งเป็นตัวเลข 0 ขึ้นไป (0 = ส่งฟรี)',
   invalid_free_over: 'ยอดส่งฟรีต้องมากกว่า 0 หรือเว้นว่าง',
   shop_not_found: 'ไม่พบร้านนี้ อาจถูกลบไปแล้ว',
+  // prices per shop (step 3.3b-1)
+  invalid_price: 'ใส่ราคาเป็นตัวเลขที่มากกว่า 0',
+  invalid_sell_unit: 'เลือกหรือพิมพ์หน่วยที่ร้านขาย เช่น กล่อง แผง ขวด',
+  per_sell_unit_required: 'ใส่ว่า 1 หน่วยที่ร้านขายมีกี่หน่วยยา เช่น 1 กล่องมี 60 เม็ด',
+  invalid_per_sell_unit: 'จำนวนหน่วยยาใน 1 หน่วยที่ร้านขายต้องเป็นตัวเลขที่มากกว่า 0 (ยาสามัญใช้ 1 เท่านั้น)',
+  price_not_found: 'ไม่พบราคานี้ อาจถูกลบไปแล้ว',
   save_failed: 'บันทึกไม่ได้ ข้อมูลเดิมยังอยู่ ลองใหม่อีกครั้ง (พื้นที่เก็บข้อมูลในเครื่องอาจเต็ม)',
 };
 
@@ -121,6 +131,7 @@ export type SettingsErrorCode = SettingsError | 'save_failed';
 const SETTINGS_TEXT: Record<SettingsErrorCode, string> = {
   invalid_expiry_days: 'จำนวนวันต้องเป็นเลขเต็ม 1 ถึง 365 ค่าเดิมยังอยู่',
   invalid_low_stock_days: 'จำนวนวันต้องเป็นเลขเต็ม 1 ถึง 60 ค่าเดิมยังอยู่',
+  invalid_order_days: 'จำนวนวันที่สั่งต้องเป็นเลขเต็ม 7 ถึง 90 ค่าเดิมยังอยู่',
   save_failed: 'บันทึกไม่ได้ ค่าเดิมยังอยู่ (พื้นที่เก็บข้อมูลในเครื่องอาจเต็ม)',
 };
 

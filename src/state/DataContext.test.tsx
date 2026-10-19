@@ -1,5 +1,5 @@
 // The data layer's medicine methods: a probe component hands out the API so the tests call it directly.
-import { act, render } from '@testing-library/react';
+import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dailyMeal } from '../domain/helpers.test-util';
 import { loadSample } from '../domain/actions';
@@ -169,5 +169,107 @@ describe('member methods of the data layer', () => {
     expect(run(() => api.restorePerson(removedId))).toEqual({ ok: false, error: 'save_failed' });
     expect(root()).toBe(beforeMemory);
     expect(localStorage.getItem(STORAGE_KEY)).toBe(beforeDisk);
+  });
+});
+
+describe('prices and order settings of the data layer (step 3.3b-1)', () => {
+  /** A house with one shop, one regular medicine and one house medicine. */
+  function setup() {
+    mount();
+    const p = run(() => api.addPerson({ name: 'Test Person A', relation: 'แม่', selfManaged: false }));
+    if (!p.ok) throw new Error(p.error);
+    const m = run(() => api.addMedicine({ personId: p.personId, name: 'ยาตัวอย่าง ก', unit: 'เม็ด', schedule: SCHEDULE, stockQty: 20 }));
+    if (!m.ok) throw new Error(m.error);
+    const s = run(() => api.addShop({ name: 'ร้านทดสอบ ก', delivery: { kind: 'pickup' } }));
+    if (!s.ok) throw new Error(s.error);
+    const h = run(() => api.addHouseItem({ name: 'ยาสามัญทดสอบ' }));
+    if (!h.ok) throw new Error(h.error);
+    return { medicationId: m.medicationId, shopId: s.shopId, houseItemId: h.houseItemId };
+  }
+
+  it('setPrice saves, a second call for the same pair changes the same row, deletePrice removes it', () => {
+    const { medicationId, shopId } = setup();
+    const first = run(() => api.setPrice({ shopId, item: { kind: 'med', medicationId }, price: 290, sellUnit: 'กล่อง', perSellUnit: 60 }));
+    if (!first.ok) throw new Error(first.error);
+    expect(stored().prices).toEqual(root().prices);
+    const second = run(() => api.setPrice({ shopId, item: { kind: 'med', medicationId }, price: 310, sellUnit: 'กล่อง', perSellUnit: 60 }));
+    expect(second).toEqual({ ok: true, priceId: first.priceId });
+    expect(root().prices).toHaveLength(1);
+    expect(stored().prices[0]?.price).toBe(310);
+    expect(run(() => api.deletePrice(first.priceId))).toEqual({ ok: true });
+    expect(root().prices).toEqual([]);
+    expect(stored().prices).toEqual([]);
+  });
+
+  it('a refused price comes back as its code and changes nothing', () => {
+    const { medicationId, shopId } = setup();
+    const before = root();
+    expect(run(() => api.setPrice({ shopId, item: { kind: 'med', medicationId }, price: 290, sellUnit: 'กล่อง' }))).toEqual({ ok: false, error: 'per_sell_unit_required' });
+    expect(run(() => api.setPrice({ shopId: 'nope', item: { kind: 'med', medicationId }, price: 290, sellUnit: 'กล่อง', perSellUnit: 60 }))).toEqual({ ok: false, error: 'shop_not_found' });
+    expect(run(() => api.deletePrice('nope'))).toEqual({ ok: false, error: 'price_not_found' });
+    expect(root()).toBe(before);
+  });
+
+  it('a price that cannot be written is save_failed: nothing in memory, nothing on disk', () => {
+    const { houseItemId, shopId } = setup();
+    const before = root();
+    const diskBefore = localStorage.getItem(STORAGE_KEY);
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('full', 'QuotaExceededError');
+    });
+    expect(run(() => api.setPrice({ shopId, item: { kind: 'house', houseItemId }, price: 35, sellUnit: 'ขวด' }))).toEqual({ ok: false, error: 'save_failed' });
+    expect(root()).toBe(before);
+    expect(root().prices).toEqual([]);
+    vi.restoreAllMocks();
+    expect(localStorage.getItem(STORAGE_KEY)).toBe(diskBefore);
+  });
+
+  it('deletePrice that cannot be written leaves the price in memory and on disk', () => {
+    const { houseItemId, shopId } = setup();
+    const added = run(() => api.setPrice({ shopId, item: { kind: 'house', houseItemId }, price: 35, sellUnit: 'ขวด' }));
+    if (!added.ok) throw new Error(added.error);
+    const before = root();
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('full', 'QuotaExceededError');
+    });
+    expect(run(() => api.deletePrice(added.priceId))).toEqual({ ok: false, error: 'save_failed' });
+    expect(root()).toBe(before);
+    expect(root().prices).toHaveLength(1);
+  });
+
+  it('setSettings takes orderDays and orderTemplate, saves them, and refuses 91 days', () => {
+    mount();
+    expect(run(() => api.setSettings({ orderDays: 45, orderTemplate: 'ขอสั่งยา {ร้าน}' }))).toEqual({ ok: true });
+    expect(root().settings).toMatchObject({ orderDays: 45, orderTemplate: 'ขอสั่งยา {ร้าน}' });
+    expect(stored().settings).toMatchObject({ orderDays: 45, orderTemplate: 'ขอสั่งยา {ร้าน}' });
+    const memory = root();
+    expect(run(() => api.setSettings({ orderDays: 91, orderTemplate: 'อื่น' }))).toEqual({ ok: false, error: 'invalid_order_days' });
+    expect(root()).toBe(memory);
+  });
+
+  it('setSettings with the new fields that cannot be written is save_failed and the old values stay', () => {
+    mount();
+    run(() => api.setSettings({ orderDays: 45 }));
+    const memory = root();
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('full', 'QuotaExceededError');
+    });
+    expect(run(() => api.setSettings({ orderDays: 60, orderTemplate: 'ใหม่' }))).toEqual({ ok: false, error: 'save_failed' });
+    expect(root()).toBe(memory);
+    expect(root().settings.orderDays).toBe(45);
+  });
+
+  it('prices and shops go round a backup file through the data layer (replaceAll)', () => {
+    const { medicationId, shopId } = setup();
+    run(() => api.setPrice({ shopId, item: { kind: 'med', medicationId }, price: 290, sellUnit: 'กล่อง', perSellUnit: 60 }));
+    const snapshot = root();
+    localStorage.removeItem(STORAGE_KEY);
+    cleanup();
+    mount();
+    expect(root().prices).toEqual([]);
+    expect(run(() => api.replaceAll(snapshot))).toEqual({ ok: true });
+    expect(root().prices).toEqual(snapshot.prices);
+    expect(root().shops).toEqual(snapshot.shops);
+    expect(stored().prices).toEqual(snapshot.prices);
   });
 });
