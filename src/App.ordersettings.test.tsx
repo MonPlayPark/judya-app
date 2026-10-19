@@ -342,8 +342,8 @@ describe('still hidden: the order page and every "สั่งยา" button or 
     expect(screen.queryByRole('button', { name: /^สั่งยา/ })).not.toBeInTheDocument();
   });
 
-  it('there is no order page: #/order is not found', () => {
+  it('there is an order page: #/order opens it (step 3.3b-3)', () => {
     open('#/order', root());
-    expect(screen.queryByRole('heading', { level: 1, name: /สั่งยา/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'สั่งยา' })).toBeInTheDocument();
   });
 });

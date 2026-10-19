@@ -226,3 +226,16 @@ export const ChatIcon = () => (
     <path d="M5 4h14a1 1 0 011 1v10a1 1 0 01-1 1h-8l-4 4v-4H5a1 1 0 01-1-1V5a1 1 0 011-1z" />
   </Icon>
 );
+
+export const CopyIcon = () => (
+  <Icon>
+    <rect x="9" y="9" width="11" height="11" rx="2" />
+    <path d="M5 15V6a2 2 0 012-2h9" />
+  </Icon>
+);
+
+export const PhoneIcon = () => (
+  <Icon>
+    <path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a1 1 0 01-1 1A15 15 0 014 5a1 1 0 011-1z" />
+  </Icon>
+);

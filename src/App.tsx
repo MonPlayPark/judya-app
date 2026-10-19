@@ -10,6 +10,7 @@ import { MemberDetailPage } from './pages/MemberDetail';
 import { EditMemberPage, NewMemberPage } from './pages/MemberForm';
 import { MembersPage } from './pages/MembersPage';
 import { NotFound } from './pages/NotFound';
+import { OrderPage } from './pages/OrderPage';
 import { ProblemPage } from './pages/ProblemPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { TodayPage } from './pages/TodayPage';
@@ -79,6 +80,8 @@ function Screen({ path }: { path: string }) {
       return <MembersPage />;
     case '/members/new':
       return <NewMemberPage />;
+    case '/order':
+      return <OrderPage />;
     case '/settings':
       return <SettingsPage />;
   }
