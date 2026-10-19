@@ -1,4 +1,4 @@
-// Medicine detail (board Med*): look, adjust dose, stop / resume, edit, history. The price section, "share with doctor"
+// Medicine detail (board Med*): look, adjust dose, stop / resume, edit, prices per shop, history. "Share with doctor"
 // and the "allergy: coming soon" sentence are hidden until their pages exist (Q12).
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { thaiDateShort } from '../domain/format';
@@ -12,6 +12,7 @@ import {
   scheduleToForm,
   type ScheduleForm,
 } from '../domain/scheduleForm';
+import { priceSharedCount } from '../domain/priceView';
 import { EVENT_REASONS, type Assignment, type Medication, type Person, type Root } from '../domain/schema';
 import type { EventReason } from '../domain/medicine';
 import { Button } from '../components/Button';
@@ -19,6 +20,7 @@ import { Card } from '../components/Card';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Actions, Chip, ChipGroup, Field, InfoBox, StepHeader, inputClass, textareaClass } from '../components/form';
 import { EditIcon, PillIcon, PlayIcon, PlusIcon, SettingsIcon, StopIcon } from '../components/icons';
+import { PriceSection } from '../components/PriceSection';
 import { ScheduleEditor } from '../components/ScheduleEditor';
 import { StatusBadge } from '../components/StatusBadge';
 import { href } from '../router';
@@ -166,6 +168,15 @@ function Detail({ root, a, med, person }: { root: Root; a: Assignment; med: Medi
         )}
         {mode === 'edit' && (
           <EditForm root={root} a={a} med={med} today={today} onCancel={() => open('view')} onDone={() => finished('บันทึกข้อมูลยาแล้ว')} />
+        )}
+
+        {mode === 'view' && (
+          <PriceSection
+            item={{ kind: 'med', medicationId: med.id }}
+            unit={med.unit}
+            sharedCount={priceSharedCount(root, med.id)}
+            lead="ใส่ราคายานี้ของแต่ละร้าน"
+          />
         )}
 
         <Card>

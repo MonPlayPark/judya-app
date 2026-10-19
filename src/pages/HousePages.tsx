@@ -1,6 +1,5 @@
 // House medicines (step 3.3a): add (#/house/new) and edit / cut stock / delete / bring back (#/house/:id), boards AddHouse
 // and EditHouse*. One form for both. Nothing is written until "บันทึก" (cutting stock and deleting save at once, like the board).
-// Hidden until step 3.3b: the section "ราคาตามร้าน".
 import { useState, type ReactNode } from 'react';
 import { errorText } from '../domain/errorText';
 import { validateHouseItem, type HouseField, type HouseFieldError } from '../domain/house';
@@ -13,6 +12,7 @@ import { ClearSampleDialog } from '../components/ClearSampleDialog';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Actions, Chip, ChipGroup, Field, InfoBox, Stepper, StepHeader, inputClass, textareaClass } from '../components/form';
 import { CheckCircleIcon } from '../components/icons';
+import { PriceSection } from '../components/PriceSection';
 import { href } from '../router';
 import { useData, useRoot } from '../state/DataContext';
 import { useToday } from '../state/useToday';
@@ -317,6 +317,7 @@ function EditForm({ item }: { item: HouseItem }) {
           </Actions>
           {saved && <InfoBox tone="ok">บันทึกแล้ว</InfoBox>}
         </div>
+        <PriceSection item={{ kind: 'house', houseItemId: item.id }} unit={null} lead="ใส่ราคาต่อ 1 หน่วยที่ร้านขาย" />
         <Button variant="dangerOutline" onClick={() => setConfirmRemove(true)}>
           ลบยานี้
         </Button>

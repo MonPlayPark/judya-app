@@ -220,3 +220,9 @@ export const ShieldIcon = () => (
     <path d="M12 3l7.5 3v5.5c0 4.5-3 8-7.5 9.5-4.5-1.5-7.5-5-7.5-9.5V6z" />
   </Icon>
 );
+
+export const ChatIcon = () => (
+  <Icon>
+    <path d="M5 4h14a1 1 0 011 1v10a1 1 0 01-1 1h-8l-4 4v-4H5a1 1 0 01-1-1V5a1 1 0 011-1z" />
+  </Icon>
+);

@@ -45,6 +45,9 @@ export function houseRows(root: Root, today: IsoDate): HouseRow[] {
     .map((h) => ({ id: h.id, name: h.name, sub: houseSub(h), badges: houseBadges(h, today, root.settings.expiryWarnDays) }));
 }
 
+/** The deleted items ("ยาสามัญที่ลบแล้ว"), in the order they were added. Nothing is erased, so they can be brought back. */
+export const removedHouseItems = (root: Root): HouseItem[] => root.houseItems.filter((h) => h.removedAt !== undefined);
+
 export interface HouseNotice {
   tone: 'error' | 'warn';
   title: string;

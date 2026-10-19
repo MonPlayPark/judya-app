@@ -1,5 +1,5 @@
 // Settings: the shops (board Settings, section "ร้านค้า"). List, add, edit, delete. The inline form follows the board;
-// deleting asks first and says the prices of that shop go too. Prices per shop are step 3.3b.
+// deleting asks first and says the prices of that shop go too. Prices per shop are in the medicine pages (PriceSection).
 import { useEffect, useState } from 'react';
 import { errorText } from '../domain/errorText';
 import { blankShopForm, shopFormFromShop, shopFormToInput, shopSub, validateShop, type ShopField, type ShopFieldError, type ShopForm } from '../domain/shop';

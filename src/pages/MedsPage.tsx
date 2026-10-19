@@ -1,5 +1,7 @@
+import { useState } from 'react';
+import { errorText } from '../domain/errorText';
 import { describeSchedule } from '../domain/scheduleForm';
-import { houseRows } from '../domain/houseView';
+import { houseRows, removedHouseItems } from '../domain/houseView';
 import { listBadges, medsByMember } from '../domain/medView';
 import type { Assignment, Root } from '../domain/schema';
 import { Avatar } from '../components/Avatar';
@@ -8,7 +10,7 @@ import { CheckIcon, ChevronRightIcon, InfoIcon, PillIcon, PlusIcon } from '../co
 import { InfoBox } from '../components/form';
 import { StatusBadge } from '../components/StatusBadge';
 import { href, useRoute } from '../router';
-import { useRoot } from '../state/DataContext';
+import { useData, useRoot } from '../state/DataContext';
 import { useDraft } from '../state/DraftContext';
 import { useToday } from '../state/useToday';
 import styles from './MedsPage.module.css';
@@ -19,7 +21,7 @@ const TABS = [
 ] as const;
 
 /** "ยาทั้งหมด" (board Medicines) with the two tabs `#/meds` (ยาประจำตัว) and `#/meds?tab=house` (ยาสามัญประจำบ้าน).
- * Hidden until step 3.3b: the price sections and the order link. */
+ * Hidden until step 3.3b-3: the order link. */
 export function MedsPage() {
   const root = useRoot();
   const { today } = useToday();
@@ -154,7 +156,46 @@ function HouseTab() {
         <PlusIcon />
         เพิ่มยาสามัญประจำบ้าน
       </a>
+      <RemovedHouse />
     </Card>
+  );
+}
+
+/** "ยาสามัญที่ลบแล้ว (N)": a fold-away bar at the end of the house tab, hidden when N = 0. Open it to see the names and "นำกลับ".
+ * Bringing back puts the item in the main list at once (its numbers and prices were never erased). */
+function RemovedHouse() {
+  const root = useRoot();
+  const { restoreHouseItem } = useData();
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const removed = removedHouseItems(root);
+  if (removed.length === 0) return null;
+  const restore = (id: string) => {
+    const res = restoreHouseItem(id);
+    setError(res.ok ? null : errorText(res.error));
+  };
+  return (
+    <div className={styles.removed}>
+      <button type="button" className={styles.removedBar} aria-expanded={open} aria-controls="removed-house-list" onClick={() => setOpen((o) => !o)}>
+        <span>ยาสามัญที่ลบแล้ว ({removed.length})</span>
+        <span className={`${styles.removedChevron} ${open ? styles.removedChevronOpen : ''}`} aria-hidden="true">
+          <ChevronRightIcon />
+        </span>
+      </button>
+      {open && (
+        <div id="removed-house-list">
+          {error && <InfoBox tone="error">{error}</InfoBox>}
+          {removed.map((h) => (
+            <div key={h.id} className={styles.removedRow}>
+              <div className={styles.medName}>{h.name}</div>
+              <button type="button" className={styles.restoreBtn} aria-label={`นำกลับ ${h.name}`} onClick={() => restore(h.id)}>
+                นำกลับ
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
