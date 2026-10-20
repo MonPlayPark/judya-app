@@ -346,3 +346,21 @@ Order page, price boxes, "ข้อความสั่งยาไปร้า
 - **Call button**: only when the chosen shop has a phone; spaces and hyphens removed, `+` kept. No "add phone" variant (the board has one; not asked).
 - **Missing prices**: links go to `#/meds/<first assignment id>` (the price is shared by every user) or `#/house/<id>`.
 - The page writes nothing (a test spies `setItem` / `removeItem` and compares keys and the stored text). Two icons added: copy, phone.
+
+## Step 3.4 (20 ต.ค. 2569) — share the medicine summary to the doctor (`#/members/:id/share`)
+
+### Decided by the owner (20 ต.ค. 2569)
+- Content: member name as typed, every active medicine (name + how it is taken now), start day, last 3 dose changes (adjust / stop / resume, newest first; "edit" not counted), medicines stopped within 90 days (90 included), allergy status, date. Picture + text, made on the device. The allergy line is always "การแพ้ยา: แอพนี้ยังไม่มีข้อมูลการแพ้ยา — โปรดสอบถามผู้ป่วยหรือญาติ" (never "ไม่แพ้" / "ไม่มี" / "ไม่พบ"), on every picture; the line "จดโดยเจ้าของแอพ ไม่ใช่เวชระเบียน โปรดตรวจกับซองยาหรือใบสั่งยาจริง" ends every picture and the text.
+- "สรุปพบแพทย์" and the add-allergy button stay hidden.
+
+### Decisions taken by the team (easy to change)
+- **Stopped medicine with no 'stop' event** (older data): left out of the stopped list; the day is not guessed.
+- **Start day** = earliest 'start' event; **latest stop** = the stop event with the latest day (same day: the one written later). Events are sorted by day, ties by write order.
+- **Pictures**: 1080x1920 PNG, text 48px (16px at 360px wide), Noto Sans Thai 400/600/700 loaded with `document.fonts.load` before drawing; colours read from the tokens (ink on white / tint header). Header (name, "สรุปยา · date", "หน้า i/n" if more than one), medicine blocks, footer (allergy box + disclaimer) on every picture.
+- **Pagination** counts wrapped lines (+ half a line gap per block). Section headings ("ยาที่ใช้อยู่", "ยาที่หยุดใน 90 วันที่ผ่านมา") belong to the first block of their section and are **not repeated** on later pictures (each stopped block says "หยุด …", so it is clear).
+- **Wrapping**: Thai dictionary words (`Intl.Segmenter`), letter clusters only for a word wider than a line; a lone ":" ")" "·" "/" stays with the word before, "(" and a number stay with the word after, and "หลังอาหาร / ก่อนอาหาร / พร้อมอาหาร / ก่อนนอน" are never cut.
+- **Share**: `navigator.share({files, text})` when `canShare({files})`; closing the sheet = quiet "ยกเลิกการแชร์แล้ว"; any other failure or no support = one download per picture (`judya-summary-<date>-<i>.png`, 0.4 s apart so Chrome does not block them) + "บันทึกภาพไว้แล้ว เปิด LINE แล้วเลือกรูปจากเครื่อง".
+- **No medicine at all** (neither active nor stopped within 90 days): only "ยังไม่มียาให้สรุป", no picture is made, no buttons.
+- **Member page**: quick buttons are now three in a 2-column grid (the third sits on a second row).
+- **Old test turned around**: `App.members.test.tsx` "hides what is not built yet: share to doctor, …" -> the share link is now checked present; the rest of that list (สรุปพบแพทย์, add allergy, เร็ว ๆ นี้) still hidden. No other old test changed.
+- No schema change, no storage write, no network call; `downloadFile` / `isAbort` in `state/backupFile.ts` are now exported (no behaviour change).
