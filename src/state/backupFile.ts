@@ -9,7 +9,7 @@ interface Env {
 }
 
 /** A click on a temporary link makes the browser save the file. */
-function downloadFile(file: File): void {
+export function downloadFile(file: File): void {
   const url = URL.createObjectURL(file);
   const a = document.createElement('a');
   a.href = url;
@@ -20,7 +20,7 @@ function downloadFile(file: File): void {
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
-const isAbort = (e: unknown): boolean => e instanceof DOMException && e.name === 'AbortError';
+export const isAbort = (e: unknown): boolean => e instanceof DOMException && e.name === 'AbortError';
 
 /** Share the file; if sharing is not possible (not supported, or it fails for any reason except the person closing the
  * sheet) download it instead. The person closing the share sheet = 'cancelled': nothing was handed over. */

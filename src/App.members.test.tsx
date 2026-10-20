@@ -176,9 +176,14 @@ describe('one member (#/members/:id)', () => {
     expect(screen.getByRole('link', { name: 'จัดยาวันนี้' })).toBeInTheDocument();
   });
 
-  it('hides what is not built yet: share to doctor, doctor summary, add allergy note', () => {
+  it('"แชร์ให้แพทย์" opens the share page of that member (step 3.4)', () => {
     open('#/members/pA');
-    for (const text of [/แชร์ให้แพทย์/, /สรุปพบแพทย์/, /เพิ่มบันทึกแพ้ยา/, /เร็ว ๆ นี้/]) {
+    expect(screen.getByRole('link', { name: 'แชร์ให้แพทย์' })).toHaveAttribute('href', '#/members/pA/share');
+  });
+
+  it('hides what is not built yet: doctor summary, add allergy note', () => {
+    open('#/members/pA');
+    for (const text of [/สรุปพบแพทย์/, /เพิ่มบันทึกแพ้ยา/, /เร็ว ๆ นี้/]) {
       expect(screen.queryByText(text)).not.toBeInTheDocument();
     }
     expect(screen.queryByRole('button', { name: /แพ้ยา/ })).not.toBeInTheDocument();

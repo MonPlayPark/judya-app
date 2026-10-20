@@ -305,6 +305,27 @@ Lists of 3.3a and 3.3b-2 above still apply (house medicines, shops, prices per s
 8. Leave and come back: the page starts again from the list; nothing is saved.
 9. Airplane mode: the page works.
 
+## Status after step 3.4 (20 ต.ค. 2569) — share the medicine summary to the doctor (S14)
+
+Branch `ccr-90ea778c-arymwy`, PR open (not merged). Schema untouched, nothing written to storage, nothing sent over the network. Choices: `docs/DECISIONS.md` "Step 3.4".
+
+### Done
+- `domain/doctorSummary.ts` (`doctorSummary`, `summaryText`, `changeLine`, `imageBlocks`, `paginate`) + 30 tests = the owner's hand examples (today 2026-10-20; order จี, บี, เอ, เอช, เอฟ; stopped 71 / 90 days shown, 91 not; 4 adjusts keep 3; resume; removed member -> null; paginate examples). Example house: `domain/doctorExample.test-util.ts`.
+- `components/summaryImage.ts` (all canvas code, `renderSummaryImages` never throws) + wrap tests; `state/shareImages.ts`; `pages/SharePage.tsx` (+css), route in `App.tsx`, third quick button "แชร์ให้แพทย์" on the member page.
+- Tests: `App.share.test.tsx` (20 screen tests, picture maker mocked because jsdom has no canvas). One old test turned around: `App.members.test.tsx` (the "hidden" list no longer has แชร์ให้แพทย์).
+- Real browser check (Playwright / Chromium 360px, production build, made-up data, PNGs saved and looked at): owner example -> **3 pictures** (หน้า 1/3, 2/3, 3/3); 12 medicines with long names, 4 time slots and 3 changes each (worst case) -> **12 pictures**; 12 ordinary medicines -> **4 pictures** (2-3 medicines per picture). Thai letters, tone marks and vowels correct, nothing outside the edges, every picture has the allergy line and the "จดโดยเจ้าของแอพ" line, a 40-letter name wraps in the header. Page at 360px: no sideways scroll, no text under 15px, no tap target under 48px, no console errors.
+- Not run: Web Share on a real phone (mocked only).
+
+### Owner's S24 test list for 3.4 (after merge and deploy)
+1. Member page -> "แชร์ให้แพทย์": "กำลังสร้างภาพ…" then the pictures appear (number of pages = หน้า i/n), the yellow warning, the text box.
+2. Look at a picture at full size: Thai letters right (tone marks above letters), nothing cut at the edges, allergy line + "จดโดยเจ้าของแอพ ไม่ใช่เวชระเบียน…" at the bottom of every picture, no "ไม่แพ้".
+3. Check the facts against the app: medicine names, how taken now, start day, last dose changes (newest first, max 3), stopped medicines (only last 90 days).
+4. "แชร์ภาพ": the Android share sheet opens -> choose LINE -> send to yourself / a trusted person: all pictures arrive, readable on the phone. Close the sheet instead: "ยกเลิกการแชร์แล้ว", no error.
+5. "คัดลอกข้อความ" -> "คัดลอกแล้ว" -> paste in LINE: same text as the box. "เปิด LINE" opens LINE with the text.
+6. Member with no medicine: "ยังไม่มียาให้สรุป", no buttons. Airplane mode: pictures and text still work.
+
+### Next: 3.5 (7 days of real use). Still hidden: "สรุปพบแพทย์", add-allergy button.
+
 ## Next after 3.2b-1: 3.2b-2 screens, then 3.2c, 3.2d. (O5 solved: the functions refuse with `sample_present`; the screen clears the sample after asking.)
 Open points from 3.1 still waiting: `settings.expiryWarnDays` must be passed to `expiryStatus` by every screen;
 persist status line in Settings (3.2d); `judya.v2.prev` is now written by "เริ่มใหม่" (restore-from-backup in 3.2d will reuse it).
