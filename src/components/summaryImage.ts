@@ -58,8 +58,8 @@ export function clusters(text: string): string[] {
   return out;
 }
 
-/** Word-ish pieces: Thai words from the browser's dictionary when it has one, otherwise split after spaces. */
-function pieces(text: string): string[] {
+/** Raw word pieces: Thai words from the browser's dictionary when it has one, otherwise split after spaces. */
+function rawPieces(text: string): string[] {
   if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
     try {
       return Array.from(new Intl.Segmenter('th', { granularity: 'word' }).segment(text), (s) => s.segment);
@@ -67,7 +67,52 @@ function pieces(text: string): string[] {
       // fall through to the plain split
     }
   }
-  return text.match(/\S+\s*|\s+/g) ?? [];
+  return text.match(/\S+|\s+/g) ?? [];
+}
+
+const CLOSING = /^[:;,.!?)\]·/%]+$/; // never starts a line: stays with the word before it
+const OPENING = /^[(\[]+$/; // never ends a line: stays with the word after it
+const NUMBER = /^[\d½]+([.,]\d+)?$/; // "1 เม็ด", "20 ต.ค.": the number stays with what follows
+
+/** Pieces a line may break between. A piece is a word with the spaces after it; a lone ":" ")" "·" "/" joins the piece before,
+ * a lone "(" or a number joins the piece after, so a line never starts with ": หมอสั่ง)" or ends with "1" before "เม็ด". */
+function pieces(text: string): string[] {
+  const out: string[] = [];
+  let glueNext = false;
+  for (const seg of rawPieces(text)) {
+    const space = /^\s+$/.test(seg);
+    const prev = out.length - 1;
+    if (space && prev >= 0) {
+      out[prev] += seg;
+      continue;
+    }
+    const word = seg.trim();
+    if (prev >= 0 && (glueNext || CLOSING.test(word))) out[prev] += seg;
+    else out.push(seg);
+    glueNext = OPENING.test(word) || NUMBER.test(word);
+  }
+  return keepPhrases(text, out);
+}
+
+/** Meal timing reads wrong when cut in two ("หลัง" / "อาหาร"), so these stay on one line. */
+const NO_BREAK = ['หลังอาหาร', 'ก่อนอาหาร', 'พร้อมอาหาร', 'ก่อนนอน'];
+
+/** Join the pieces of `parts` (which together are `text`) wherever a break would fall inside a NO_BREAK phrase. */
+function keepPhrases(text: string, parts: string[]): string[] {
+  const inside = new Set<number>();
+  for (const phrase of NO_BREAK) {
+    for (let at = text.indexOf(phrase); at >= 0; at = text.indexOf(phrase, at + 1)) {
+      for (let k = at + 1; k < at + phrase.length; k++) inside.add(k);
+    }
+  }
+  const out: string[] = [];
+  let offset = 0;
+  for (const part of parts) {
+    if (out.length > 0 && inside.has(offset)) out[out.length - 1] += part;
+    else out.push(part);
+    offset += part.length;
+  }
+  return out;
 }
 
 /** Break `text` into lines no wider than `maxWidth`. A line breaks between words; a word wider than a whole line breaks between

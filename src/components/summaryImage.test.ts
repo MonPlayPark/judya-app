@@ -59,3 +59,28 @@ describe('renderSummaryImages without a canvas', () => {
     vi.restoreAllMocks();
   });
 });
+
+describe('wrapText punctuation and numbers', () => {
+  const text = 'ปรับโดส 1 ต.ค. 2569 จาก เช้า หลังอาหาร 2 เม็ด · เย็น หลังอาหาร 2 เม็ด เป็น เช้า หลังอาหาร 1 เม็ด (เหตุผล: ใช้ยาไม่ได้ / ผลข้างเคียง)';
+  it.each([200, 250, 300, 330, 400])('width %i: no line starts with ":" "·" ")" "/" or ends with "(" or a lone number', (w) => {
+    const lines = wrapText(text, w, measure);
+    for (const l of lines) {
+      expect(l).not.toMatch(/^[:;,.)·/]/);
+      expect(l).not.toMatch(/[([]$/);
+      expect(l).not.toMatch(/(^|\s)[\d½]+$/);
+    }
+    expect(lines.join(' ').replace(/\s+/g, '')).toBe(text.replace(/\s+/g, ''));
+  });
+});
+
+describe('wrapText meal timing', () => {
+  const text = 'เช้า หลังอาหาร 1 เม็ด · กลางวัน พร้อมอาหาร 1 เม็ด · เย็น ก่อนอาหาร 1 เม็ด · ก่อนนอน 1 เม็ด';
+  it.each([150, 200, 250, 300])('width %i: "หลังอาหาร", "พร้อมอาหาร", "ก่อนอาหาร", "ก่อนนอน" are never cut', (w) => {
+    const lines = wrapText(text, w, measure);
+    for (const l of lines) {
+      expect(l).not.toMatch(/(หลัง|พร้อม|ก่อน)$/);
+      expect(l).not.toMatch(/^(อาหาร|นอน)/);
+    }
+    expect(lines.join(' ').replace(/\s+/g, '')).toBe(text.replace(/\s+/g, ''));
+  });
+});
