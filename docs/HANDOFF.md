@@ -2,6 +2,12 @@
 
 Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every session.
 
+## Step A0 — visual refresh images (20 ต.ค. 2569)
+
+Branch `assets/visual-refresh` adds 48 WebP images in `src/assets/visual/` (28 icons, 12 avatars, 8 mascot poses; about 0.4 MB).
+Images only: nothing imports them yet, no code, no `src/domain/**` or `src/state/**` change. Step V1 wires them in.
+They will be swapped for SVG later (step V1b, same file names). See `src/assets/visual/README.md`.
+
 ## Status after step 3.1 (16 ต.ค. 2569)
 
 Step 3.1 "app skeleton" is merged to `main` (PR #2) and live.
