@@ -4,7 +4,7 @@ import { Avatar } from '../components/Avatar';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { InfoBox, StepHeader } from '../components/form';
-import { BackIcon, BagIcon, CalendarCheckIcon, ChevronRightIcon, EditIcon, InfoIcon, PillIcon, ShieldIcon } from '../components/icons';
+import { BackIcon, BagIcon, CalendarCheckIcon, ChatIcon, ChevronRightIcon, EditIcon, InfoIcon, PillIcon, ShieldIcon } from '../components/icons';
 import { href } from '../router';
 import { useRoot } from '../state/DataContext';
 import { useToday } from '../state/useToday';
@@ -29,9 +29,9 @@ export function MemberNotFound() {
   );
 }
 
-/** One member (boards MemberDad etc.). Hidden for now (Q12): the "add allergy" button, "แชร์ให้แพทย์" and "สรุปพบแพทย์" (3.4).
- * The two quick buttons are "จัดยาวันนี้" and "สั่งยา" (step 3.3b-3); "สั่งยา" opens the order page of the whole house, not filtered
- * by member. */
+/** One member (boards MemberDad etc.). Hidden for now (Q12): the "add allergy" button and "สรุปพบแพทย์".
+ * The quick buttons are "จัดยาวันนี้", "สั่งยา" (step 3.3b-3; opens the order page of the whole house, not filtered by member) and
+ * "แชร์ให้แพทย์" (step 3.4). */
 export function MemberDetailPage({ id }: { id: string }) {
   const root = useRoot();
   const person = findMember(root, id);
@@ -87,7 +87,7 @@ function Detail({ person }: { person: Person }) {
           <p className={styles.allergyText}>ยังไม่ได้บันทึก — ถามแพทย์/เภสัชกรก่อนใช้ยาใหม่</p>
         </Card>
 
-        {/* Two of the board's four quick buttons; the other two (3.4) come back when their page exists. */}
+        {/* Three of the board's four quick buttons; "สรุปพบแพทย์" comes back when its page exists. */}
         <div className={styles.quick}>
           <a className={styles.quickBtn} href={href(`/today?who=${encodeURIComponent(person.id)}`)}>
             <CalendarCheckIcon />
@@ -96,6 +96,10 @@ function Detail({ person }: { person: Person }) {
           <a className={styles.quickBtn} href={href('/order')}>
             <BagIcon />
             สั่งยา
+          </a>
+          <a className={styles.quickBtn} href={href(`/members/${encodeURIComponent(person.id)}/share`)}>
+            <ChatIcon />
+            แชร์ให้แพทย์
           </a>
         </div>
 

@@ -13,6 +13,7 @@ import { NotFound } from './pages/NotFound';
 import { OrderPage } from './pages/OrderPage';
 import { ProblemPage } from './pages/ProblemPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { SharePage } from './pages/SharePage';
 import { TodayPage } from './pages/TodayPage';
 import type { IsoDate } from './domain/calc';
 import { useRoute } from './router';
@@ -57,8 +58,10 @@ const MED_PATH = /^\/meds\/([^/]+)$/;
 const MEMBER_PATH = /^\/members\/([^/]+)$/;
 const HOUSE_PATH = /^\/house\/([^/]+)$/;
 const MEMBER_EDIT_PATH = /^\/members\/([^/]+)\/edit$/;
+const MEMBER_SHARE_PATH = /^\/members\/([^/]+)\/share$/;
 
-/** The screen for a route. `/meds/new...`, `/house/new` and `/members/new` are checked before `/meds/:id`, `/house/:id` and `/members/:id`,
+/** The screen for a route. `/meds/new...`, `/house/new` and `/members/new` are checked before `/meds/:id`, `/house/:id` and `/members/:id`
+ * (`/members/:id/share` and `/members/:id/edit` have a second segment, so `/members/:id` never matches them),
  * so "new" is never read as an id. */
 function Screen({ path }: { path: string }) {
   switch (path) {
@@ -93,6 +96,8 @@ function Screen({ path }: { path: string }) {
   if (member?.[1]) return <MemberDetailPage id={safeDecode(member[1])} />;
   const edit = MEMBER_EDIT_PATH.exec(path);
   if (edit?.[1]) return <EditMemberPage id={safeDecode(edit[1])} />;
+  const share = MEMBER_SHARE_PATH.exec(path);
+  if (share?.[1]) return <SharePage id={safeDecode(share[1])} />;
   return <NotFound />;
 }
 
