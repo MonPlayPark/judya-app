@@ -94,8 +94,8 @@
   --text-days-unit-line: 1.125rem;
   --text-note-size: 1rem;
   --text-note-line: 1.5rem;
-  --text-ring-size: 2.125rem;
-  --text-ring-line: 2.375rem;
+  --text-ring-size: 1.75rem; /* round 9: 28px */
+  --text-ring-line: 2rem;
 
   /* layout (new) */
   --card-padding: 1.5rem;
@@ -119,9 +119,11 @@
   --avatar-ring: 2px;
   --mascot-min: 5.5rem; /* 88px .. 140px depending on the screen */
   --mascot-max: 8.75rem;
+  --mascot-hero: 6.25rem; /* round 9: 100px in the home hero */
+  --mascot-done: 7.5rem; /* round 9: 120px, ok pose on the all-done card */
 
   /* progress ring (D6) */
-  --ring-size: 7.5rem;
+  --ring-size: 6rem; /* round 9: 96px (viewBox stays 120) */
   --ring-stroke: 8;
   --ring-radius: 52;
   --ring-dasharray: 326.73;

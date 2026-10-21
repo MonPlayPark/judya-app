@@ -296,11 +296,12 @@ describe('home screen', () => {
     expect(screen.getByText('20:00')).toBeInTheDocument();
   });
 
-  it('everything prepared: จัดครบแล้ว', () => {
+  it('everything prepared: ยาวันนี้ครบแล้ว', () => {
     const keys = ['a9:morning', 'a1:morning', 'a8:noon', 'a1:evening', 'a2:bedtime', 'a3:08:00', 'a3:20:00'];
     open('#/', house({ prepLog: { [TODAY]: Object.fromEntries(keys.map((k) => [k, true as const])) } }));
-    expect(screen.getByText('จัดครบแล้ว')).toBeInTheDocument();
-    expect(screen.getByText('จัดแล้ว 7 จาก 7')).toBeInTheDocument();
+    expect(screen.getByText('ยาวันนี้ครบแล้ว')).toBeInTheDocument();
+    expect(screen.getByText('จัดครบ 7 จาก 7')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('เก่งมากค่ะ');
   });
 
   it('no medicine to prepare today: says so', () => {
@@ -329,19 +330,21 @@ describe('home screen', () => {
     it('lists the three groups, with the owner name for members and the right-hand texts', () => {
       open('#/', house({ houseItems }));
       expect(screen.getByRole('heading', { name: 'ยาที่ต้องดูแล' })).toBeInTheDocument();
-      expect(screen.getByText('หมดอายุแล้ว')).toBeInTheDocument();
-      expect(screen.getByRole('heading', { name: /ถึงรอบซื้อเติมสต๊อก/ })).toBeInTheDocument(); // plain heading, not a button
-      expect(screen.getByText('ใกล้หมดอายุ')).toBeInTheDocument();
-      expect(screen.getByText('หมดอายุภายใน 15 วัน · 1 รายการ')).toBeInTheDocument();
+      // round 9: one list sorted by urgency (expired first, then fewest days); no group banners
+      expect(screen.getByRole('link', { name: 'ดูทั้งหมด 4' })).toHaveAttribute('href', '#/meds');
 
       // a member's medicine (self-managed counts) with the owner's name
       const selfRow = screen.getByText('Med Self Managed').closest('li') as HTMLElement;
       expect(selfRow).toHaveTextContent('Test Person B');
-      expect(selfRow).toHaveTextContent('เกิน 15 วัน');
+      expect(selfRow).toHaveTextContent('เลิกใช้');
       // house medicines
-      expect(screen.getByText('House Expired').closest('li')).toHaveTextContent('เกิน 16 วัน');
-      expect(screen.getByText('House Soon').closest('li')).toHaveTextContent('อีก 8 วัน');
-      expect(screen.getByText('House Low').closest('li')).toHaveTextContent('เหลือ 4 เม็ด');
+      expect(screen.getByText('House Expired').closest('li')).toHaveTextContent('เลิกใช้');
+      expect(screen.getByText('House Soon').closest('li')).toHaveTextContent('หมดอายุใน8วัน');
+      expect(screen.getByText('House Low').closest('li')).toHaveTextContent('เหลือ4เม็ด');
+      const care = screen.getByRole('heading', { name: 'ยาที่ต้องดูแล' }).closest('section') as HTMLElement;
+      const names = within(care).getAllByRole('listitem').map((li) => li.querySelector('a > div > div')?.textContent);
+      expect(names.slice(0, 2).sort()).toEqual(['House Expired', 'Med Self Managed']); // expired come first
+      expect(names.slice(2)).toEqual(['House Soon', 'House Low'].sort((a, b) => names.indexOf(a) - names.indexOf(b)));
       // left out: stopped medicine, removed member, removed house medicine
       for (const name of ['Med Stopped', 'Med Removed Member', 'House Removed']) {
         expect(screen.queryByText(name)).not.toBeInTheDocument();
@@ -350,12 +353,9 @@ describe('home screen', () => {
       expect(screen.getByRole('heading', { name: 'ยาที่ต้องดูแล' }).parentElement).toHaveTextContent('4');
     });
 
-    it('uses the expiry setting from the data, and the explanation is plain text, not a link', () => {
-      const root = house({ houseItems });
-      root.settings = { ...root.settings, expiryWarnDays: 30 };
-      open('#/', root);
-      const note = screen.getByText('เตือนก่อนหมดอายุ 30 วัน');
-      expect(note.closest('a')).toBeNull();
+    it('the old note "เตือนก่อนหมดอายุ N วัน" is gone from home (not in round 9; the setting is on the settings page)', () => {
+      open('#/', house({ houseItems }));
+      expect(screen.queryByText(/เตือนก่อนหมดอายุ/)).not.toBeInTheDocument();
     });
 
     it('nothing to care for: a message with a tick icon', () => {
@@ -377,11 +377,11 @@ describe('home screen', () => {
       const list = screen.getByRole('heading', { name: 'สมาชิกในบ้าน' }).closest('section') as HTMLElement;
       const rows = within(list).getAllByRole('listitem').map((li) => li.textContent);
       expect(rows).toEqual([
-        'TTest Person Aยา 4 รายการใกล้หมด', // Test Person A: 4 active, one running low (stopped one not counted)
-        'TTest Person Bยา 1 รายการจัดยาเอง · เราดูแลสต๊อก',
-        'TTest Person Dยา 1 รายการยังไม่ใส่จำนวนยา',
+        'Test Person Aยา 4 รายการ', // Test Person A: 4 active (stopped one not counted); round 9 has no status chip
+        'Test Person Bยา 1 รายการ · จัดยาเอง',
+        'Test Person Dยา 1 รายการ',
       ]);
-      expect(within(list).queryByRole('link')).not.toBeInTheDocument(); // member pages are not built yet
+      expect(within(list).getAllByRole('link')).toHaveLength(3); // each row opens the member page (chevron)
     });
 
     it('enough stock, no medicine', () => {
@@ -392,15 +392,16 @@ describe('home screen', () => {
       open('#/', root);
       const list = screen.getByRole('heading', { name: 'สมาชิกในบ้าน' }).closest('section') as HTMLElement;
       expect(within(list).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
-        'TTest Person Aยา 1 รายการสต๊อกพอ',
-        'TTest Person Dยา 0 รายการยังไม่ใส่ยา',
+        'Test Person Aยา 1 รายการ',
+        'Test Person Dยา 0 รายการ',
       ]);
     });
   });
 
-  it('buttons for pages that are not built yet stay hidden', () => {
+  it('buttons for pages that are not built yet stay hidden ("เพิ่มยา" is now a real button, round 9)', () => {
     open('#/');
-    for (const name of [/เพิ่มยา/, /เปลี่ยนเกณฑ์/, /เพิ่มสมาชิก/]) {
+    expect(screen.getByRole('link', { name: 'เพิ่มยา' })).toHaveAttribute('href', '#/meds/new');
+    for (const name of [/เปลี่ยนเกณฑ์/, /เพิ่มสมาชิก/]) {
       expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
       expect(screen.queryByRole('link', { name })).not.toBeInTheDocument();
     }
@@ -420,10 +421,11 @@ describe('home screen', () => {
     expect(screen.queryByText('นี่คือข้อมูลตัวอย่าง')).not.toBeInTheDocument();
   });
 
-  it('a blank house keeps the old empty card', () => {
+  it('a blank house shows the first-run card (round 9 screen 3)', () => {
     window.location.hash = '#/';
     render(<App getToday={getToday} />);
-    expect(screen.getByText('ยังไม่มีสมาชิกหรือยา')).toBeInTheDocument();
+    expect(screen.getByText('เริ่มที่ยาตัวแรก')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'เพิ่มยาตัวแรก' })).toHaveAttribute('href', '#/meds/new');
     expect(screen.queryByText('ยาที่ต้องดูแล')).not.toBeInTheDocument();
   });
 });

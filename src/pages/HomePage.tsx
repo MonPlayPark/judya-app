@@ -1,56 +1,87 @@
+import type { CSSProperties } from 'react';
 import { isBlank } from '../domain/actions';
 import { backupAge, needsBackupWarning } from '../domain/backup';
-import { orderLines } from '../domain/order';
-import { careItems, memberCards, type CareItem, type MemberCard, type MemberStatus } from '../domain/care';
+import { careItems, memberCards, type CareItem, type MemberCard } from '../domain/care';
 import { thaiDate } from '../domain/format';
 import { todayDoses, todayProgress } from '../domain/today';
 import { Button } from '../components/Button';
-import { Card, CardTitle, Pill } from '../components/Card';
-import { SubLine } from '../components/SubLine';
-import {
-  BagIcon,
-  CalendarCheckIcon,
-  CalendarWarnIcon,
-  CheckCircleIcon,
-  ChevronRightIcon,
-  InfoIcon,
-  PeopleIcon,
-  WarningIcon,
-  XCircleIcon,
-} from '../components/icons';
+import { Card } from '../components/Card';
+import { CheckCircleIcon, ChevronRightIcon, InfoIcon, WarningIcon } from '../components/icons';
+import subLine from '../components/SubLine.module.css';
 import { href } from '../router';
 import { useData, useRoot } from '../state/DataContext';
+import { useDraft } from '../state/DraftContext';
 import { useToday } from '../state/useToday';
+import { avatarForIndex, avatarUrl, iconUrl, mascotUrl, type IconName, type MascotPose } from '../visual';
 import { doseView, SLOT_LABEL } from './doseView';
 import styles from './HomePage.module.css';
 
 const PREVIEW_ROWS = 3;
 
-/** Home screen (board Main). Greeting, today's medicines, what needs care, the members.
- * Hidden for now (Q12, pages not built yet): the bell, add medicine, change threshold, member pages.
- * The "สั่งยา" button (inside the care card, as on the board) is always shown and opens #/order (step 3.3b-3); the order page has
- * its own empty state.
- * Rows of house medicines in "ยาที่ต้องดูแล" open their edit page (step 3.3a). */
+/** Home screen, mockup round 9 screens 1-3 (docs/design/mockup-r9-reference.html): a flat coloured band with the mascot
+ * standing on its bottom edge, then the cards. Three states: first run (nothing yet), during the day, all done.
+ * Look only: every number comes from the same domain functions as before (todayDoses, careItems, memberCards, orderLines). */
 export function HomePage() {
   const root = useRoot();
   const { today } = useToday();
   const { loadSample, clearSample } = useData();
+  const { reset } = useDraft();
+
+  const blank = isBlank(root);
+  const doses = todayDoses(root, today);
+  const { total } = todayProgress(doses);
+  const undone = doses.filter((d) => !d.done);
+  const allDone = !blank && total > 0 && undone.length === 0;
 
   return (
     <>
-      <header className={styles.header}>
-        <h1 className={styles.greeting}>สวัสดีค่ะ</h1>
-        <p className={styles.date}>{thaiDate(today)}</p>
-      </header>
+      {blank ? (
+        <Hero title="ยินดีต้อนรับค่ะ" sub="มาเริ่มจัดยาให้คนที่คุณดูแลกัน" />
+      ) : allDone ? (
+        <Hero done title="เก่งมากค่ะ" sub={`${thaiDate(today)} · จัดยาครบทุกรายการแล้ว`} />
+      ) : (
+        <Hero
+          title="สวัสดีค่ะ"
+          sub={total > 0 ? `วันนี้ยังเหลือยา ${undone.length} รายการ` : undefined}
+          date={thaiDate(today)}
+        />
+      )}
       <div className={styles.body}>
-        {isBlank(root) ? (
-          <Card>
-            <p className={styles.line}>
-              <InfoIcon />
-              <strong>ยังไม่มีสมาชิกหรือยา</strong>
-            </p>
-            <Button onClick={loadSample}>ลองดูด้วยข้อมูลตัวอย่าง</Button>
-          </Card>
+        {blank ? (
+          <>
+            <section className={`${styles.card} ${styles.empty}`}>
+              <img className={styles.mascotPill} src={mascotUrl('pill')} alt="น้องเภสัชถือแคปซูลยา" />
+              <h2 className={styles.heading}>เริ่มที่ยาตัวแรก</h2>
+              <ol className={styles.steps}>
+                <li>
+                  <span className={styles.stepNo}>1</span>พิมพ์ชื่อยา
+                </li>
+                <li>
+                  <span className={styles.stepNo}>2</span>เลือกว่ายาของใคร
+                </li>
+                <li>
+                  <span className={styles.stepNo}>3</span>ตั้งวิธีกินและบันทึก
+                </li>
+              </ol>
+              <a className={styles.btn} href={href('/meds/new')} onClick={() => reset()}>
+                <Pic icon="add-medicine" />
+                เพิ่มยาตัวแรก
+              </a>
+              <p className={styles.note}>ยังไม่ต้องเพิ่มสมาชิกก่อน แอปจะถามตอนเลือกว่ายาของใคร</p>
+            </section>
+            <section className={styles.card}>
+              <h2 className={styles.heading}>
+                <Pic icon="household-medicine" size="40" />
+                ยาสามัญประจำบ้าน
+              </h2>
+              <p className={`${styles.note} ${styles.noteTop}`}>
+                บันทึกยาที่ใช้ร่วมกันทุกคน เช่น พาราเซตามอล แอปจะเตือนวันหมดอายุให้
+              </p>
+            </section>
+            <Button variant="secondary" onClick={loadSample}>
+              ลองดูด้วยข้อมูลตัวอย่าง
+            </Button>
+          </>
         ) : (
           <>
             {root.meta.isSample && (
@@ -66,12 +97,36 @@ export function HomePage() {
             )}
             <BackupReminder />
             <TodayCard />
-            <CareCard />
-            <MembersCard />
+            <CareCard allDone={allDone} />
+            <MembersCard allDone={allDone} />
+            <a className={styles.btn} href={href('/meds/new')} onClick={() => reset()}>
+              <Pic icon="add-medicine" />
+              เพิ่มยา
+            </a>
           </>
         )}
       </div>
     </>
+  );
+}
+
+/** One image from visual.ts as a round icon. Decorative: the words next to it carry the meaning. */
+function Pic({ icon, size = '32' }: { icon: IconName; size?: '32' | '40' }) {
+  return <img className={size === '40' ? styles.icon40 : styles.icon32} src={iconUrl(icon)} alt="" />;
+}
+
+/** Flat colour band (blue; green when all done). The mascot stands on the bottom edge, outside any member card. */
+function Hero({ title, sub, date, done }: { title: string; sub?: string | undefined; date?: string; done?: boolean }) {
+  const pose: MascotPose = 'wave';
+  return (
+    <header className={`${styles.hero} ${done ? styles.heroDone : ''}`}>
+      <div className={styles.heroText}>
+        <h1 className={styles.heroTitle}>{title}</h1>
+        {sub && <p className={styles.heroSub}>{sub}</p>}
+        {date && <span className={styles.datePill}>{date}</span>}
+      </div>
+      <img className={styles.mascotHero} src={mascotUrl(pose)} alt="น้องเภสัชโบกมือ" />
+    </header>
   );
 }
 
@@ -95,6 +150,36 @@ function BackupReminder() {
   );
 }
 
+// Ring geometry = tokens --ring-radius / --ring-dasharray (an SVG attribute cannot read a CSS variable).
+const RING_R = 52;
+const RING_LEN = 326.73;
+
+function ProgressRing({ done, total, percent }: { done: number; total: number; percent: number }) {
+  const frac = total === 0 ? 0 : done / total;
+  return (
+    <div className={styles.ring} role="progressbar" aria-label="จัดยาวันนี้แล้ว" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}>
+      <svg viewBox="0 0 120 120" aria-hidden="true">
+        <circle cx="60" cy="60" r={RING_R} fill="none" stroke="var(--color-primary-tint)" strokeWidth="8" />
+        <circle
+          cx="60"
+          cy="60"
+          r={RING_R}
+          fill="none"
+          stroke="var(--color-success)"
+          strokeWidth="8"
+          strokeLinecap="round"
+          strokeDasharray={RING_LEN}
+          strokeDashoffset={RING_LEN * (1 - frac)}
+        />
+      </svg>
+      <div className={styles.ringNum}>
+        <b>{done}</b>
+        <span>จาก {total}</span>
+      </div>
+    </div>
+  );
+}
+
 function TodayCard() {
   const root = useRoot();
   const { today } = useToday();
@@ -102,114 +187,121 @@ function TodayCard() {
   const { done, total, percent } = todayProgress(doses);
   const undone = doses.filter((d) => !d.done);
   const shown = undone.slice(0, PREVIEW_ROWS);
-  const more = undone.length - shown.length; // only what is still to do, so it never contradicts "จัดครบแล้ว"
+  const more = undone.length - shown.length; // only what is still to do, so it never contradicts "ยาวันนี้ครบแล้ว"
+
+  if (total > 0 && undone.length === 0) {
+    return (
+      <a className={`${styles.card} ${styles.empty}`} href={href('/today')}>
+        <img className={styles.mascotOk} src={mascotUrl('ok')} alt="น้องเภสัชทำสัญลักษณ์โอเค" />
+        <h2 className={`${styles.heading} ${styles.headingOk}`}>ยาวันนี้ครบแล้ว</h2>
+        <span className={`${styles.chip} ${styles.chipOk}`}>
+          <CheckCircleIcon />
+          จัดครบ {total} จาก {total}
+        </span>
+      </a>
+    );
+  }
 
   return (
-    <Card href={href('/today')}>
-      <div className={styles.cardTop}>
-        <CardTitle icon={<CalendarCheckIcon />}>ยาวันนี้</CardTitle>
-        {total > 0 && (
-          <Pill tone="info">
-            จัดแล้ว {done} จาก {total}
-          </Pill>
-        )}
-      </div>
+    <a className={styles.card} href={href('/today')}>
       {total === 0 ? (
-        <p className={styles.state}>
-          <InfoIcon />
-          วันนี้ไม่มียาที่ต้องจัด
-        </p>
+        <>
+          <h2 className={styles.heading}>
+            <Pic icon="today-meds" size="40" />
+            ยาวันนี้
+          </h2>
+          <p className={styles.state}>
+            <InfoIcon />
+            วันนี้ไม่มียาที่ต้องจัด
+          </p>
+        </>
       ) : (
         <>
-          <div
-            className={styles.bar}
-            role="progressbar"
-            aria-label="จัดยาวันนี้แล้ว"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={percent}
-          >
-            <div className={styles.barFill} style={{ width: `${percent}%` }} />
+          <div className={styles.todayTop}>
+            <ProgressRing done={done} total={total} percent={percent} />
+            <div className={styles.todayText}>
+              <h2 className={styles.heading}>
+                <Pic icon="today-meds" size="40" />
+                ยาวันนี้
+              </h2>
+              <span className={styles.sub}>จัดแล้ว {done} จาก {total}</span>
+            </div>
           </div>
-          {undone.length === 0 && (
-            <p className={styles.state}>
-              <CheckCircleIcon />
-              จัดครบแล้ว
-            </p>
-          )}
-          {shown.map((d) => {
-            const v = doseView(root, d);
-            return (
-              <div key={d.key} className={styles.doseRow}>
-                <span className={styles.slot}>{d.when.kind === 'slot' ? SLOT_LABEL[d.when.slot] : d.when.time}</span>
-                <span className={styles.ring} aria-hidden="true" />
-                <div>
-                  <div className={styles.medName}>
-                    {v.name}
-                    {v.everyHours !== undefined && ` ทุก ${v.everyHours} ชม.`}
-                  </div>
-                  <div className={styles.sub}>
-                    <SubLine text={`${v.who} · ${v.amount}`} status="ยังไม่จัด" />
+          <div className={styles.doses}>
+            {shown.map((d) => {
+              const v = doseView(root, d);
+              return (
+                <div key={d.key} className={styles.doseRow}>
+                  <span className={styles.dot} aria-hidden="true" />
+                  <div>
+                    <div className={styles.medName}>
+                      {v.name}
+                      {v.everyHours !== undefined && ` ทุก ${v.everyHours} ชม.`}
+                    </div>
+                    <div className={styles.sub}>
+                      {v.who} · {v.amount} · <span>{d.when.kind === 'slot' ? SLOT_LABEL[d.when.slot] : d.when.time}</span>{' '}
+                      <span className={subLine.status}>· ยังไม่จัด</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
           <div className={styles.seeAll}>
             <span>{more > 0 ? `ดูทั้งหมด (อีก ${more} รายการ)` : 'ดูทั้งหมด'}</span>
             <ChevronRightIcon />
           </div>
         </>
       )}
-    </Card>
+    </a>
   );
 }
 
-function CareRows({ items }: { items: CareItem[] }) {
-  return (
-    <ul className={styles.careList}>
-      {items.map((i) => {
-        const inner = (
-          <>
-            <div>
-              <div className={styles.medName}>{i.name}</div>
-              <div className={styles.sub}>{i.sub}</div>
-            </div>
-            <span className={`${styles.right} ${i.group === 'expired' ? styles.rightRed : styles.rightAmber}`}>{i.right}</span>
-          </>
-        );
-        return (
-          <li key={`${i.group}-${i.id}`} className={styles.careRow}>
-            {/* A house medicine opens its edit page (step 3.3a); the rows of members' medicines are not links yet. */}
-            {i.kind === 'house' ? (
-              <a className={styles.careLink} href={href(`/house/${encodeURIComponent(i.id)}`)}>
-                {inner}
-              </a>
-            ) : (
-              inner
-            )}
-          </li>
-        );
-      })}
-    </ul>
-  );
+/** How one care row reads in round 9: a line "owner · ยาจะหมดใน" and a day number in coloured text (no chip, no red for
+ * "running low"). The number is read back from the text the domain already built (`CareItem.right`), never recomputed. */
+interface CareView {
+  sub: string;
+  value?: string;
+  unit?: string;
+  text?: string;
+  danger: boolean;
+  rank: number; // expired first, then fewest days
 }
 
-function CareCard() {
+const owner = (i: CareItem): string => (i.sub.indexOf(' · ') < 0 ? i.sub : i.sub.slice(0, i.sub.indexOf(' · ')));
+
+function careView(i: CareItem): CareView {
+  const who = owner(i);
+  if (i.group === 'expired') return { sub: `${who} · หมดอายุแล้ว`, text: 'เลิกใช้', danger: true, rank: -1 };
+  const m = /^(เหลือ|อีก) (\d+) (\S+)$/.exec(i.right);
+  if (!m) {
+    const rest = i.group === 'expirySoon' ? 'หมดอายุ' : 'ยา';
+    return { sub: `${who} · ${rest}`, text: i.right, danger: false, rank: 0 };
+  }
+  const [, , n, unit] = m as unknown as [string, string, string, string];
+  const lead = i.group === 'expirySoon' ? 'หมดอายุใน' : unit === 'วัน' ? 'ยาจะหมดใน' : 'เหลือ';
+  return { sub: `${who} · ${lead}`, value: n, unit, danger: false, rank: unit === 'วัน' ? Number(n) : 0 };
+}
+
+function CareCard({ allDone }: { allDone: boolean }) {
   const root = useRoot();
   const { today } = useToday();
   const care = careItems(root, today);
-  const warnDays = root.settings.expiryWarnDays;
-  const orderCount = orderLines(root, today).length; // the lines the order page lists
+  const rows = [...care.expired, ...care.lowStock, ...care.expirySoon]
+    .map((item) => ({ item, view: careView(item) }))
+    .sort((a, b) => a.view.rank - b.view.rank); // stable: same rank keeps the domain order
 
   return (
-    <Card>
+    <section className={styles.card}>
       <div className={styles.cardTop}>
-        <CardTitle icon={<BagIcon />}>ยาที่ต้องดูแล</CardTitle>
+        <h2 className={styles.heading}>
+          {!allDone && <Pic icon="expiry-alert" />}
+          {allDone && care.count > 0 ? 'ยังต้องดูแล' : 'ยาที่ต้องดูแล'}
+        </h2>
         {care.count > 0 && (
-          <Pill tone="warning" icon={<WarningIcon />}>
-            {care.count}
-          </Pill>
+          <a className={styles.link} href={href('/meds')}>
+            ดูทั้งหมด {care.count}
+          </a>
         )}
       </div>
 
@@ -220,95 +312,91 @@ function CareCard() {
         </p>
       )}
 
-      {care.expired.length > 0 && (
-        <>
-          <div className={`${styles.banner} ${styles.bannerRed}`}>
-            <XCircleIcon />
-            <div>
-              <div className={styles.bannerTitle}>หมดอายุแล้ว</div>
-              <div>ไม่ควรใช้ · {care.expired.length} รายการ</div>
-            </div>
-          </div>
-          <CareRows items={care.expired} />
-        </>
-      )}
-      {care.lowStock.length > 0 && (
-        <>
-          {/* A plain heading: the way to the order page is the button below the list. */}
-          <h3 className={styles.groupTitle}>
-            ถึงรอบซื้อเติมสต๊อก · {care.lowStock.length} รายการ
-          </h3>
-          <CareRows items={care.lowStock} />
-        </>
-      )}
-      <a className={styles.orderBtn} href={href('/order')}>
-        {orderCount > 0 ? `สั่งยา ${orderCount} รายการ` : 'สั่งยา'}
-      </a>
-      {care.expirySoon.length > 0 && (
-        <>
-          <div className={`${styles.banner} ${styles.bannerAmber}`}>
-            <CalendarWarnIcon />
-            <div>
-              <div className={styles.bannerTitle}>ใกล้หมดอายุ</div>
-              <div>
-                หมดอายุภายใน {warnDays} วัน · {care.expirySoon.length} รายการ
+      <ul className={styles.list}>
+        {rows.map(({ item, view }) => (
+          <li key={`${item.group}-${item.id}`}>
+            <a className={styles.row} href={href(item.kind === 'house' ? `/house/${encodeURIComponent(item.id)}` : `/meds/${encodeURIComponent(item.id)}`)}>
+              <div className={styles.rowText}>
+                <div className={styles.medName}>{item.name}</div>
+                <div className={styles.sub}>{view.sub}</div>
               </div>
-            </div>
-          </div>
-          <CareRows items={care.expirySoon} />
-        </>
-      )}
-      <p className={styles.note}>เตือนก่อนหมดอายุ {warnDays} วัน</p>
-    </Card>
+              <div className={`${styles.days} ${view.danger ? styles.daysErr : styles.daysWarn}`}>
+                {view.text !== undefined ? (
+                  <span className={styles.daysText}>{view.text}</span>
+                ) : (
+                  <>
+                    <b>{view.value}</b>
+                    <span>{view.unit}</span>
+                  </>
+                )}
+              </div>
+              <span className={styles.chev}>
+                <ChevronRightIcon />
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+      <a className={styles.btnTonal} href={href('/order')}>
+        <Pic icon="order" />
+        {allDone ? 'ไปสั่งยา' : 'สั่งยา'}
+      </a>
+    </section>
   );
 }
 
-const STATUS: Record<MemberStatus, { tone: 'warning' | 'success' | 'neutral'; text: string; icon: 'warn' | 'ok' | 'info' }> = {
-  low: { tone: 'warning', text: 'ใกล้หมด', icon: 'warn' },
-  ok: { tone: 'success', text: 'สต๊อกพอ', icon: 'ok' },
-  selfManaged: { tone: 'neutral', text: 'จัดยาเอง · เราดูแลสต๊อก', icon: 'info' },
-  noMeds: { tone: 'neutral', text: 'ยังไม่ใส่ยา', icon: 'info' },
-  noStock: { tone: 'neutral', text: 'ยังไม่ใส่จำนวนยา', icon: 'info' },
+const RING: Record<MemberCard['color'], string> = {
+  blue: 'var(--color-member-blue)',
+  green: 'var(--color-member-green)',
+  yellow: 'var(--color-member-yellow)',
+  gray: 'var(--color-border-strong)', // O6 answered by the owner: no new token, reuse the existing grey
 };
 
-const AVATAR: Record<MemberCard['color'], string> = {
-  blue: styles.avBlue ?? '',
-  green: styles.avGreen ?? '',
-  yellow: styles.avYellow ?? '',
-  gray: styles.avGray ?? '',
-};
-
-/** First letter of the name, skipping Thai leading vowels (เ แ โ ใ ไ) that cannot stand alone. */
-const initial = (name: string): string => Array.from(name.trim()).find((c) => !'เแโใไ'.includes(c)) ?? '?';
-
-function MembersCard() {
+function MembersCard({ allDone }: { allDone: boolean }) {
   const root = useRoot();
   const { today } = useToday();
   const cards = memberCards(root, today);
   if (cards.length === 0) return null;
+  const withDoses = new Set(todayDoses(root, today).map((d) => d.personId));
 
   return (
-    <Card>
-      <CardTitle icon={<PeopleIcon />}>สมาชิกในบ้าน</CardTitle>
+    <section className={styles.card}>
+      <h2 className={styles.heading}>สมาชิกในบ้าน</h2>
       <ul className={styles.members}>
-        {cards.map((m) => {
-          const s = STATUS[m.status];
+        {cards.map((m, index) => {
+          const self = root.persons.find((p) => p.id === m.personId)?.selfManaged === true;
+          const finished = allDone && withDoses.has(m.personId);
           return (
-            <li key={m.personId} className={styles.member}>
-              <span className={`${styles.avatar} ${AVATAR[m.color]}`} aria-hidden="true">
-                {initial(m.name)}
-              </span>
-              <div className={styles.memberText}>
-                <div className={styles.medName}>{m.name}</div>
-                <div className={styles.sub}>ยา {m.medCount} รายการ</div>
-              </div>
-              <Pill tone={s.tone} icon={s.icon === 'warn' ? <WarningIcon /> : s.icon === 'ok' ? <CheckCircleIcon /> : <InfoIcon />} className={styles.status}>
-                {s.text}
-              </Pill>
+            <li key={m.personId}>
+              <a className={styles.memberRow} href={href(`/members/${encodeURIComponent(m.personId)}`)}>
+                <img
+                  className={styles.avatar}
+                  src={avatarUrl(avatarForIndex(index))}
+                  alt=""
+                  style={{ '--ring-color': RING[m.color] } as CSSProperties}
+                />
+                <div className={styles.rowText}>
+                  <div className={styles.medName}>{m.name}</div>
+                  <div className={styles.sub}>
+                    ยา {m.medCount} รายการ{self && ' · จัดยาเอง'}
+                    {finished && ' · จัดครบวันนี้'}
+                  </div>
+                </div>
+                {finished ? (
+                  <span className={`${styles.chip} ${styles.chipOk}`}>
+                    <CheckCircleIcon />
+                    ครบ
+                  </span>
+                ) : (
+                  <span className={styles.chev}>
+                    <ChevronRightIcon />
+                  </span>
+                )}
+              </a>
             </li>
           );
         })}
       </ul>
-    </Card>
+    </section>
   );
 }

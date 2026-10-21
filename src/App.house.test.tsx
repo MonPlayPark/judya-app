@@ -394,12 +394,12 @@ describe('home: ยาที่ต้องดูแล includes house medicines
       { id: 'd', name: 'ยาสามัญ สต๊อกพอ', stock: { qty: 50, unit: 'เม็ด' }, lowAt: 5 },
     ];
     open('#/', withHouse(...items));
-    expect(screen.getByText('ถึงรอบซื้อเติมสต๊อก · 2 รายการ')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'ดูทั้งหมด 3' })).toBeInTheDocument(); // 3 medicines need care (round 9: no group headings)
     const low = screen.getByRole('link', { name: /ยาสามัญ ใกล้หมด/ });
     expect(low).toHaveAttribute('href', '#/house/a');
-    expect(within(low).getByText('เหลือ 5 เม็ด')).toBeInTheDocument();
+    expect(low).toHaveTextContent('เหลือ5เม็ด');
     expect(within(screen.getByRole('link', { name: /ยาสามัญ หมดแล้ว/ })).getByText('หมดแล้ว')).toBeInTheDocument();
-    expect(within(screen.getByRole('link', { name: /ยาสามัญ หมดอายุ/ })).getByText('เกิน 1 วัน')).toBeInTheDocument();
+    expect(within(screen.getByRole('link', { name: /ยาสามัญ หมดอายุ/ })).getByText('เลิกใช้')).toBeInTheDocument();
     expect(screen.queryByText('ยาสามัญ สต๊อกพอ')).not.toBeInTheDocument();
   });
 

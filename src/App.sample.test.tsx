@@ -62,13 +62,13 @@ describe('sample house on a Sunday', () => {
     expect(screen.queryByRole('group', { name: 'กรองตามสมาชิก' })).not.toBeInTheDocument();
   });
 
-  it('home: when everything is prepared the link says only "ดูทั้งหมด"', () => {
+  it('home: when everything is prepared the card says "ยาวันนี้ครบแล้ว" (round 9) and keeps its link', () => {
     openSample('#/today');
     for (const box of screen.getAllByRole('checkbox')) fireEvent.click(box);
     go('#/');
     const card = screen.getByRole('link', { name: /ยาวันนี้/ });
-    expect(within(card).getByText('จัดครบแล้ว')).toBeInTheDocument();
-    expect(within(card).getByText('ดูทั้งหมด')).toBeInTheDocument();
+    expect(within(card).getByText('ยาวันนี้ครบแล้ว')).toBeInTheDocument();
+    expect(within(card).getByText('จัดครบ 4 จาก 4')).toBeInTheDocument();
     expect(within(card).queryByText(/อีก \d+ รายการ/)).not.toBeInTheDocument();
   });
 

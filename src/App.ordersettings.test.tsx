@@ -347,9 +347,9 @@ describe('the "สั่งยา" buttons and links (step 3.3b-3)', () => {
     expect(screen.getByRole('link', { name: 'สั่งยา' })).toHaveAttribute('href', '#/order');
   });
 
-  it('the home button counts the lines of the order page (1 regular + 1 house = 2 รายการ)', () => {
+  it('the home button says only "สั่งยา" (round 9; it used to add the count of lines)', () => {
     open('#/', root());
-    expect(screen.getByRole('link', { name: 'สั่งยา 2 รายการ' })).toHaveAttribute('href', '#/order');
+    expect(screen.getByRole('link', { name: 'สั่งยา' })).toHaveAttribute('href', '#/order');
   });
 
   it.each(['#/meds/a1', '#/house/h1', '#/settings'])('%s has no order link (not asked)', (hash) => {
