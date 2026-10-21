@@ -432,8 +432,8 @@ describe('edit form (#/members/:id/edit)', () => {
 describe('taking a member out and putting them back', () => {
   it('the confirm box: cancel changes nothing; confirming hides the member everywhere; putting back brings everything back', () => {
     open('#/');
-    expect(screen.getByText('สมาชิกทดสอบ ก · มี 14 เม็ด')).toBeInTheDocument(); // the numbers before taking ก out
-    expect(screen.getByText('เหลือ 7 วัน')).toBeInTheDocument();
+    expect(screen.getByText('สมาชิกทดสอบ ก · ยาจะหมดใน')).toBeInTheDocument(); // the numbers before taking ก out (round 9 row: owner line + day number)
+    expect(screen.getByText('7')).toBeInTheDocument();
     nav('#/members/pA/edit');
     const before = JSON.stringify(stored());
 
@@ -482,8 +482,8 @@ describe('taking a member out and putting them back', () => {
     nav('#/today');
     expect(todayRows()).toHaveLength(3);
     nav('#/');
-    expect(screen.getByText('สมาชิกทดสอบ ก · มี 14 เม็ด')).toBeInTheDocument(); // exactly the same numbers as before
-    expect(screen.getByText('เหลือ 7 วัน')).toBeInTheDocument();
+    expect(screen.getByText('สมาชิกทดสอบ ก · ยาจะหมดใน')).toBeInTheDocument(); // exactly the same numbers as before (round 9 row)
+    expect(screen.getByText('7')).toBeInTheDocument();
     nav('#/meds');
     expect(screen.getByRole('heading', { name: 'สมาชิกทดสอบ ก' })).toBeInTheDocument();
     expect(JSON.stringify(stored().assignments)).toBe(JSON.stringify(JSON.parse(before).assignments)); // medicines untouched

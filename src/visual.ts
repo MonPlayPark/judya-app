@@ -1,5 +1,5 @@
 // Typed access to the visual-refresh images in src/assets/visual (spec 3). SVG is the main format.
-// Screens do not use these yet (V2 onwards). To change the format later, only the glob patterns below change.
+// To change the format later, only the glob patterns below change.
 
 export const ICON_NAMES = [
   'nav-home', 'nav-medicines', 'nav-members', 'nav-settings', 'today-meds', 'restock', 'add-medicine',
@@ -32,3 +32,6 @@ function pick(map: UrlMap, folder: string, name: string): string {
 export const iconUrl = (name: IconName): string => pick(icons, 'icons', name);
 export const avatarUrl = (name: AvatarName): string => pick(avatars, 'avatars', name);
 export const mascotUrl = (pose: MascotPose): string => pick(mascot, 'mascot', pose);
+
+/** Avatar of the n-th member in the list (0-based): first member = avatar-01, wraps after 12. Nothing is stored. */
+export const avatarForIndex = (index: number): AvatarName => AVATAR_NAMES[index % AVATAR_NAMES.length] as AvatarName;

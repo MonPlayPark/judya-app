@@ -116,12 +116,12 @@ describe('thresholds apply at once, with no save button', () => {
     });
     expect(saveRoot({ ...base, meta: { ...base.meta, lastBackupAt: CLOCK }, settings: { ...base.settings, expiryWarnDays: 7 } }).ok).toBe(true);
     open('#/');
-    expect(screen.queryByText('อีก 14 วัน')).not.toBeInTheDocument(); // 7-day window: not listed
+    expect(screen.queryByText('14')).not.toBeInTheDocument(); // 7-day window: not listed (round 9: the day number is its own text)
     go('#/settings');
     fireEvent.click(chip('เตือนยาใกล้หมดอายุ', '30 วัน'));
     go('#/');
-    expect(screen.getByText('อีก 14 วัน')).toBeInTheDocument();
-    expect(screen.getByText('เตือนก่อนหมดอายุ 30 วัน')).toBeInTheDocument();
+    expect(screen.getByText('14')).toBeInTheDocument();
+    expect(screen.getByText('14').closest('a')).toHaveTextContent('Sample Med 5 mg');
   });
 
   it('a save that fails writes the reason, and the value on screen does not change', () => {

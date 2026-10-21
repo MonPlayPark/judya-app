@@ -382,3 +382,23 @@ Order page, price boxes, "ข้อความสั่งยาไปร้า
 - **Inputs ≥ 16px**: one rule `html body :is(input, textarea, select) { font-size: max(16px, 1rem) }` in `global.css`, so it also holds at "ปกติ" and for inputs added later.
 - **user-select: none** on `button, nav, h1, h2, h3` only.
 - **Overflow check**: `npm run check:overflow` (script `scripts/check-overflow.mjs`, `playwright-core`, needs a built `dist`). It is not part of `npm test` or CI because it needs Chromium.
+
+## Step V2 (21 ต.ค. 2569) — home screen, mockup round 9
+
+### Answered by the owner
+- O6 (gray member ring): use the existing `--color-border-strong` (#80868B). No new token.
+- Avatars: no field in the data. The n-th member in the list shows `avatar-0n` (wraps after 12). Nothing is stored. Note: if a member is removed, later members shift one avatar; the rule is easy to change (`avatarForIndex`).
+
+### Decisions taken (easy to change)
+- **Mockup source**: round 9 read from the PR #20 branch; where the spec and the mockup differ, the mockup wins.
+- **Greeting**: kept "สวัสดีค่ะ" (the mockup says "สวัสดีตอนบ่ายค่ะ" for the sample time). A time-of-day greeting needs the clock and words for the other times; not decided.
+- **Left out because the data or the brief does not cover it**: "ถัดไป 18:00 · เย็น" under "ยาวันนี้" (slots have no clock time); "พรุ่งนี้เริ่มจัดเช้า N รายการ" and "สั่ง 28 เม็ด" on the all-done screen; ticking a dose from home (the card still opens "ยาวันนี้").
+- **Kept from before**: "ลองดูด้วยข้อมูลตัวอย่าง" button on the first-run screen (below the cards; the mockup has none, but it is the only way to load the sample), the sample banner and the backup reminder, "ดูทั้งหมด (อีก N รายการ)" text, "จัดแล้ว N จาก M" and "ยังไม่จัด" next to each dose (status needs words).
+- **Care rows**: the day number is read back from `CareItem.right` (text built by `careItems`), never recomputed. Sort: expired first, then fewest days; house medicines counted in pieces and "หมดแล้ว" count as 0 days (most urgent). Row text: expired "เลิกใช้"; stock days "ยาจะหมดใน N วัน"; expiry "หมดอายุใน N วัน"; house stock "เหลือ N เม็ด". The old detail lines (expiry date, "มี 14 เม็ด", group banners, "เตือนก่อนหมดอายุ N วัน") are not in round 9 and are gone from home.
+- **New links** (the mockup shows a chevron on every row): care rows open `#/meds/:id` (house: `#/house/:id`), member rows open `#/members/:id`, "ดูทั้งหมด N" opens `#/meds`, "เพิ่มยา" / "เพิ่มยาตัวแรก" open `#/meds/new` (form reset like on the medicines page). The mockup does not name these targets.
+- **All-done member rows**: "ยา N รายการ · จัดครบวันนี้" plus chip "ครบ" (kept the count of medicines).
+- **Card icons** follow the mockup: "ยาวันนี้" (today-meds), "ยาที่ต้องดูแล" (expiry-alert, not on the all-done screen), "ยาสามัญประจำบ้าน" (household-medicine), buttons (order, add-medicine). "สมาชิกในบ้าน" has no icon in the mockup, so none.
+- **Tokens changed to round 9**: `--ring-size` 7.5rem to 6rem, `--text-ring-size/line` 34/38 to 28/32px; added `--mascot-hero` (100px) and `--mascot-done` (120px).
+
+### Old UI tests whose expected text changed (all home screen, logic unchanged)
+`App.test` (h1 on a blank house: "ยินดีต้อนรับค่ะ"); `App.data` (`EMPTY_TEXT`: "เริ่มที่ยาตัวแรก", 6 uses); `App.screens` (all done text; care card three groups to one list; expiry note removed; member rows text and links; "เพิ่มยา" now a link; blank house card); `App.sample` (all-done card); `App.house` (care rows of house medicines); `App.members` (care row numbers after putting a member back); `App.settings` (care row after changing the warn days); `App.ordersettings` (button says "สั่งยา" without the count).

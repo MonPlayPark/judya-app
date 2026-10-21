@@ -8,7 +8,7 @@ import { App } from './App';
 import { PREV_KEY, STORAGE_KEY } from './domain/storage';
 import { requestPersistence, resetPersistenceAsked } from './state/persist';
 
-const EMPTY_TEXT = 'ยังไม่มีสมาชิกหรือยา';
+const EMPTY_TEXT = 'เริ่มที่ยาตัวแรก'; // round 9 first-run card heading (was 'ยังไม่มีสมาชิกหรือยา')
 const SAMPLE_TEXT = 'นี่คือข้อมูลตัวอย่าง';
 
 const click = (el: HTMLElement) => fireEvent.click(el);

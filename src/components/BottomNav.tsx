@@ -1,20 +1,19 @@
-import type { ReactNode } from 'react';
 import { href, useRoute } from '../router';
-import { HomeIcon, PeopleIcon, PillIcon, SettingsIcon } from './icons';
+import { iconUrl, type IconName } from '../visual';
 import styles from './BottomNav.module.css';
 
 interface Tab {
   path: string;
   label: string;
-  icon: ReactNode;
+  icon: IconName;
 }
 
 // Order and labels follow the design canvas (BRIEF section 1).
 export const TABS: Tab[] = [
-  { path: '/', label: 'หน้าแรก', icon: <HomeIcon /> },
-  { path: '/meds', label: 'ยา', icon: <PillIcon /> },
-  { path: '/members', label: 'สมาชิก', icon: <PeopleIcon /> },
-  { path: '/settings', label: 'ตั้งค่า', icon: <SettingsIcon /> },
+  { path: '/', label: 'หน้าแรก', icon: 'nav-home' },
+  { path: '/meds', label: 'ยา', icon: 'nav-medicines' },
+  { path: '/members', label: 'สมาชิก', icon: 'nav-members' },
+  { path: '/settings', label: 'ตั้งค่า', icon: 'nav-settings' },
 ];
 
 // The house-medicine pages (/house/...) belong to the "ยา" tab.
@@ -34,7 +33,7 @@ export function BottomNav() {
           href={href(tab.path)}
           aria-current={isActive(tab.path, path) ? 'page' : undefined}
         >
-          <span className={styles.icon}>{tab.icon}</span>
+          <img className={styles.icon} src={iconUrl(tab.icon)} alt="" />
           {tab.label}
         </a>
       ))}

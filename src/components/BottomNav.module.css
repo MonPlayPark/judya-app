@@ -22,18 +22,16 @@
 }
 
 .icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 64px;
-  height: 32px;
-  border-radius: var(--radius-pill);
+  width: var(--icon-32);
+  height: var(--icon-32);
+  border-radius: 50%;
 }
 
 .item[aria-current='page'] {
   color: var(--color-primary-ink);
+  font-weight: var(--weight-bold);
 }
 
 .item[aria-current='page'] .icon {
-  background: var(--color-primary-tint);
+  box-shadow: 0 0 0 3px var(--color-primary);
 }

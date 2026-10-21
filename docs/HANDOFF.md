@@ -2,6 +2,26 @@
 
 Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every session.
 
+## Step V2 — home screen, mockup round 9 screens 1-3 (21 ต.ค. 2569)
+
+Branch `claude/homepage-v2-mockup-r9-s6keiw`. Look only: `src/domain/**`, `src/state/**`, `judya.v2` untouched; nothing new is written to storage. The mockup was read from the branch of PR #20 (`docs/design/mockup-r9-reference.html`), which was not merged yet when this was built.
+
+### Done
+- `HomePage.tsx` + CSS rewritten for three states: during the day (screen 1), all done (screen 2, green band, mascot `ok`), first run with no medicine (screen 3, mascot `pill`). Flat band with mascot `wave` standing on its bottom edge; ring 96px; cards "ยาวันนี้", "ยาที่ต้องดูแล", "สมาชิกในบ้าน"; button "เพิ่มยา".
+- "ยาที่ต้องดูแล": one list sorted by urgency (expired, then fewest days), member name on every row, day number as coloured text without a chip, expired = "เลิกใช้", button "สั่งยา" ("ไปสั่งยา" when all done), link "ดูทั้งหมด N".
+- Member rows: avatar (n-th member = `avatar-0n`, wraps after 12, `avatarForIndex` in `src/visual.ts`), name, "ยา N รายการ", chevron, no status chip. Ring colour = the member's own colour; gray uses `--color-border-strong`.
+- Bottom nav uses the new icons (`nav-*`), active tab has a ring and bold label.
+- Tokens: ring size 96px, ring number 28/32, `--mascot-hero`, `--mascot-done` (round 9 values).
+
+### Checks
+`npm test` 885 passed (same count; 17 tests had their expected home text changed, listed in `docs/DECISIONS.md`). `npm run build` passes. `npm run check:overflow`: 192 page checks, 0 problems. App size 1,251,679 B (dist), over the 1 MB goal (O5).
+
+### Owner's S24 test list for V2
+Home looks like mockup screens 1, 2, 3 (blank house = first run; sample data = screen 1; tick everything on "ยาวันนี้" = screen 2) · mascot stands on the bottom edge of the band and is not inside a member card · text readable at all 3 font sizes · tap "สั่งยา", "เพิ่มยา", a care row, a member row, the "ยาวันนี้" card, bottom nav · avatar of the 4th member (gray) has a grey ring.
+
+### Next
+V3 medicines list, add, detail.
+
 ## Step V1 — visual refresh foundation (21 ต.ค. 2569)
 
 Branch `ccr-216f9d24-7b2o75` (look only; no screen changed; `src/domain/**`, `src/state/**`, `judya.v2` and old logic tests untouched). Spec: `docs/design/visual-refresh-spec.md`.
