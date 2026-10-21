@@ -364,3 +364,21 @@ Order page, price boxes, "ข้อความสั่งยาไปร้า
 - **Member page**: quick buttons are now three in a 2-column grid (the third sits on a second row).
 - **Old test turned around**: `App.members.test.tsx` "hides what is not built yet: share to doctor, …" -> the share link is now checked present; the rest of that list (สรุปพบแพทย์, add allergy, เร็ว ๆ นี้) still hidden. No other old test changed.
 - No schema change, no storage write, no network call; `downloadFile` / `isAbort` in `state/backupFile.ts` are now exported (no behaviour change).
+
+## Step V1 (21 ต.ค. 2569) — visual refresh foundation (spec: `docs/design/visual-refresh-spec.md`)
+
+### Open questions for the owner
+| # | Question | What was done meanwhile |
+|---|---|---|
+| O4 | **Default font size.** The spec says "normal" = 93%, but 93% makes the 15px minimum (nav labels) 13.95px and the 16px lines 14.9px, below the 15px rule in CLAUDE.md (risk K4). Keep "กลาง" (100%) as the default, or accept "ปกติ" (93%)? | Default is **กลาง (m, 100%)** in `src/prefs/fontSize.ts` (`DEFAULT_FONT_SIZE`). One line to change. |
+| O5 | **App size.** With all 48 SVG images in use the build is 1.19 MiB (1,246,210 bytes) against the 1 MB goal; the images add about 424 KB. Which number counts (whole `dist` folder, offline cache, or download size)? Options: minify the SVG files (svgo), drop the mascot from the offline cache, or accept. | Nothing is dropped. Today the images are not imported by any screen, so the build is still 823,618 bytes. The `.webp` files are kept (not imported, not in the build) as asked. |
+| O6 | Spec lists member ring colours blue / green / yellow only; the data model has a 4th colour, gray. | No gray token invented. Ask before V4. |
+
+### Decisions taken (easy to change)
+- **Where things are**: `src/visual.ts` (typed image helper: `IconName`, `AvatarName`, `MascotPose` unions, `iconUrl` / `avatarUrl` / `mascotUrl`; points at `.svg`), `src/prefs/fontSize.ts` (logic + `useFontSize` hook), tokens in `src/styles/tokens.css`. `src/domain/**` and `src/state/**` untouched.
+- **Font size**: `<html data-fs="n|m|l">` → html `font-size` 93% / 100% / 115% (percent, so the Android system font size still works). Existing text, spacing and radius tokens are now rem (1rem = 16px, identical at "กลาง"). `--touch-min` and `--button-h` stay in px so tap targets never drop below 48px. Stored under `judya.fontsize` (not `judya.v2`, not in the backup). Applied in `main.tsx` before the first render.
+- **Screens are not changed**: component CSS that has fixed px sizes (icon boxes, row heights) does not scale with the font size yet; V2–V5 restyle them using the new tokens.
+- **New token names** follow the existing `--color-*` / `--text-*` style, not the mockup's short names (`--card` = `--color-surface`, `--screen` = `--color-background`, `--ok` = `--color-success-ink`, and so on); only values that were missing were added.
+- **Inputs ≥ 16px**: one rule `html body :is(input, textarea, select) { font-size: max(16px, 1rem) }` in `global.css`, so it also holds at "ปกติ" and for inputs added later.
+- **user-select: none** on `button, nav, h1, h2, h3` only.
+- **Overflow check**: `npm run check:overflow` (script `scripts/check-overflow.mjs`, `playwright-core`, needs a built `dist`). It is not part of `npm test` or CI because it needs Chromium.
