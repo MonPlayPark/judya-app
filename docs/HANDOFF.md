@@ -2,6 +2,12 @@
 
 Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every session.
 
+## Step V0 — vector images added (21 ต.ค. 2569)
+
+Branch `assets/vector-svg` adds the 48 SVG files next to the WebP files in `src/assets/visual/` (same names). Images only: nothing imports them, no change to `src/domain/**`, `src/state/**` or tests.
+Checks done: 48 of 48 names present; icons/avatars <= 12.2 KB, mascot <= 33.3 KB; no gradients, no embedded raster, no scripts or external links; looks the same as the WebP at 24/56 px.
+Next: V1 wires images in (WebP is fine until V1b), V1b switches to SVG and deletes the WebP files.
+
 ## Step A0 — visual refresh images (20 ต.ค. 2569)
 
 Branch `assets/visual-refresh` adds 48 WebP images in `src/assets/visual/` (28 icons, 12 avatars, 8 mascot poses; about 0.4 MB).
