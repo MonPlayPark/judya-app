@@ -22,10 +22,12 @@ import { PageHeader } from '../components/PageHeader';
 import { RestorePanel } from '../components/RestorePanel';
 import { OrderMessageCard } from './OrderMessageCard';
 import { ShopsCard } from './ShopsCard';
+import { FONT_SIZES, FONT_SIZE_LABELS, useFontSize } from '../prefs/fontSize';
 import { useData, useRoot } from '../state/DataContext';
 import { handOffBackup } from '../state/backupFile';
 import { refreshPersistStatus, usePersistStatus, type PersistStatus } from '../state/persist';
 import { useToday } from '../state/useToday';
+import { iconUrl } from '../visual';
 import styles from './SettingsPage.module.css';
 
 /** Settings (board Settings). Warning thresholds and the order days apply at once (no save button), then the shops, the
@@ -39,6 +41,7 @@ export function SettingsPage() {
     <>
       <PageHeader title="ตั้งค่า" />
       <div className={styles.body}>
+        <FontSizeCard />
         <DaysSetting
           icon={<BellIcon />}
           title="เตือนยาใกล้หมดอายุ"
@@ -242,6 +245,33 @@ function StorageCard() {
       <div className={styles.stack}>
         <p className={styles.hint}>{p.note}</p>
       </div>
+    </Card>
+  );
+}
+
+/** Mockup round 9 screen 5. Applies to the whole app at once; stored on this device under `judya.fontsize`
+ * (not in `judya.v2`, not in the backup file). */
+function FontSizeCard() {
+  const [size, setSize] = useFontSize();
+  return (
+    <Card>
+      <h2 className={styles.fsTitle}>
+        <img className={styles.fsIcon} src={iconUrl('nav-settings')} alt="" />
+        ขนาดตัวอักษร
+      </h2>
+      <p className={styles.fsNote}>ปรับทั้งแอปให้อ่านสบายตา</p>
+      <div className={styles.fsSeg} role="group" aria-label="เลือกขนาดตัวอักษร">
+        {FONT_SIZES.map((s) => (
+          <button key={s} type="button" className={styles.fsBtn} aria-pressed={size === s} onClick={() => setSize(s)}>
+            {FONT_SIZE_LABELS[s]}
+          </button>
+        ))}
+      </div>
+      <div className={styles.fsSample}>
+        <b>ยาตัวอย่าง A</b>
+        <span>คุณแม่ · 1 เม็ด · หลังอาหารเช้า</span>
+      </div>
+      <p className={styles.fsNote}>ถ้าผู้สูงอายุใช้ร่วมด้วย แนะนำ กลาง หรือ ใหญ่</p>
     </Card>
   );
 }

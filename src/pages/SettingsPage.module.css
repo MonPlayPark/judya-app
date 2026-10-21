@@ -110,3 +110,67 @@
 .footer p {
   margin: 0;
 }
+
+/* font size card (mockup round 9 screen 5) */
+.fsTitle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-size: var(--text-heading-size);
+  line-height: var(--text-heading-line);
+  font-weight: var(--weight-semibold);
+}
+.fsIcon {
+  flex: none;
+  width: var(--icon-32);
+  height: var(--icon-32);
+  border-radius: 50%;
+}
+.fsNote {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-note-size);
+  line-height: var(--text-note-line);
+  color: var(--color-ink-muted);
+}
+.fsSeg {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+.fsBtn {
+  min-height: var(--touch-min);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: inherit;
+  font-size: var(--text-note-size);
+  line-height: var(--text-note-line);
+  font-weight: var(--weight-medium);
+}
+.fsBtn[aria-pressed='true'] {
+  border-color: var(--color-primary);
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+  font-weight: var(--weight-semibold);
+}
+.fsSample {
+  margin-top: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+}
+.fsSample b {
+  display: block;
+  font-size: var(--text-list-title-size);
+  line-height: var(--text-list-title-line);
+  font-weight: var(--weight-semibold);
+}
+.fsSample span {
+  display: block;
+  font-size: var(--text-list-sub-size);
+  line-height: var(--text-list-sub-line);
+  color: var(--color-ink-muted);
+}
