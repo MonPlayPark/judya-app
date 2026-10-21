@@ -406,3 +406,7 @@ Order page, price boxes, "ข้อความสั่งยาไปร้า
 ## Owner's answers to O4 and O5 (21 ต.ค. 2569, after PR #19 was merged)
 - **O4 default font size**: the owner chose **"ปกติ" (n, 93%)**. `DEFAULT_FONT_SIZE` is now `'n'`. Risk K4 accepted: the smallest text is about 14px (13.95px for the 15px nav labels). If older users find it hard to read, change the default back to `'m'` (one line in `src/prefs/fontSize.ts` and its test). `CLAUDE.md` now says "Smallest text 14px at the 'normal' font size (15px or more at 'medium')".
 - **O5 app size**: the owner accepts the size if the SVG files are minified and the images look the same. To be done in V1b (not in V2).
+
+### Font size card in Settings (done in the V2 PR; the rest of Settings stays for V5)
+- Card "ขนาดตัวอักษร" is the first card on the settings page: 3 buttons (ปกติ / กลาง / ใหญ่, 48px tall, `aria-pressed`), a sample medicine line and the hint "ถ้าผู้สูงอายุใช้ร่วมด้วย แนะนำ กลาง หรือ ใหญ่" (no quotes around กลาง / ใหญ่, as the owner wrote it). Uses `useFontSize`; the choice is applied at once and stored under `judya.fontsize` only.
+- The text "จัดการยา ไม่ใช่คำแนะนำทางการแพทย์" is not added here (V5).

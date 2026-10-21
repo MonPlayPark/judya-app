@@ -450,3 +450,35 @@ describe('problem screen (unreadable data) offers restore from a backup file', (
     expect(screen.queryByRole('button', { name: 'นำกลับจากไฟล์สำรอง' })).not.toBeInTheDocument();
   });
 });
+
+describe('font size card (mockup round 9 screen 5)', () => {
+  afterEach(() => {
+    localStorage.removeItem('judya.fontsize');
+    delete document.documentElement.dataset.fs;
+  });
+
+  it('shows 3 buttons, a sample line and the hint', () => {
+    open();
+    const group = screen.getByRole('group', { name: 'เลือกขนาดตัวอักษร' });
+    expect(within(group).getAllByRole('button').map((b) => b.textContent)).toEqual(['ปกติ', 'กลาง', 'ใหญ่']);
+    expect(screen.getByRole('heading', { name: 'ขนาดตัวอักษร' })).toBeInTheDocument();
+    expect(screen.getByText('ยาตัวอย่าง A')).toBeInTheDocument();
+    expect(screen.getByText('ถ้าผู้สูงอายุใช้ร่วมด้วย แนะนำ กลาง หรือ ใหญ่')).toBeInTheDocument();
+    expect(within(group).getByRole('button', { name: 'ปกติ' })).toHaveAttribute('aria-pressed', 'true'); // default
+  });
+
+  it('a button changes data-fs on <html> at once and saves under judya.fontsize only', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sampleRoot()));
+    const before = rawStored();
+    open();
+    fireEvent.click(screen.getByRole('button', { name: 'ใหญ่' }));
+    expect(document.documentElement.dataset.fs).toBe('l');
+    expect(localStorage.getItem('judya.fontsize')).toBe('l');
+    expect(screen.getByRole('button', { name: 'ใหญ่' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'ปกติ' })).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(screen.getByRole('button', { name: 'กลาง' }));
+    expect(document.documentElement.dataset.fs).toBe('m');
+    expect(localStorage.getItem('judya.fontsize')).toBe('m');
+    expect(rawStored()).toBe(before); // judya.v2 is not touched
+  });
+});
