@@ -1,6 +1,7 @@
 # JudYa — Visual Refresh spec (for steps V1–V6)
 
 Source of truth for the new look (replaces the look of design canvas v35; v35 stays the source for screen structure and behaviour only).
+**Final design = mockup round 9, 10 screens: `docs/design/mockup-r9-reference.html`** (open it in a browser or read the HTML/CSS; images are removed, class `i-<name>` / `m-<pose>` / `avatar` show which image goes where; `i-shop` = icon `shops`). Where this doc and round 9 differ, round 9 wins. The tokens below are the same in round 9.
 Copied from the owner's project docs `design-decisions-visual-refresh.md` and `design-plan-m4v.md`, plus tokens taken from mockup round 8. No real people or real medicine data here.
 
 Rules for V1–V6: look only. Do NOT change `src/domain/**`, `src/state/**`, the `judya.v2` data model or existing logic tests. One step = one PR. Never merge yourself.
@@ -13,10 +14,10 @@ Rules for V1–V6: look only. Do NOT change `src/domain/**`, `src/state/**`, the
 | D3 | Member avatars | 12 avatars replace initials. 48px, ring 2px in a member colour, no white double ring, row height >= 80px. |
 | D4 | Mascot | "น้องเภสัช" (woman, white coat, dark outline), 8 poses: wave, pill, list, heart, point, ok, phone, sleep. Used: wave in home hero, ok on all-done, pill on empty state. Place only outside member cards (K1). |
 | D5 | Home hero | Single flat colour: blue `#D6E6FD`; all-done state green `#CDEBD6`. NO gradients. Mascot stands on the bottom edge of the band. Date is a white pill. |
-| D6 | Progress ring | 120px, stroke 8px, big number centred (34px), under it "จาก N". |
+| D6 | Progress ring | **Round 9: 96px**, stroke 8px (viewBox 120, r=52), big number centred **28px/32**, under it "จาก N". |
 | D7 | Cards | White always (all-done card also white; green only on the status chip). Padding 24px, gap between cards 20px, soft shadow. |
 | D8 | Font weights | Headings / big numbers 600 (not 700), body 400, medicine names 600. Keep secondary text colour `#5F6368`. |
-| D9 | Needs-attention card | Sorted by urgency (expired, few days, many days). Show member name on every row. Different wording: "ยาจะหมดใน N วัน" vs "หมดอายุใน N วัน". Expired shows red chip "เลิกใช้", not "0 วัน". Day number 20px. Chevron at row end. Link "ดูทั้งหมด N". |
+| D9 | Needs-attention card | Sorted by urgency (expired, few days, many days). Show member name on every row. Different wording: "ยาจะหมดใน N วัน" vs "หมดอายุใน N วัน". Expired shows red chip "เลิกใช้", not "0 วัน". Day number 20px, **shown as plain coloured text with no background chip** (round 9). Chevron at row end. Link "ดูทั้งหมด N". Tonal button "สั่งยา" (icon `order`) under the list. |
 | D10 | Font size | 3 levels in Settings: normal = 93%, medium = 100%, large = 115%. Applies to the whole app, remembered. Owner decided this over the team's warning (K4). |
 | D11 | Zoom lock | Lock pinch zoom and double-tap zoom like a native app (spec 2). |
 | D12 | Source of truth | This doc + mockup round 8 override v35 for the look only. |
@@ -70,3 +71,13 @@ Open question for the owner (put in `docs/DECISIONS.md`): default font size. Unt
 
 ## Steps after V1 (one PR each)
 V2 home · V3 medicines list, add, detail · V4 members and member page · V5 order, shops, settings (font-size card, "not medical advice" text), share summary · V6 QA by a fresh session (text >= 14px, tap >= 48px, contrast 4.5:1, no colour-only status, no gradients).
+
+
+## Round 9 corrections and decisions (supersede anything above)
+- Ring 96px / number 28px; day badges are plain coloured text (no chip background); "expired" shows red text "เลิกใช้".
+- Member rows on home: avatar, name, "ยา N รายการ" (+ " · จัดยาเอง" for self) and a chevron. No "ใกล้หมด" chip in member rows (it duplicated the needs-attention card). Member page keeps its two chips.
+- Insurance row moved: the card heading "ข้อมูลสมาชิก" has the icon `insurance`; the row has none.
+- Home needs-attention card has a tonal button "สั่งยา" (icon `order`) under the list; all-done screen has "ไปสั่งยา".
+- Screens in round 9: 1 home, 2 home all done, 3 first run, 4 member page, 5 settings font size, 6 order (interactive), 7 order empty, 8 all medicines / household tab, 9 settings shops + order message, 10 share summary to doctor.
+- Mockup names/phones/prices are sample data only. Medicine names in the HTML were replaced by "ยาตัวอย่าง A-E".
+- Unclear item in a screen: stop and ask the owner, do not guess.
