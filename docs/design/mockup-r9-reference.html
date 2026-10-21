@@ -1,0 +1,657 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>JudYa mockup round 9 (reference, no images)</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: four phone screens (home, home all done, first run, member page). Look: JudYa v2 colours, tinted header band, progress ring, colour icons, mascot in three states. */
+:root{--bg:#E8EAED;--screen:#F8F9FA;--card:#FFFFFF;--ink:#202124;--muted:#5F6368;--primary:#1A73E8;--primary-ink:#1967D2;--tint:#E8F0FE;--band:#D6E6FD;--ok:#137333;--ok-t:#E6F4EA;--warn:#8A5300;--warn-t:#FEF7E0;--err:#C5221F;--err-t:#FCE8E6;--line:#DADCE0;--strong:#80868B;--font:'Noto Sans Thai',system-ui,sans-serif;color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);padding-block:24px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top{max-width:1700px;margin:0 auto 24px}
+.top h1{margin:0 0 8px;font-size:26px;line-height:34px;font-weight:600;text-wrap:balance}
+.top p{margin:0;max-width:64ch;font-size:16px;line-height:24px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),390px));gap:32px;justify-content:center;max-width:1700px;margin:0 auto}
+.cap{margin:0 0 8px;font-size:15px;line-height:20px;font-weight:600;color:var(--muted)}
+.phone{background:var(--screen);border-radius:28px;overflow:hidden;box-shadow:0 2px 6px rgba(60,64,67,.25),0 8px 24px rgba(60,64,67,.15);display:flex;flex-direction:column;min-width:0}
+.hero{background:var(--band);padding:28px 16px 0 20px;display:flex;align-items:flex-end;gap:8px}
+.hero.done{background:#CDEBD6}
+.hero .tx{flex:1;min-width:0;padding-bottom:20px}
+.hero .when{display:inline-block;margin-top:8px;padding:2px 12px;border-radius:999px;background:#fff;font-size:calc(15px*var(--fs));line-height:calc(24px*var(--fs));font-weight:500;color:#3C4043}
+.hero h2{margin:0;font-size:calc(26px*var(--fs));line-height:calc(34px*var(--fs));font-weight:600}
+.hero .sub{margin:4px 0 0;font-size:calc(17px*var(--fs));line-height:calc(26px*var(--fs));color:#3C4043}
+.hd{display:flex;align-items:center;gap:8px;padding:24px 16px 8px}
+.hd h2{margin:0;flex:1;font-size:calc(22px*var(--fs));line-height:calc(30px*var(--fs));font-weight:600}
+.back{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ink)}
+.pill-btn{min-height:48px;padding:0 20px;border:0;border-radius:999px;background:var(--tint);color:var(--primary-ink);font:600 calc(17px*var(--fs))/calc(24px*var(--fs)) var(--font)}
+main{display:flex;flex-direction:column;gap:20px;padding:16px 16px 28px}
+.card{background:var(--card);border-radius:16px;box-shadow:0 1px 2px rgba(60,64,67,.20),0 1px 3px 1px rgba(60,64,67,.08);padding:24px}
+.card.okc{background:var(--card)}
+.card h3{margin:0;display:flex;align-items:center;gap:12px;font-size:calc(20px*var(--fs));line-height:calc(28px*var(--fs));font-weight:600}
+.ic{display:inline-block;flex:none;border-radius:50%;background-size:cover;background-position:center;width:var(--s,48px);height:var(--s,48px)}
+.s28{--s:28px}.s32{--s:32px}.s40{--s:40px}.s48{--s:48px}.s56{--s:56px}.s72{--s:72px}
+.mas{display:inline-block;flex:none;height:var(--h,88px);aspect-ratio:var(--ar);background-size:contain;background-repeat:no-repeat;background-position:center bottom}
+.ring{--c:#34A853;position:relative;width:120px;height:120px;flex:none}
+.ring svg{display:block;transform:rotate(-90deg)}
+.ring .num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.ring .num b{font-size:calc(34px*var(--fs));line-height:calc(38px*var(--fs));font-weight:600}
+.ring .num span{font-size:calc(15px*var(--fs));line-height:calc(20px*var(--fs));color:var(--muted)}
+.row{display:flex;align-items:center;gap:12px;min-height:60px}
+.row.tall{min-height:80px;padding-block:10px;gap:16px}
+.row + .row{border-top:1px solid var(--line)}
+.t{flex:1;min-width:0}
+.t b{display:block;font-size:calc(17px*var(--fs));line-height:calc(24px*var(--fs));font-weight:600}
+.t span{display:block;font-size:calc(16px*var(--fs));line-height:calc(24px*var(--fs));color:var(--muted)}
+.chip{flex:none;border-radius:999px;padding:4px 12px;font-size:calc(16px*var(--fs));line-height:calc(24px*var(--fs));font-weight:600;white-space:nowrap}
+.c-ok{background:var(--ok-t);color:var(--ok)}.c-warn{background:var(--warn-t);color:var(--warn)}.c-err{background:var(--err-t);color:var(--err)}.c-pri{background:var(--tint);color:var(--primary-ink)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.days{flex:none;min-width:68px;border-radius:12px;padding:4px 8px;text-align:center;line-height:1}
+.days b{display:block;font-size:calc(20px*var(--fs));line-height:calc(26px*var(--fs));font-weight:600}
+.days span{display:block;font-size:calc(15px*var(--fs));line-height:calc(18px*var(--fs));font-weight:500}
+.chev{flex:none;color:var(--strong);margin-left:-4px}
+.days.w{background:var(--warn-t);color:var(--warn)}.days.e{background:var(--err-t);color:var(--err)}
+.dotb{border:0;background:transparent;padding:0;display:flex;align-items:center;gap:16px;width:100%;min-height:64px;text-align:left;font-family:var(--font);color:var(--ink);cursor:pointer}
+.dotb + .dotb{border-top:1px solid var(--line)}
+.dot{width:32px;height:32px;flex:none;border-radius:50%;border:2px solid var(--strong);background:#fff;display:flex;align-items:center;justify-content:center}
+.dot svg{display:none}
+.dotb.on .dot{background:#34A853;border-color:#34A853}
+.dotb.on .dot svg{display:block}
+.dotb:focus-visible{outline:3px solid var(--primary);outline-offset:2px}
+.btn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;min-height:52px;border:0;border-radius:999px;background:var(--primary);color:#fff;font:600 calc(17px*var(--fs))/calc(24px*var(--fs)) var(--font)}
+.btn.tonal{background:var(--tint);color:var(--primary-ink)}
+.link{font-size:calc(16px*var(--fs));line-height:calc(24px*var(--fs));font-weight:600;color:var(--primary-ink)}
+.actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.act{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 4px;border-radius:16px;background:var(--card);box-shadow:0 1px 2px rgba(60,64,67,.30),0 1px 3px 1px rgba(60,64,67,.15);font-size:calc(16px*var(--fs));line-height:calc(22px*var(--fs));font-weight:500;text-align:center}
+.act small{display:block;font-size:calc(15px*var(--fs));font-weight:500;color:var(--muted)}
+.av{border-radius:50%;box-shadow:0 0 0 2px var(--rc)}
+.nav{margin-top:auto;display:flex;justify-content:space-around;background:#fff;border-top:1px solid var(--line);padding:8px 8px 16px}
+.n{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:72px;font-size:calc(15px*var(--fs));line-height:calc(20px*var(--fs));font-weight:500;color:var(--muted)}
+.n.on{color:var(--primary-ink);font-weight:700}
+.n.on .ic{box-shadow:0 0 0 3px var(--primary)}
+.note{font-size:calc(16px*var(--fs));line-height:calc(24px*var(--fs));color:var(--muted);margin:0}
+.empty{text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px}
+.empty h3{justify-content:center}
+.steps{display:flex;flex-direction:column;gap:8px;width:100%;text-align:left}
+.step{display:flex;align-items:center;gap:12px;font-size:calc(17px*var(--fs));line-height:calc(24px*var(--fs))}
+.step i{width:32px;height:32px;border-radius:50%;background:var(--tint);color:var(--primary-ink);display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:700;flex:none}
+@keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.25)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:no-preference){.dotb.pop .dot{animation:pop .3s ease-out}.ring circle.pr{transition:stroke-dashoffset .4s ease}}
+
+:root{--fs:.93}
+html[data-fs="m"]{--fs:1}
+html[data-fs="l"]{--fs:1.15}
+.fsbar{position:sticky;top:8px;z-index:5;max-width:420px;margin:0 auto 24px;background:#fff;border-radius:20px;padding:12px 16px;box-shadow:0 2px 6px rgba(60,64,67,.25);display:flex;align-items:center;gap:12px;flex-wrap:wrap;font:500 15px/20px var(--font)}
+.fsbar>span{flex:1 1 100%;color:var(--muted)}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;flex:1 1 100%}
+.seg button{min-height:48px;border-radius:999px;border:2px solid var(--line);background:#fff;color:var(--ink);font:500 16px/24px var(--font);cursor:pointer}
+.seg button[aria-pressed="true"]{border-color:var(--primary);background:var(--tint);color:var(--primary-ink);font-weight:600}
+.seg.in{margin-top:16px}
+.row:not(.tall){padding-block:8px}
+.hh{margin-bottom:8px}
+.prev{margin-top:16px;border-radius:12px;background:var(--screen);padding:16px}
+.prev b{display:block;font-size:calc(17px*var(--fs));line-height:calc(24px*var(--fs));font-weight:600}
+.prev span{display:block;font-size:calc(16px*var(--fs));line-height:calc(24px*var(--fs));color:var(--muted)}
+.note2{margin:12px 0 0;font-size:calc(16px*var(--fs));line-height:calc(24px*var(--fs));color:var(--muted)}
+</style>
+
+<style>
+/* round 9 additions: order, empty order, household meds, shops/settings, share. Same tokens as rounds 1-8. */
+.sm{display:block;font-size:calc(15px*var(--fs));line-height:calc(22px*var(--fs));color:var(--muted)}
+.sm2{display:inline-block;align-self:flex-start;margin-top:4px;font-size:calc(15px*var(--fs));padding:2px 12px}
+.ln{display:flex;align-items:flex-start;gap:12px;padding-block:12px;min-height:80px}
+.ln + .ln{border-top:1px solid var(--line)}
+.ln .t{display:flex;flex-direction:column}
+.dotb2{flex:none;width:48px;height:48px;border:0;background:transparent;padding:0;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:50%}
+.dotb2:focus-visible,.stp button:focus-visible,.opt:focus-visible,.swrow:focus-visible,.tabs button:focus-visible,.btn:focus-visible{outline:3px solid var(--primary);outline-offset:2px}
+.dot.on{background:#34A853;border-color:#34A853}.dot.on svg{display:block}
+.dotb2[aria-checked="false"] .dot{background:#fff;border-color:var(--strong)}
+.dotb2[aria-checked="false"] .dot svg{display:none}
+.stp{flex:none;display:flex;gap:8px}
+.stp button{width:48px;height:48px;border-radius:50%;border:2px solid var(--line);background:#fff;color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.swrow{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;margin-top:8px;border:0;background:transparent;padding:0;text-align:left;font-family:var(--font);color:var(--ink);cursor:pointer}
+.sw{flex:none;width:52px;height:32px;border-radius:999px;background:var(--strong);position:relative;transition:background .2s}
+.sw i{position:absolute;top:4px;left:4px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .2s}
+.swrow[aria-checked="true"] .sw{background:var(--primary)}
+.swrow[aria-checked="true"] .sw i{transform:translateX(20px)}
+.opts{display:flex;flex-direction:column;gap:12px;margin-top:8px}
+.opt{display:flex;flex-direction:column;gap:4px;width:100%;text-align:left;padding:16px;border-radius:16px;border:2px solid var(--line);background:#fff;color:var(--ink);font-family:var(--font);cursor:pointer;min-height:48px}
+.opt[aria-pressed="true"]{border-color:var(--primary);background:var(--tint)}
+.opt .l1{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.opt .nm{font-size:calc(17px*var(--fs));line-height:calc(24px*var(--fs));font-weight:600}
+.opt .tt{font-size:calc(20px*var(--fs));line-height:calc(28px*var(--fs));font-weight:600;font-variant-numeric:tabular-nums}
+.opt .d{font-size:calc(16px*var(--fs));line-height:calc(24px*var(--fs));color:var(--muted)}
+.opt .more{font-size:calc(16px*var(--fs));line-height:calc(24px*var(--fs));font-weight:600;color:var(--warn)}
+.chip.tiny{font-size:calc(15px*var(--fs));padding:2px 12px}
+.missb{margin-top:16px;padding:16px;border-radius:12px;background:var(--screen)}
+.missb b{display:block;font-size:calc(17px*var(--fs));line-height:calc(24px*var(--fs));font-weight:600}
+.missb span{display:block;font-size:calc(16px*var(--fs));line-height:calc(24px*var(--fs));color:var(--muted)}
+.msg{margin-top:12px;padding:16px;border-radius:12px;background:var(--screen);border:1px solid var(--line);font-size:calc(16px*var(--fs));line-height:calc(26px*var(--fs));white-space:pre-wrap;overflow-wrap:anywhere;user-select:text;-webkit-user-select:text}
+.btnrow{display:flex;flex-direction:column;gap:12px;margin-top:16px}
+.btnrow .btn[hidden]{display:none}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 16px 0}
+.tabs button{min-height:48px;border-radius:999px;border:2px solid var(--line);background:#fff;color:var(--ink);font:500 calc(16px*var(--fs))/calc(24px*var(--fs)) var(--font);cursor:pointer}
+.tabs button[aria-selected="true"]{border-color:var(--primary);background:var(--tint);color:var(--primary-ink);font-weight:600}
+.info{display:flex;flex-direction:column;gap:4px;padding:16px 20px;border-radius:16px;background:var(--warn-t);color:var(--warn)}
+.info b{font-size:calc(17px*var(--fs));line-height:calc(24px*var(--fs));font-weight:600}
+.info span{font-size:calc(16px*var(--fs));line-height:calc(24px*var(--fs));color:#3C4043}
+.paper{margin-top:16px;padding:20px;border-radius:12px;background:#fff;border:2px solid var(--line);display:flex;flex-direction:column;gap:12px;color:#202124}
+.paper .ph b{display:block;font-size:calc(22px*var(--fs));line-height:calc(30px*var(--fs));font-weight:600}
+.paper .ph span{display:block;font-size:calc(16px*var(--fs));line-height:calc(24px*var(--fs));color:#3C4043}
+.paper .pl{font-size:calc(17px*var(--fs));line-height:calc(24px*var(--fs));font-weight:600;color:var(--primary-ink);border-top:2px solid var(--line);padding-top:12px}
+.paper .pm{display:flex;flex-direction:column}
+.paper .pm b{font-size:calc(17px*var(--fs));line-height:calc(24px*var(--fs));font-weight:600}
+.paper .pm span{font-size:calc(16px*var(--fs));line-height:calc(24px*var(--fs));color:#3C4043}
+.paper .pf{border-top:2px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:4px}
+.paper .pf b{font-size:calc(16px*var(--fs));line-height:calc(24px*var(--fs));font-weight:600}
+.paper .pf span{font-size:calc(15px*var(--fs));line-height:calc(22px*var(--fs));color:#3C4043}
+.hd h2{min-width:0}
+
+/* round 9b: comments 4 and 6 */
+.ring{width:96px;height:96px}
+.ring svg{width:96px;height:96px}
+.ring .num b{font-size:calc(28px*var(--fs));line-height:calc(32px*var(--fs))}
+.days,.days.w,.days.e{background:none!important;padding:0;min-width:56px}
+.days b{font-size:calc(20px*var(--fs))}
+.days.e span{font-size:calc(16px*var(--fs));line-height:calc(22px*var(--fs));font-weight:600}
+</style>
+
+<div class="top">
+<h1>JudYa มอคอัพรอบ 9</h1>
+<p>รอบสุดท้ายก่อนล็อกดีไซน์ เพิ่ม 5 หน้าใหม่ (จอ 6 ถึง 10) ได้แก่ สั่งยา สั่งยาแบบว่าง ยาสามัญ ร้านค้าในตั้งค่า และแชร์สรุปให้แพทย์ จอ 6 กดได้จริง ลองติ๊ก กด + หรือ − เลือกร้าน และสลับค่าส่ง ตัวเลขคำนวณตามตัวอย่างในสเปก 3.3b-3 ชื่อยา ร้าน เบอร์โทรและตัวเลขทั้งหมดเป็นข้อมูลตัวอย่าง ไอคอนร้านและไอคอนข้อความเป็นภาพตัดจากแผ่น ChatGPT ยังไม่ใช่เวกเตอร์ รอ V0</p>
+</div>
+
+<div class="fsbar" role="group" aria-label="ขนาดตัวอักษร ตัวทดสอบ"><span>ทดสอบขนาดตัวอักษรทุกหน้าจอ (ค่าเริ่มต้น: ปกติ)</span><div class="seg"><button type="button" data-fs="n" aria-pressed="true">ปกติ</button><button type="button" data-fs="m" aria-pressed="false">กลาง</button><button type="button" data-fs="l" aria-pressed="false">ใหญ่</button></div></div>
+<div class="grid">
+
+<!-- 1 หน้าแรก ยังไม่ครบ -->
+<section>
+<p class="cap">1 หน้าแรก ระหว่างวัน</p>
+<div class="phone" id="p1">
+<div class="hero">
+<div class="tx"><h2>สวัสดีตอนบ่ายค่ะ</h2><p class="sub">วันนี้ยังเหลือยา <span id="left">8</span> รายการ</p><span class="when">อังคาร 20 ต.ค. 2569</span></div>
+<span class="mas m-wave" style="--h:100px" role="img" aria-label="น้องเภสัชโบกมือ"></span>
+</div>
+<main>
+<div class="card">
+<div style="display:flex;align-items:center;gap:16px">
+<div class="ring"><svg width="120" height="120" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="52" fill="none" stroke="#E8F0FE" stroke-width="8"/><circle class="pr" id="pr" cx="60" cy="60" r="52" fill="none" stroke="#34A853" stroke-width="8" stroke-linecap="round" stroke-dasharray="326.73" stroke-dashoffset="237.6"/></svg><div class="num"><b id="cnt">3</b><span>จาก 11</span></div></div>
+<div class="t"><h3 style="font-size:calc(20px*var(--fs))"><span class="ic s40 i-today-meds" role="img" aria-label=""></span>ยาวันนี้</h3><span style="margin-top:4px">ถัดไป 18:00 · เย็น</span><span class="link" style="margin-top:4px">ดูทั้งหมด</span></div>
+</div>
+<div style="margin-top:8px">
+<button type="button" class="dotb on" data-t><span class="dot"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#202124" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="t"><b>ยาตัวอย่าง A</b><span>คุณแม่ · 1 เม็ด · เช้า</span></span></button>
+<button type="button" class="dotb" data-t><span class="dot"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#202124" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="t"><b>ยาตัวอย่าง A</b><span>คุณแม่ · 1 เม็ด · เย็น</span></span></button>
+<button type="button" class="dotb" data-t><span class="dot"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#202124" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="t"><b>ยาตัวอย่าง C</b><span>คุณพ่อ · 1 เม็ด · เย็น</span></span></button>
+</div>
+</div>
+
+<div class="card">
+<div class="hh" style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h3><span class="ic s32 i-expiry-alert" role="img" aria-label=""></span>ยาที่ต้องดูแล</h3><span class="link">ดูทั้งหมด 4</span></div>
+<div class="row"><div class="t"><b>ยาหยอดตา</b><span>คุณพ่อ · หมดอายุแล้ว</span></div><div class="days e"><span>เลิกใช้</span></div><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></div>
+<div class="row"><div class="t"><b>ยาตัวอย่าง B</b><span>คุณพ่อ · ยาจะหมดใน</span></div><div class="days w"><b>5</b><span>วัน</span></div><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></div>
+<div class="row"><div class="t"><b>ยาตัวอย่าง E</b><span>คุณแม่ · ยาจะหมดใน</span></div><div class="days w"><b>6</b><span>วัน</span></div><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></div>
+<div class="row"><div class="t"><b>ยาทาแก้ผื่นคัน</b><span>คุณแม่ · หมดอายุใน</span></div><div class="days w"><b>12</b><span>วัน</span></div><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></div>
+<button type="button" class="btn tonal" style="margin-top:12px"><span class="ic s32 i-order" role="img" aria-label=""></span>สั่งยา</button>
+</div>
+
+<div class="card">
+<h3>สมาชิกในบ้าน</h3>
+<div class="row tall"><span class="ic s48 av i-avatar-01" style="--rc:#1A73E8" role="img" aria-label="คุณพ่อ"></span><div class="t"><b>คุณพ่อ</b><span>ยา 5 รายการ</span></div><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></div>
+<div class="row tall"><span class="ic s48 av i-avatar-02" style="--rc:#34A853" role="img" aria-label="คุณแม่"></span><div class="t"><b>คุณแม่</b><span>ยา 2 รายการ</span></div><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></div>
+<div class="row tall"><span class="ic s48 av i-avatar-05" style="--rc:#FBBC05" role="img" aria-label="ฉัน"></span><div class="t"><b>ฉัน</b><span>ยา 2 รายการ · จัดยาเอง</span></div><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></div>
+</div>
+<button type="button" class="btn"><span class="ic s32 i-add-medicine" role="img" aria-label=""></span>เพิ่มยา</button>
+</main>
+<nav class="nav" aria-label="เมนูหลัก">
+<div class="n on"><span class="ic s32 i-nav-home"></span>หน้าแรก</div>
+<div class="n"><span class="ic s32 i-nav-medicines"></span>ยา</div>
+<div class="n"><span class="ic s32 i-nav-members"></span>สมาชิก</div>
+<div class="n"><span class="ic s32 i-nav-settings"></span>ตั้งค่า</div>
+</nav>
+</div>
+</section>
+
+<!-- 2 จัดครบแล้ว -->
+<section>
+<p class="cap">2 หน้าแรก จัดครบทั้งวันแล้ว</p>
+<div class="phone">
+<div class="hero done">
+<div class="tx"><h2>เก่งมากค่ะ</h2><p class="sub">อังคาร 20 ต.ค. 2569 · จัดยาครบทุกรายการแล้ว</p></div>
+<span class="mas m-wave" style="--h:100px" role="img" aria-label="น้องเภสัชโบกมือ"></span>
+</div>
+<main>
+<div class="card okc empty">
+<span class="mas m-ok" style="--h:120px" role="img" aria-label="น้องเภสัชทำสัญลักษณ์โอเค"></span>
+<h3 style="color:var(--ok)">ยาวันนี้ครบแล้ว</h3>
+<span class="chip c-ok" style="background:#fff">จัดครบ 11 จาก 11</span>
+<p class="note" style="color:#1E4620">พรุ่งนี้เริ่มจัดเช้า 4 รายการ</p>
+</div>
+<div class="card">
+<h3>ยังต้องดูแล</h3>
+<div class="row"><div class="t"><b>ยาตัวอย่าง B</b><span>คุณพ่อ · สั่ง 28 เม็ด</span></div><div class="days w"><b>5</b><span>วัน</span></div></div>
+<button type="button" class="btn tonal" style="margin-top:12px"><span class="ic s32 i-order" role="img" aria-label=""></span>ไปสั่งยา</button>
+</div>
+<div class="card">
+<h3>สมาชิกในบ้าน</h3>
+<div class="row tall"><span class="ic s48 av i-avatar-01" style="--rc:#1A73E8" role="img" aria-label="คุณพ่อ"></span><div class="t"><b>คุณพ่อ</b><span>จัดครบวันนี้</span></div><span class="chip c-ok">ครบ</span></div>
+<div class="row tall"><span class="ic s48 av i-avatar-02" style="--rc:#34A853" role="img" aria-label="คุณแม่"></span><div class="t"><b>คุณแม่</b><span>จัดครบวันนี้</span></div><span class="chip c-ok">ครบ</span></div>
+</div>
+</main>
+<nav class="nav" aria-label="เมนูหลัก">
+<div class="n on"><span class="ic s32 i-nav-home"></span>หน้าแรก</div>
+<div class="n"><span class="ic s32 i-nav-medicines"></span>ยา</div>
+<div class="n"><span class="ic s32 i-nav-members"></span>สมาชิก</div>
+<div class="n"><span class="ic s32 i-nav-settings"></span>ตั้งค่า</div>
+</nav>
+</div>
+</section>
+
+<!-- 3 เปิดครั้งแรก -->
+<section>
+<p class="cap">3 เปิดแอพครั้งแรก ยังไม่มียา</p>
+<div class="phone">
+<div class="hero">
+<div class="tx"><h2>ยินดีต้อนรับค่ะ</h2><p class="sub">มาเริ่มจัดยาให้คนที่คุณดูแลกัน</p></div>
+<span class="mas m-wave" style="--h:100px" role="img" aria-label="น้องเภสัชโบกมือ"></span>
+</div>
+<main>
+<div class="card empty">
+<span class="mas m-pill" style="--h:140px" role="img" aria-label="น้องเภสัชถือแคปซูลยา"></span>
+<h3>เริ่มที่ยาตัวแรก</h3>
+<div class="steps">
+<div class="step"><i>1</i>พิมพ์ชื่อยา</div>
+<div class="step"><i>2</i>เลือกว่ายาของใคร</div>
+<div class="step"><i>3</i>ตั้งวิธีกินและบันทึก</div>
+</div>
+<button type="button" class="btn" style="margin-top:4px"><span class="ic s32 i-add-medicine" role="img" aria-label=""></span>เพิ่มยาตัวแรก</button>
+<p class="note">ยังไม่ต้องเพิ่มสมาชิกก่อน แอปจะถามตอนเลือกว่ายาของใคร</p>
+</div>
+<div class="card">
+<h3><span class="ic s40 i-household-medicine" role="img" aria-label=""></span>ยาสามัญประจำบ้าน</h3>
+<p class="note" style="margin-top:8px">บันทึกยาที่ใช้ร่วมกันทุกคน เช่น พาราเซตามอล แอปจะเตือนวันหมดอายุให้</p>
+</div>
+</main>
+<nav class="nav" aria-label="เมนูหลัก">
+<div class="n on"><span class="ic s32 i-nav-home"></span>หน้าแรก</div>
+<div class="n"><span class="ic s32 i-nav-medicines"></span>ยา</div>
+<div class="n"><span class="ic s32 i-nav-members"></span>สมาชิก</div>
+<div class="n"><span class="ic s32 i-nav-settings"></span>ตั้งค่า</div>
+</nav>
+</div>
+</section>
+
+<!-- 4 คุณพ่อ -->
+<section>
+<p class="cap">4 หน้าสมาชิก: คุณพ่อ</p>
+<div class="phone">
+<div class="hd"><span class="back"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></span><h2>คุณพ่อ</h2><button type="button" class="pill-btn">แก้ไข</button></div>
+<main>
+<div class="card" style="display:flex;align-items:center;gap:20px">
+<span class="ic s72 av i-avatar-01" style="--rc:#1A73E8;margin:4px" role="img" aria-label="คุณพ่อ"></span>
+<div class="chips"><span class="chip c-pri">ทานวันนี้ 6 ครั้ง</span><span class="chip c-warn">ใกล้หมด 1 รายการ</span></div>
+</div>
+<div class="card">
+<h3><span class="ic s40 i-allergy" role="img" aria-label=""></span>การแพ้ยา</h3>
+<p class="note" style="margin-top:8px">ยังไม่พบการแพ้ยา ยังไม่ได้บันทึก ถามแพทย์หรือเภสัชกรก่อนใช้ยาใหม่</p>
+</div>
+<div class="actions">
+<div class="act"><span class="ic s48 i-prepare-meds" role="img" aria-label=""></span>จัดยาวันนี้</div>
+<div class="act"><span class="ic s48 i-order" role="img" aria-label=""></span>สั่งยา</div>
+<div class="act"><span class="ic s48 i-share-doctor" role="img" aria-label=""></span>แชร์ให้แพทย์<small>เร็ว ๆ นี้</small></div>
+</div>
+<div class="card">
+<h3><span class="ic s32 i-rx-medicine" role="img" aria-label=""></span>ยาของคุณพ่อ</h3>
+<div class="row"><div class="t"><b>ยาตัวอย่าง B</b><span>ก่อนนอน 1 เม็ด</span></div><div class="days w"><b>5</b><span>วัน</span></div></div>
+<div class="row"><div class="t"><b>ยาตัวอย่าง D</b><span>เช้า 1 เม็ด</span></div><div class="days" style="background:var(--ok-t);color:var(--ok)"><b>38</b><span>วัน</span></div></div>
+<div class="row"><div class="t"><b>ยาตัวอย่าง C</b><span>เช้า 1 เม็ด · เย็น 1 เม็ด</span></div><div class="days" style="background:var(--ok-t);color:var(--ok)"><b>21</b><span>วัน</span></div></div>
+<div class="actions" style="margin-top:12px;border-top:1px solid var(--line);padding-top:12px">
+<div class="act" style="box-shadow:none;background:var(--screen)"><span class="ic s40 i-adjust-dose" role="img" aria-label=""></span>ปรับโดส</div>
+<div class="act" style="box-shadow:none;background:var(--screen)"><span class="ic s40 i-stop-medicine" role="img" aria-label=""></span>หยุดยา</div>
+<div class="act" style="box-shadow:none;background:var(--screen)"><span class="ic s40 i-history" role="img" aria-label=""></span>ประวัติ</div>
+</div>
+</div>
+<div class="card">
+<h3><span class="ic s32 i-insurance" role="img" aria-label=""></span>ข้อมูลสมาชิก</h3>
+<div class="row"><div class="t"><b>ประกันสุขภาพ</b><span>ยังไม่ระบุ</span></div></div>
+</div>
+</main>
+<nav class="nav" aria-label="เมนูหลัก">
+<div class="n"><span class="ic s32 i-nav-home"></span>หน้าแรก</div>
+<div class="n"><span class="ic s32 i-nav-medicines"></span>ยา</div>
+<div class="n on"><span class="ic s32 i-nav-members"></span>สมาชิก</div>
+<div class="n"><span class="ic s32 i-nav-settings"></span>ตั้งค่า</div>
+</nav>
+</div>
+</section>
+
+<section>
+<p class="cap">5 ตั้งค่า ขนาดตัวอักษร</p>
+<div class="phone">
+<div class="hd"><span class="back"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></span><h2>ตั้งค่า</h2></div>
+<main>
+<div class="card">
+<h3><span class="ic s32 i-nav-settings" role="img" aria-label=""></span>ขนาดตัวอักษร</h3>
+<p class="note2">ปรับทั้งแอปให้อ่านสบายตา</p>
+<div class="seg in"><button type="button" data-fs="n" aria-pressed="true">ปกติ</button><button type="button" data-fs="m" aria-pressed="false">กลาง</button><button type="button" data-fs="l" aria-pressed="false">ใหญ่</button></div>
+<div class="prev"><b>ยาตัวอย่าง A</b><span>คุณแม่ · 1 เม็ด · หลังอาหารเช้า</span></div>
+<p class="note2">ถ้าผู้สูงอายุใช้ร่วมด้วย แนะนำ "กลาง" หรือ "ใหญ่"</p>
+</div>
+</main>
+<nav class="nav" aria-label="เมนูหลัก">
+<div class="n"><span class="ic s32 i-nav-home"></span>หน้าแรก</div>
+<div class="n"><span class="ic s32 i-nav-medicines"></span>ยา</div>
+<div class="n"><span class="ic s32 i-nav-members"></span>สมาชิก</div>
+<div class="n on"><span class="ic s32 i-nav-settings"></span>ตั้งค่า</div>
+</nav>
+</div>
+</section>
+
+<section>
+<p class="cap">6 สั่งยา (กดได้จริง)</p>
+<div class="phone" id="p6">
+<div class="hd"><span class="back"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></span><h2>สั่งยา</h2></div>
+<main>
+<div class="card">
+<h3><span class="ic s32 i-order" role="img" aria-label=""></span>ยาที่ต้องสั่ง</h3>
+<p class="note2">ติ๊กยาที่ต้องการสั่ง กด + หรือ − เพื่อปรับจำนวน</p>
+<div style="margin-top:8px">
+<div class="ln" id="lnx"><button type="button" class="dotb2" id="tx" role="checkbox" aria-checked="true" aria-label="เลือก ยาตัวอย่าง A"><span class="dot on"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#202124" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></button>
+<div class="t"><b>ยาตัวอย่าง A</b><span id="qx">73 เม็ด</span><span id="hx" class="sm"></span><span class="chip c-warn sm2">ใกล้หมด</span></div>
+<div class="stp"><button type="button" id="dx" aria-label="ลดจำนวน ยาตัวอย่าง A"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"/></svg></button><button type="button" id="ux" aria-label="เพิ่มจำนวน ยาตัวอย่าง A"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg></button></div></div>
+<div class="ln" id="lny"><button type="button" class="dotb2" id="ty" role="checkbox" aria-checked="true" aria-label="เลือก พาราเซตามอล"><span class="dot on"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#202124" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></button>
+<div class="t"><b>พาราเซตามอล 500 mg</b><span id="qy">2 ขวด</span><span class="chip c-warn sm2">ใกล้หมด</span></div>
+<div class="stp"><button type="button" id="dy" aria-label="ลดจำนวน พาราเซตามอล"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"/></svg></button><button type="button" id="uy" aria-label="เพิ่มจำนวน พาราเซตามอล"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg></button></div></div>
+</div>
+</div>
+<div class="card" id="cmp">
+<h3><span class="ic s32 i-shop" role="img" aria-label=""></span>เทียบร้าน</h3>
+<button type="button" class="swrow" id="sw" role="switch" aria-checked="true"><span class="t"><b>รวมค่าส่งในยอด</b><span class="sm">ปิดเพื่อดูราคายาอย่างเดียว</span></span><span class="sw" aria-hidden="true"><i></i></span></button>
+<div id="rows" class="opts"></div>
+<div id="miss"></div>
+</div>
+<div class="card" id="msgc">
+<h3><span class="ic s32 i-order-template" role="img" aria-label=""></span>ข้อความสั่งยา</h3>
+<p class="note2">ข้อความนี้ไม่มีชื่อสมาชิก แก้รูปแบบได้ที่ตั้งค่า</p>
+<div class="msg" id="msg" tabindex="0"></div>
+<div class="btnrow"><button type="button" class="btn" id="cp">คัดลอกข้อความ</button><button type="button" class="btn tonal" id="ln">เปิด LINE</button><button type="button" class="btn tonal" id="tel">โทรหาร้าน</button></div>
+<p class="note2" id="cpst" role="status"></p>
+</div>
+</main>
+<nav class="nav" aria-label="เมนูหลัก">
+<div class="n"><span class="ic s32 i-nav-home"></span>หน้าแรก</div>
+<div class="n on"><span class="ic s32 i-nav-medicines"></span>ยา</div>
+<div class="n"><span class="ic s32 i-nav-members"></span>สมาชิก</div>
+<div class="n"><span class="ic s32 i-nav-settings"></span>ตั้งค่า</div>
+</nav>
+</div>
+</section>
+
+<section>
+<p class="cap">7 สั่งยา ตอนยังไม่มียาที่ต้องสั่ง</p>
+<div class="phone">
+<div class="hd"><span class="back"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></span><h2>สั่งยา</h2></div>
+<main>
+<div class="card empty">
+<span class="mas m-ok" style="--h:120px" role="img" aria-label="น้องเภสัชทำสัญลักษณ์โอเค"></span>
+<h3>ตอนนี้ยังไม่มียาที่ต้องสั่ง</h3>
+<p class="note">ยาทุกตัวยังมีพอใช้ แอพจะขึ้นรายการเมื่อยาใกล้หมด</p>
+<button type="button" class="btn tonal">กลับหน้าแรก</button>
+</div>
+</main>
+<nav class="nav" aria-label="เมนูหลัก">
+<div class="n"><span class="ic s32 i-nav-home"></span>หน้าแรก</div>
+<div class="n on"><span class="ic s32 i-nav-medicines"></span>ยา</div>
+<div class="n"><span class="ic s32 i-nav-members"></span>สมาชิก</div>
+<div class="n"><span class="ic s32 i-nav-settings"></span>ตั้งค่า</div>
+</nav>
+</div>
+</section>
+
+<section>
+<p class="cap">8 ยาทั้งหมด แท็บยาสามัญประจำบ้าน</p>
+<div class="phone">
+<div class="hd"><h2 style="padding-left:8px">ยา</h2><button type="button" class="pill-btn">สั่งยา</button></div>
+<div class="tabs" role="tablist" aria-label="ประเภทยา"><button type="button" role="tab" aria-selected="false">ยาประจำตัว</button><button type="button" role="tab" aria-selected="true">ยาสามัญประจำบ้าน</button></div>
+<main>
+<div class="card">
+<div class="hh" style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h3><span class="ic s32 i-household-medicine" role="img" aria-label=""></span>ยาสามัญ 3 รายการ</h3></div>
+<div class="row tall"><div class="t"><b>พาราเซตามอล 500 mg</b><span>เหลือ 2 ขวด · เตือนเมื่อเหลือ 5</span></div><div class="days w"><b>2</b><span>ขวด</span></div><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></div>
+<div class="row tall"><div class="t"><b>ยาธาตุน้ำขาว</b><span>เหลือ 3 ขวด</span></div><div class="days" style="background:var(--ok-t);color:var(--ok)"><b>3</b><span>ขวด</span></div><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></div>
+<div class="row tall"><div class="t"><b>ยาทาแก้ผื่นคัน</b><span>หมดอายุใน</span></div><div class="days w"><b>12</b><span>วัน</span></div><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></div>
+</div>
+<button type="button" class="btn"><span class="ic s32 i-add-medicine" role="img" aria-label=""></span>เพิ่มยาสามัญ</button>
+<p class="note">ไม่ต้องใส่จำนวนหรือวันหมดอายุก็ได้ ใส่เมื่อต้องการให้แอพเตือน</p>
+</main>
+<nav class="nav" aria-label="เมนูหลัก">
+<div class="n"><span class="ic s32 i-nav-home"></span>หน้าแรก</div>
+<div class="n on"><span class="ic s32 i-nav-medicines"></span>ยา</div>
+<div class="n"><span class="ic s32 i-nav-members"></span>สมาชิก</div>
+<div class="n"><span class="ic s32 i-nav-settings"></span>ตั้งค่า</div>
+</nav>
+</div>
+</section>
+
+<section>
+<p class="cap">9 ตั้งค่า ร้านค้า ข้อความสั่งยา</p>
+<div class="phone">
+<div class="hd"><span class="back"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></span><h2>ตั้งค่า</h2></div>
+<main>
+<div class="card">
+<h3><span class="ic s32 i-shop" role="img" aria-label=""></span>ร้านค้า</h3>
+<p class="note2">ใส่ราคาที่หน้ายาแต่ละตัว แล้วแอพจะเทียบให้ตอนสั่งยา</p>
+<div class="row tall"><div class="t"><b>ร้านยาตัวอย่าง ก</b><span>รับเองที่ร้าน · 081-234-5678</span></div><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></div>
+<div class="row tall"><div class="t"><b>ร้านยาตัวอย่าง ข</b><span>ส่งถึงบ้าน ค่าส่ง ฿40 ส่งฟรีเมื่อครบ ฿1,000</span></div><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></div>
+<div class="row tall"><div class="t"><b>ร้านยาตัวอย่าง ค</b><span>ส่งถึงบ้าน ค่าส่ง ฿30 ส่งฟรีเมื่อครบ ฿700</span></div><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></div>
+<button type="button" class="btn tonal" style="margin-top:12px">เพิ่มร้านค้า</button>
+</div>
+<div class="card">
+<h3><span class="ic s32 i-order-template" role="img" aria-label=""></span>ข้อความสั่งยา</h3>
+<p class="note2">ใช้ตอนกดคัดลอกที่หน้าสั่งยา ไม่ใส่ชื่อสมาชิก</p>
+<div class="msg" tabindex="0">สวัสดีค่ะ {ร้าน}
+ขอสั่งยาตามรายการนี้
+{รายการยา}
+รบกวนแจ้งราคารวมและเวลารับยาด้วย ขอบคุณค่ะ</div>
+<button type="button" class="btn tonal" style="margin-top:12px">แก้ข้อความ</button>
+</div>
+<div class="card">
+<h3><span class="ic s32 i-nav-settings" role="img" aria-label=""></span>เกี่ยวกับแอพ</h3>
+<p class="note2">JudYa ช่วยจดและจัดการยาในบ้าน ไม่ใช่คำแนะนำทางการแพทย์ ถามแพทย์หรือเภสัชกรก่อนเปลี่ยนหรือหยุดยาเสมอ</p>
+</div>
+</main>
+<nav class="nav" aria-label="เมนูหลัก">
+<div class="n"><span class="ic s32 i-nav-home"></span>หน้าแรก</div>
+<div class="n"><span class="ic s32 i-nav-medicines"></span>ยา</div>
+<div class="n"><span class="ic s32 i-nav-members"></span>สมาชิก</div>
+<div class="n on"><span class="ic s32 i-nav-settings"></span>ตั้งค่า</div>
+</nav>
+</div>
+</section>
+
+<section>
+<p class="cap">10 แชร์สรุปให้แพทย์ (คุณพ่อ)</p>
+<div class="phone">
+<div class="hd"><span class="back"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></span><h2>แชร์ให้แพทย์</h2></div>
+<main>
+<div class="info" role="note"><b>ตรวจก่อนส่ง</b><span>ภาพนี้มีชื่อและรายการยาของสมาชิก ส่งให้เฉพาะแพทย์หรือเภสัชกรที่ดูแลเท่านั้น</span></div>
+<div class="card">
+<h3><span class="ic s32 i-share-doctor" role="img" aria-label=""></span>ภาพสรุป</h3>
+<div class="paper" role="img" aria-label="ตัวอย่างภาพสรุปยาของคุณพ่อ">
+<div class="ph"><b>คุณพ่อ</b><span>สรุปยา · 20 ต.ค. 2569</span></div>
+<div class="pl">ยาที่ใช้อยู่</div>
+<div class="pm"><b>1) ยาตัวอย่าง C</b><span>เช้า 1 เม็ด · เย็น 1 เม็ด</span><span>เริ่มใช้ 12 ก.ย. 2569</span><span>ปรับโดส 1 ต.ค. 2569 จาก เช้า 2 เม็ด เป็น เช้า 1 เม็ด · เย็น 1 เม็ด (เหตุผล: หมอสั่ง)</span></div>
+<div class="pm"><b>2) ยาตัวอย่าง D</b><span>เช้า 1 เม็ด</span><span>เริ่มใช้ 1 ส.ค. 2569</span></div>
+<div class="pm"><b>3) ยาตัวอย่าง B</b><span>ก่อนนอน 1 เม็ด</span><span>เริ่มใช้ ไม่ระบุวันที่</span></div>
+<div class="pl">ยาที่หยุดใน 90 วันที่ผ่านมา</div>
+<div class="pm"><span>ยาหยอดตา หยุด 10 ส.ค. 2569 (เหตุผล: หมอสั่ง)</span></div>
+<div class="pf"><b>การแพ้ยา: แอพนี้ยังไม่มีข้อมูลการแพ้ยา โปรดสอบถามผู้ป่วยหรือญาติ</b><span>จดโดยเจ้าของแอพ ไม่ใช่เวชระเบียน โปรดตรวจกับซองยาหรือใบสั่งยาจริง</span></div>
+</div>
+<div class="btnrow"><button type="button" class="btn">แชร์ภาพ</button></div>
+</div>
+<div class="card">
+<h3><span class="ic s32 i-order-template" role="img" aria-label=""></span>ข้อความ</h3>
+<div class="msg" id="smsg" tabindex="0">สรุปยาของ คุณพ่อ
+ข้อมูลจากแอพ JudYa วันที่ 20 ต.ค. 2569
+
+ยาที่ใช้อยู่
+1) ยาตัวอย่าง C — เช้า 1 เม็ด · เย็น 1 เม็ด
+   เริ่มใช้ 12 ก.ย. 2569
+   ปรับโดส 1 ต.ค. 2569 จาก เช้า 2 เม็ด เป็น เช้า 1 เม็ด · เย็น 1 เม็ด (เหตุผล: หมอสั่ง)
+2) ยาตัวอย่าง D — เช้า 1 เม็ด
+   เริ่มใช้ 1 ส.ค. 2569
+3) ยาตัวอย่าง B — ก่อนนอน 1 เม็ด
+   เริ่มใช้ ไม่ระบุวันที่
+
+ยาที่หยุดใน 90 วันที่ผ่านมา
+- ยาหยอดตา หยุด 10 ส.ค. 2569 (เหตุผล: หมอสั่ง)
+
+การแพ้ยา: แอพนี้ยังไม่มีข้อมูลการแพ้ยา — โปรดสอบถามผู้ป่วยหรือญาติ
+จดโดยเจ้าของแอพ ไม่ใช่เวชระเบียน โปรดตรวจกับซองยาหรือใบสั่งยาจริง</div>
+<div class="btnrow"><button type="button" class="btn tonal" id="scp">คัดลอกข้อความ</button><button type="button" class="btn tonal" id="sln">เปิด LINE</button></div>
+<p class="note2" id="scpst" role="status"></p>
+</div>
+</main>
+<nav class="nav" aria-label="เมนูหลัก">
+<div class="n"><span class="ic s32 i-nav-home"></span>หน้าแรก</div>
+<div class="n"><span class="ic s32 i-nav-medicines"></span>ยา</div>
+<div class="n on"><span class="ic s32 i-nav-members"></span>สมาชิก</div>
+<div class="n"><span class="ic s32 i-nav-settings"></span>ตั้งค่า</div>
+</nav>
+</div>
+</section>
+</div>
+
+<script>
+(function(){
+  var C=326.73,total=11;
+  var p=document.getElementById('p1');
+  if(!p)return;
+  var btns=p.querySelectorAll('[data-t]');
+  var base=3-p.querySelectorAll('[data-t].on').length;
+  function upd(){
+    var n=base+p.querySelectorAll('[data-t].on').length;
+    document.getElementById('cnt').textContent=String(n);
+    document.getElementById('left').textContent=total-n;
+    document.getElementById('pr').setAttribute('stroke-dashoffset',String(C*(1-n/total)));
+  }
+  btns.forEach(function(b){
+    b.setAttribute('role','checkbox');
+    b.setAttribute('aria-checked',b.classList.contains('on')?'true':'false');
+    b.addEventListener('click',function(){
+      var on=!b.classList.contains('on');
+      b.classList.toggle('on',on);
+      b.setAttribute('aria-checked',on?'true':'false');
+      b.classList.remove('pop'); void b.offsetWidth; if(on)b.classList.add('pop');
+      upd();
+    });
+  });
+  upd();
+})();
+
+(function(){
+  var root=document.documentElement;
+  function setFs(v){
+    root.setAttribute('data-fs',v);
+    document.querySelectorAll('[data-fs]').forEach(function(b){if(b.tagName==='BUTTON')b.setAttribute('aria-pressed',String(b.getAttribute('data-fs')===v));});
+    try{localStorage.setItem('judya-fs2',v);}catch(e){}
+  }
+  document.querySelectorAll('button[data-fs]').forEach(function(b){b.addEventListener('click',function(){setFs(b.getAttribute('data-fs'));});});
+  var s='n';try{s=localStorage.getItem('judya-fs2')||'n';}catch(e){}
+  setFs(s==='m'||s==='l'?s:'n');
+})();
+</script>
+
+<script>
+(function(){
+  var root=document.getElementById('p6'); if(!root) return;
+  var shops=[
+    {name:'ร้านยาตัวอย่าง ก',mode:'pickup',tel:'081-234-5678',x:{p:290,u:'กล่อง',per:60},y:{p:35}},
+    {name:'ร้านยาตัวอย่าง ข',mode:'deliver',fee:40,free:1000,tel:'081-234-5678',x:{p:240,u:'แผง',per:30},y:{p:40}},
+    {name:'ร้านยาตัวอย่าง ค',mode:'deliver',fee:30,free:700,tel:'081-234-5678',x:{p:250,u:'กล่อง',per:30},y:{p:30}},
+    {name:'ร้านยาตัวอย่าง ง',mode:'deliver',fee:50,free:650,tel:'081-234-5678',x:{p:290,u:'กล่อง',per:60},y:{p:35}},
+    {name:'ร้านยาตัวอย่าง จ',mode:'pickup',tel:'081-234-5678',x:{p:100,u:'แผง',per:10},y:null}
+  ];
+  var st={qx:73,qy:2,tx:true,ty:true,ship:true,chosen:null};
+  function $(id){return document.getElementById(id);}
+  function fmt(n){return '฿'+n.toLocaleString('en-US');}
+  function unitsX(s,q){return Math.max(Math.ceil(q/s.x.per-1e-9),1);}
+  function compute(){
+    var rows=[],missing=[];
+    shops.forEach(function(s){
+      var tot=0,miss=[];
+      if(st.tx){ if(s.x){tot+=unitsX(s,st.qx)*s.x.p;}else{miss.push('ยาตัวอย่าง A');} }
+      if(st.ty){ if(s.y){tot+=st.qy*s.y.p;}else{miss.push('พาราเซตามอล');} }
+      if(miss.length){missing.push({s:s,miss:miss});return;}
+      var ship=0,more=null;
+      if(s.mode==='deliver'&&tot<s.free){ship=s.fee;more=s.free-tot;}
+      rows.push({s:s,sub:tot,ship:ship,more:more,total:tot+(st.ship?ship:0)});
+    });
+    rows.sort(function(a,b){return (a.total-b.total)||a.s.name.localeCompare(b.s.name,'th');});
+    return {rows:rows,missing:missing};
+  }
+  function pick(rows){
+    if(!rows.length) return null;
+    for(var i=0;i<rows.length;i++){ if(rows[i].s.name===st.chosen) return rows[i]; }
+    return rows[0];
+  }
+  function stepX(dir,per){
+    if(per===null){ return dir==='up'?st.qx+1:Math.max(st.qx-1,1); }
+    var n=Math.max(Math.ceil(st.qx/per-1e-9),1);
+    return dir==='up'?(n+1)*per:Math.max(n-1,1)*per;
+  }
+  function render(){
+    var c=compute(), ch=pick(c.rows), any=st.tx||st.ty;
+    $('tx').setAttribute('aria-checked',String(st.tx)); $('ty').setAttribute('aria-checked',String(st.ty));
+    $('qx').textContent=st.qx+' เม็ด'; $('qy').textContent=st.qy+' ขวด';
+    $('hx').textContent=ch?('= '+unitsX(ch.s,st.qx)+' '+ch.s.x.u+' ('+ch.s.x.per+' เม็ดต่อ'+ch.s.x.u+')'):'';
+    $('hx').hidden=!ch;
+    $('sw').setAttribute('aria-checked',String(st.ship));
+    var h='';
+    if(!any){ h='<p class="note2">ติ๊กยาที่ต้องการสั่งก่อน</p>'; }
+    c.rows.forEach(function(r,i){
+      var on=ch&&ch.s===r.s;
+      var mode=r.s.mode==='pickup'?'รับเอง':'ส่งถึงบ้าน';
+      var ship=r.s.mode==='pickup'?'':(r.ship===0?' · ส่งฟรี':' · ค่าส่ง '+fmt(r.ship));
+      h+='<button type="button" class="opt" aria-pressed="'+on+'" data-i="'+r.s.name+'"><span class="l1"><span class="nm">'+r.s.name+'</span><span class="tt">'+fmt(r.total)+'</span></span><span class="d">'+mode+ship+'</span>'
+        +(i===0?'<span class="chip c-ok tiny" style="align-self:flex-start">ถูกที่สุด</span>':'')
+        +(r.more!==null?'<span class="more">ซื้อเพิ่มอีก '+fmt(r.more)+' ส่งฟรี</span>':'')+'</button>';
+    });
+    $('rows').innerHTML=h;
+    var m='';
+    if(c.missing.length&&any){
+      m='<div class="missb"><b>ร้านที่ยังไม่มีราคาครบ</b>';
+      c.missing.forEach(function(x){m+='<span>'+x.s.name+' ยังไม่มีราคา: '+x.miss.join(', ')+'</span>';});
+      m+='</div>';
+    }
+    $('miss').innerHTML=m;
+    // message
+    var lines=[],n=0;
+    if(st.tx&&st.qx>0){n++;lines.push(n+') ยาตัวอย่าง A x '+(ch?(unitsX(ch.s,st.qx)+' '+ch.s.x.u+' ('+(unitsX(ch.s,st.qx)*ch.s.x.per)+' เม็ด)'):(st.qx+' เม็ด')));}
+    if(st.ty&&st.qy>0){n++;lines.push(n+') พาราเซตามอล 500 mg x '+st.qy+' ขวด');}
+    var box=$('msgc');
+    if(!lines.length){ $('msg').textContent='ติ๊กยาที่ต้องการสั่งก่อน'; $('cp').hidden=true; $('ln').hidden=true; $('tel').hidden=true; return; }
+    var txt='สวัสดีค่ะ '+(ch?ch.s.name:'ร้านยา')+'\nขอสั่งยาตามรายการนี้\n'+lines.join('\n')+'\nรบกวนแจ้งราคารวมและเวลารับยาด้วย ขอบคุณค่ะ';
+    $('msg').textContent=txt; $('cp').hidden=false; $('ln').hidden=false;
+    $('tel').hidden=!ch; if(ch) $('tel').textContent='โทรหาร้าน '+ch.s.tel;
+    root._txt=txt;
+  }
+  $('tx').addEventListener('click',function(){st.tx=!st.tx;render();});
+  $('ty').addEventListener('click',function(){st.ty=!st.ty;render();});
+  $('sw').addEventListener('click',function(){st.ship=!st.ship;render();});
+  $('ux').addEventListener('click',function(){var ch=pick(compute().rows);st.qx=stepX('up',ch?ch.s.x.per:null);render();});
+  $('dx').addEventListener('click',function(){var ch=pick(compute().rows);st.qx=stepX('down',ch?ch.s.x.per:null);render();});
+  $('uy').addEventListener('click',function(){st.qy+=1;render();});
+  $('dy').addEventListener('click',function(){st.qy=Math.max(st.qy-1,1);render();});
+  $('rows').addEventListener('click',function(e){var b=e.target.closest('.opt');if(!b)return;st.chosen=b.getAttribute('data-i');render();});
+  function copy(text,el){
+    function done(ok){el.textContent=ok?'คัดลอกแล้ว':'คัดลอกไม่ได้ ลองกดค้างที่ข้อความแล้วเลือกคัดลอกเอง';}
+    try{navigator.clipboard.writeText(text).then(function(){done(true);},function(){done(false);});}catch(e){done(false);}
+  }
+  $('cp').addEventListener('click',function(){copy($('msg').textContent,$('cpst'));});
+  $('ln').addEventListener('click',function(){$('cpst').textContent='ในแอพจริง ปุ่มนี้เปิด LINE พร้อมข้อความ';});
+  $('tel').addEventListener('click',function(){$('cpst').textContent='ในแอพจริง ปุ่มนี้โทรหาร้านที่เลือก';});
+  $('scp').addEventListener('click',function(){copy($('smsg').textContent,$('scpst'));});
+  $('sln').addEventListener('click',function(){$('scpst').textContent='ในแอพจริง ปุ่มนี้เปิด LINE พร้อมข้อความ';});
+  render();
+})();
+</script>
+
+</body></html>
