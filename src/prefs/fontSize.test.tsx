@@ -16,11 +16,11 @@ beforeEach(() => {
 });
 
 describe('font size preference', () => {
-  it('defaults to medium when nothing is saved', () => {
-    expect(DEFAULT_FONT_SIZE).toBe('m');
-    expect(readFontSize()).toBe('m');
-    expect(initFontSize()).toBe('m');
-    expect(document.documentElement.dataset.fs).toBe('m');
+  it('defaults to normal when nothing is saved', () => {
+    expect(DEFAULT_FONT_SIZE).toBe('n');
+    expect(readFontSize()).toBe('n');
+    expect(initFontSize()).toBe('n');
+    expect(document.documentElement.dataset.fs).toBe('n');
   });
 
   it('writes the choice, applies it to <html> and reads it back', () => {
@@ -35,7 +35,7 @@ describe('font size preference', () => {
   it('ignores a bad saved value and falls back to the default', () => {
     for (const bad of ['xl', '', '1.15', 'M', '{"a":1}']) {
       window.localStorage.setItem(FONT_SIZE_KEY, bad);
-      expect(readFontSize()).toBe('m');
+      expect(readFontSize()).toBe('n');
     }
   });
 
@@ -46,7 +46,7 @@ describe('font size preference', () => {
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('full');
     });
-    expect(readFontSize()).toBe('m');
+    expect(readFontSize()).toBe('n');
     expect(writeFontSize('l')).toBe(false);
     expect(document.documentElement.dataset.fs).toBe('l');
   });

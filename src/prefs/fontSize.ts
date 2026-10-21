@@ -7,7 +7,7 @@ export const FONT_SIZE_KEY = 'judya.fontsize';
 export const FONT_SIZES = ['n', 'm', 'l'] as const;
 export type FontSize = (typeof FONT_SIZES)[number];
 /** Medium until the owner decides (docs/DECISIONS.md O4): normal (93%) is below the 15px minimum. */
-export const DEFAULT_FONT_SIZE: FontSize = 'm';
+export const DEFAULT_FONT_SIZE: FontSize = 'n'; // owner's answer to O4: "ปกติ" (93%); go back to 'm' if older users find it hard to read
 
 export const FONT_SIZE_LABELS: Record<FontSize, string> = { n: 'ปกติ', m: 'กลาง', l: 'ใหญ่' };
 /** Same numbers as `[data-fs]` in tokens.css. */
