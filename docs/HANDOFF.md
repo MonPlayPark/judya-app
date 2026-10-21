@@ -14,7 +14,7 @@ Branch `claude/homepage-v2-mockup-r9-s6keiw`. Look only: `src/domain/**`, `src/s
 - Tokens: ring size 96px, ring number 28/32, `--mascot-hero`, `--mascot-done` (round 9 values).
 
 ### Checks
-`npm test` 885 passed (same count; 15 tests had their expected home text changed, listed in `docs/DECISIONS.md`). `npm run build` passes. `npm run check:overflow`: 192 page checks, 0 problems. App size 1,251,679 B (dist), over the 1 MB goal (O5).
+`npm test` 885 passed (same count; 17 tests had their expected home text changed, listed in `docs/DECISIONS.md`). `npm run build` passes. `npm run check:overflow`: 192 page checks, 0 problems. App size 1,251,679 B (dist), over the 1 MB goal (O5).
 
 ### Owner's S24 test list for V2
 Home looks like mockup screens 1, 2, 3 (blank house = first run; sample data = screen 1; tick everything on "ยาวันนี้" = screen 2) · mascot stands on the bottom edge of the band and is not inside a member card · text readable at all 3 font sizes · tap "สั่งยา", "เพิ่มยา", a care row, a member row, the "ยาวันนี้" card, bottom nav · avatar of the 4th member (gray) has a grey ring.
