@@ -2,6 +2,26 @@
 
 Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every session.
 
+## Step V1 — visual refresh foundation (21 ต.ค. 2569)
+
+Branch `ccr-216f9d24-7b2o75` (look only; no screen changed; `src/domain/**`, `src/state/**`, `judya.v2` and old logic tests untouched). Spec: `docs/design/visual-refresh-spec.md`.
+
+### Done
+- Image helper `src/visual.ts` (typed unions: 28 icons, 12 avatars, 8 mascot poses; `.svg`). The `.webp` files are still in the repo (nothing imports them); delete them in V1b if the owner agrees.
+- Tokens in `src/styles/tokens.css` (colours, weights, type scale, layout, image sizes, ring); existing sizes converted to rem.
+- Font size: `data-fs` n/m/l = 93/100/115%, `src/prefs/fontSize.ts` (read, write, apply, init, `useFontSize`), key `judya.fontsize`, default **m** (open question O4 in `docs/DECISIONS.md`). Settings card is V5.
+- Zoom lock, all five items: viewport meta, `touch-action` / `overscroll-behavior-y`, `user-select` only on button/nav/h1-h3, inputs ≥ 16px, manifest `standalone` + `portrait`.
+- Tests: 9 new (6 font size, 3 image helper). `npm run check:overflow`: 192 page checks (2 widths × 3 sizes × empty + sample house, all routes), 0 problems.
+
+### Open for the owner
+O4 default font size, O5 app size (1.19 MiB with all images used, goal 1 MB), O6 gray member ring colour. See `docs/DECISIONS.md`.
+
+### Owner's S24 test list for V1
+Install/open the new version, then: two-finger pinch does not zoom · double-tap does not zoom · pull down at the top of a page does not refresh · long-press selects and copies text (prescription text, the LINE order message, inside input fields) · normal scrolling works · tapping into an input does not zoom the page.
+
+### Next
+V1b (swap to SVG, delete WebP), V2 home. Font-size card in V5.
+
 ## Step V0 — vector images added (21 ต.ค. 2569)
 
 Branch `assets/vector-svg` adds the 48 SVG files next to the WebP files in `src/assets/visual/` (same names). Images only: nothing imports them, no change to `src/domain/**`, `src/state/**` or tests.

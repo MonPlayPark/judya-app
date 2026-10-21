@@ -8,7 +8,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:overflow": "node scripts/check-overflow.mjs"
   },
   "dependencies": {
     "@fontsource/noto-sans-thai": "^5.3.0",
@@ -25,6 +26,7 @@
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^6.1.2",
     "jsdom": "^29.1.1",
+    "playwright-core": "^1.64.1",
     "typescript": "^7.0.2",
     "vite": "^8.3.4",
     "vite-plugin-pwa": "^2.0.0",

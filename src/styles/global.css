@@ -4,8 +4,29 @@
   box-sizing: border-box;
 }
 
-html {
+/* Zoom lock (D11, spec 2). No pinch or double-tap zoom, no pull-to-refresh; scrolling and tapping work as usual.
+   Android "force zoom" in the accessibility settings is not blocked. */
+html,
+body {
+  touch-action: pan-x pan-y;
+  overscroll-behavior-y: none;
   -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Only buttons, bottom nav and headings cannot be selected. Body text, the LINE order message and inputs stay selectable. */
+button,
+nav,
+h1,
+h2,
+h3 {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Every field is at least 16px so the browser does not zoom in on focus. The longer selector beats the component classes. */
+html body :is(input, textarea, select) {
+  font-size: max(16px, 1rem);
 }
 
 body {

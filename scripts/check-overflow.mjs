@@ -1,0 +1,102 @@
+// Visual check (V1): at 360 and 412px wide and all 3 font sizes, no page may scroll sideways.
+// Run:  npm run build && npm run check:overflow   (needs Chromium; set CHROMIUM_PATH if it is not at the default place)
+import { spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { chromium } from 'playwright-core';
+
+const PORT = 4173;
+const ORIGIN = `http://localhost:${PORT}`;
+const BASE = `${ORIGIN}/judya-app/`;
+const WIDTHS = [360, 412];
+const SIZES = ['n', 'm', 'l'];
+const STATIC_ROUTES = ['/', '/today', '/meds', '/meds?tab=house', '/meds/new', '/meds/new/schedule', '/meds/new/stock',
+  '/house/new', '/members', '/members/new', '/order', '/settings', '/no-such-page'];
+
+const chromePath = process.env.CHROMIUM_PATH
+  ?? ['/opt/pw-browsers/chromium', '/usr/bin/chromium', '/usr/bin/google-chrome'].find((p) => existsSync(p));
+
+const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], { stdio: 'ignore' });
+const stop = () => server.kill();
+process.on('exit', stop);
+
+async function waitForServer() {
+  for (let i = 0; i < 60; i += 1) {
+    try {
+      if ((await fetch(BASE)).ok) return;
+    } catch { /* not up yet */ }
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  throw new Error('preview server did not start (run npm run build first)');
+}
+
+/** Returns a description of what sticks out sideways, or '' when the page fits. */
+const measure = () => {
+  const vw = document.documentElement.clientWidth;
+  const out = [];
+  if (document.documentElement.scrollWidth > vw) out.push(`page scrollWidth ${document.documentElement.scrollWidth} > ${vw}`);
+  for (const el of document.body.querySelectorAll('*')) {
+    const r = el.getBoundingClientRect();
+    if (r.width > 0 && (r.right > vw + 0.5 || r.left < -0.5)) {
+      // A scrolling strip inside the page is fine; only report things that make the page itself wider.
+      let clipped = false;
+      for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+        const o = getComputedStyle(p).overflowX;
+        if (o !== 'visible') { clipped = true; break; }
+      }
+      if (!clipped) out.push(`${el.tagName.toLowerCase()}.${String(el.className).slice(0, 40)} ${Math.round(r.left)}..${Math.round(r.right)}`);
+    }
+  }
+  return out.slice(0, 5).join('; ');
+};
+
+await waitForServer();
+const browser = await chromium.launch({ executablePath: chromePath });
+let problems = 0;
+let checked = 0;
+
+for (const width of WIDTHS) {
+  for (const fs of SIZES) {
+    const ctx = await browser.newContext({ viewport: { width, height: 800 }, serviceWorkers: 'block' });
+    await ctx.addInitScript((size) => window.localStorage.setItem('judya.fontsize', size), fs);
+    const page = await ctx.newPage();
+
+    const visit = async (route, label) => {
+      await page.goto(`${BASE}#${route}`);
+      await page.reload(); // hash change alone does not re-run the app; reload keeps the state in localStorage
+      await page.waitForSelector('#root > *');
+      const fsOnHtml = await page.evaluate(() => document.documentElement.dataset.fs);
+      if (fsOnHtml !== fs) { console.log(`FAIL ${width}px fs=${fs} ${route}: data-fs is ${fsOnHtml}`); problems += 1; }
+      const bad = await page.evaluate(measure);
+      checked += 1;
+      if (bad) { problems += 1; console.log(`FAIL ${width}px fs=${fs} ${label} ${route}: ${bad}`); }
+    };
+
+    // 1) empty house
+    for (const r of STATIC_ROUTES) await visit(r, 'empty');
+
+    // 2) house with the sample data (pages that need ids too)
+    await page.goto(`${BASE}#/`);
+    await page.getByRole('button', { name: 'ลองดูด้วยข้อมูลตัวอย่าง' }).click();
+    await page.waitForTimeout(300);
+    const ids = await page.evaluate(() => {
+      const root = JSON.parse(window.localStorage.getItem('judya.v2') ?? '{}');
+      return {
+        assignment: root.assignments?.[0]?.id,
+        house: root.houseItems?.[0]?.id,
+        person: root.persons?.[0]?.id,
+      };
+    });
+    const routes = [...STATIC_ROUTES];
+    if (ids.assignment) routes.push(`/meds/${ids.assignment}`);
+    if (ids.house) routes.push(`/house/${ids.house}`);
+    if (ids.person) routes.push(`/members/${ids.person}`, `/members/${ids.person}/edit`, `/members/${ids.person}/share`, `/today?who=${ids.person}`);
+    if (!ids.assignment || !ids.house || !ids.person) { problems += 1; console.log('FAIL could not read sample ids'); }
+    for (const r of routes) await visit(r, 'sample');
+    await ctx.close();
+  }
+}
+
+await browser.close();
+stop();
+console.log(`${checked} page checks, ${problems} problem(s)`);
+process.exit(problems === 0 ? 0 : 1);

@@ -25,37 +25,119 @@
 
   /* type */
   --font-sans: 'Noto Sans Thai', system-ui, sans-serif;
-  --text-display-size: 30px;
-  --text-display-line: 40px;
-  --text-title-size: 22px;
-  --text-title-line: 30px;
-  --text-heading-size: 20px;
-  --text-heading-line: 28px;
-  --text-body-size: 17px;
-  --text-body-line: 26px;
-  --text-label-size: 17px;
-  --text-label-line: 24px;
-  --text-secondary-size: 16px;
-  --text-secondary-line: 24px;
-  --text-nav-size: 15px; /* the smallest size allowed */
-  --text-nav-line: 20px;
+  --text-display-size: 1.875rem;
+  --text-display-line: 2.5rem;
+  --text-title-size: 1.375rem;
+  --text-title-line: 1.875rem;
+  --text-heading-size: 1.25rem;
+  --text-heading-line: 1.75rem;
+  --text-body-size: 1.0625rem;
+  --text-body-line: 1.625rem;
+  --text-label-size: 1.0625rem;
+  --text-label-line: 1.5rem;
+  --text-secondary-size: 1rem;
+  --text-secondary-line: 1.5rem;
+  --text-nav-size: 0.9375rem; /* the smallest size allowed */
+  --text-nav-line: 1.25rem;
 
   /* spacing (8px grid) */
-  --space-1: 8px;
-  --space-2: 16px;
-  --space-3: 24px;
-  --space-4: 32px;
-  --touch-min: 48px;
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+  --space-4: 2rem;
+  --touch-min: 48px; /* never below 48px, even at "normal" */
   --button-h: 52px;
 
   /* radius */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
   --radius-pill: 999px;
 
   /* shadow */
   --elevation-1: 0 1px 2px rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
   --elevation-2: 0 1px 2px rgba(60, 64, 67, 0.3), 0 2px 6px 2px rgba(60, 64, 67, 0.15);
+
+  /* ---- visual refresh (V1): spec docs/design/visual-refresh-spec.md. Sizes are rem: 1rem = 16px at "medium". ---- */
+
+  /* colour (new) */
+  --color-bg-outer: #e8eaed; /* behind the phone frame */
+  --color-band: #d6e6fd; /* home hero, single flat colour (D5) */
+  --color-band-done: #cdebd6; /* home hero when everything is done */
+  --color-hero-ink-muted: #3c4043;
+  --color-member-blue: #1a73e8; /* avatar ring (D3) */
+  --color-member-green: #34a853;
+  --color-member-yellow: #fbbc05;
+  /* ring and done dot use --color-success (#34a853) */
+
+  /* font weights (D8) */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600; /* headings, big numbers, medicine names */
+  --weight-bold: 700;
+
+  /* type scale (new) */
+  --text-hero-title-size: 1.625rem;
+  --text-hero-title-line: 2.125rem;
+  --text-hero-sub-size: 1.0625rem;
+  --text-hero-sub-line: 1.625rem;
+  --text-list-title-size: 1.0625rem;
+  --text-list-title-line: 1.5rem;
+  --text-list-sub-size: 1rem;
+  --text-list-sub-line: 1.5rem;
+  --text-chip-size: 1rem;
+  --text-chip-line: 1.5rem;
+  --text-days-size: 1.25rem;
+  --text-days-line: 1.625rem;
+  --text-days-unit-size: 0.9375rem;
+  --text-days-unit-line: 1.125rem;
+  --text-note-size: 1rem;
+  --text-note-line: 1.5rem;
+  --text-ring-size: 2.125rem;
+  --text-ring-line: 2.375rem;
+
+  /* layout (new) */
+  --card-padding: 1.5rem;
+  --gap-main: 1.25rem;
+  --screen-pad: 1rem;
+  --radius-card: 1rem;
+  --radius-phone: 1.75rem;
+  --row-min: 3.75rem; /* list row */
+  --row-tall-min: 5rem; /* row with avatar (D3) */
+  --elevation-card: 0 1px 2px rgba(60, 64, 67, 0.2), 0 1px 3px 1px rgba(60, 64, 67, 0.08);
+
+  /* images */
+  --icon-28: 1.75rem;
+  --icon-32: 2rem;
+  --icon-40: 2.5rem;
+  --icon-48: 3rem;
+  --icon-56: 3.5rem;
+  --icon-72: 4.5rem;
+  --avatar-size: 3rem;
+  --avatar-size-lg: 4.5rem; /* member page */
+  --avatar-ring: 2px;
+  --mascot-min: 5.5rem; /* 88px .. 140px depending on the screen */
+  --mascot-max: 8.75rem;
+
+  /* progress ring (D6) */
+  --ring-size: 7.5rem;
+  --ring-stroke: 8;
+  --ring-radius: 52;
+  --ring-dasharray: 326.73;
+}
+
+/* Font size (D10, spec 1): <html data-fs="n|m|l"> sets the root size; everything in rem follows.
+   A percentage (not px) keeps the Android system font size working. Default "m" is set in src/prefs/fontSize.ts. */
+html {
+  font-size: 100%;
+}
+html[data-fs='n'] {
+  font-size: 93%;
+}
+html[data-fs='m'] {
+  font-size: 100%;
+}
+html[data-fs='l'] {
+  font-size: 115%;
 }
