@@ -392,3 +392,4 @@ persist status line in Settings (3.2d); `judya.v2.prev` is now written by "เ�
 - Component tests mock `virtual:pwa-register` (see `src/App.test.tsx`). Screen tests of the data layer: `src/App.data.test.tsx`
   (jsdom `localStorage`; spy on `Storage.prototype.setItem` to simulate a full disk).
 - Do not touch other localStorage keys (`judya.v1`, `medmate.v1` share the origin).
+- M4-0 done (25 ต.ค. 2569): gap review only, no code changed. See `docs/M4-GAP.md` (spec vs code table, v3 schema proposal, 15-PR plan, owner questions Q1–Q14).
