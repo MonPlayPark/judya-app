@@ -6,7 +6,8 @@ Read `docs/BRIEF.md` before any work. It is the approved spec for milestone M3 (
 
 - Source of truth for UI: the design canvas linked in the brief. Do NOT use the UI, screen specs, screen pictures or AGENTS.md of the old repo `MonPlayPark/JudYa`; only `reference/calc.mjs` + tests may be reused.
 - Never put real people's names or real medicine data in code, tests or docs. This repo is public.
-- Storage key `judya.v2` only. Never read, change or delete other localStorage keys.
+- Storage keys: the v2 app uses `judya.v2` only. The v3 code under `src/domain/v3/` uses `judya.v3` and its safety copy `judya.v3.prev` only. `judya.v2` (and `judya.v2.prev`) must not be touched by v3 code until PR 7b. Never read, change or delete any other localStorage key.
+- Spec for milestone M4 (v3 data and screens): `docs/M4-GAP.md` (sections 4 and 5), plus the PR instructions given by the owner.
 - Work on a branch, open a PR, never merge. Commit one logical change at a time; English commit messages.
 - At the end of every session update `docs/HANDOFF.md`.
 
