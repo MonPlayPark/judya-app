@@ -2,6 +2,25 @@
 
 Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every session.
 
+## M4 PR 2 — data: stock / days left / weeks / refill logic (28 ต.ค. 2569)
+
+Branch `m4/pr2-stock-logic`. Data only, no UI. New in `src/domain/v3/`: `schedule.ts` (units per day), `stock.ts` (units, stockNow, daysLeft, targetDoses, isLowStock, houseStatus, refillStock, openNewTube), `stockText.ts` (days / weeks texts), a test file for each, and `schemaStock.test.ts`. `schema.ts` got the rule "stock must fit the medicine kind" (+ count with strips needs a pack with a strip size). v2 files, `src/pages`, `src/components`, `src/App.tsx` and old tests untouched (`git diff --stat origin/main` shows only `src/domain/v3/*` and `docs/*`).
+
+### Status
+Done for PR 2. `npm test`: 933 before, 1010 after (77 new: 11 worked examples with hand calculations in `stock.test.ts`); `npm run build` passes. All choices and open points are in `docs/DECISIONS.md` ("M4 PR 2").
+
+### Waiting for the owner
+- Low-stock rule for cream / drops (now never low).
+- Liquid dose range (schedule `pills` max 4 cannot hold a 5 ml dose).
+- Weeks: nearest (used) or floor (M4-GAP)?
+- Proposed Thai texts (see DECISIONS) for tubes / error / 0 days.
+
+### Next
+PR 3 — backup / restore v3 (`version: 3`).
+
+### Owner's S24 test for PR 2
+No UI in this PR. Just open the app and see that the old app works as before.
+
 ## M4 PR 1 — data: schema v3 + storage key + fixtures (28 ต.ค. 2569)
 
 Branch `m4/pr1-schema-v3`. Data only, no UI. New files under `src/domain/v3/`: `schema.ts`, `storage.ts`, `fixtures.ts` and a test file each for schema and storage. v2 files, `src/pages`, `src/components`, `src/App.tsx` and old tests untouched (checked with `git diff --stat origin/main`). CLAUDE.md now allows `judya.v3` / `judya.v3.prev` for v3 code, keeps `judya.v2` off limits until PR 7b, and points to `docs/M4-GAP.md`.

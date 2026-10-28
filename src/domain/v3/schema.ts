@@ -186,6 +186,35 @@ export const assignmentSchema = z.object({
   createdAt: isoDateTime,
 });
 
+/** Units in one strip for a `count` stock: strip / box = perStrip, sachetBox = sachets (a "strip" is then one box).
+ * null = the pack has no strip size (none, container). */
+export function unitsPerStrip(pack: Pack): number | null {
+  switch (pack.type) {
+    case 'strip':
+    case 'box':
+      return pack.perStrip;
+    case 'sachetBox':
+      return pack.sachets;
+    case 'none':
+    case 'container':
+      return null;
+  }
+}
+
+/** Does the stock fit the medicine? tablet / capsule / sachet = count; liquid = volume; cream / drops = tubes;
+ * other = any. A count with strips needs a pack that has a strip size. Returns an error text, or null when fine. */
+export function stockProblem(medication: Pick<Medication, 'kind' | 'pack'>, stock: Stock | null): string | null {
+  if (!stock) return null;
+  const { kind } = medication;
+  const wanted =
+    kind === 'tablet' || kind === 'capsule' || kind === 'sachet' ? 'count' : kind === 'liquid' ? 'volume' : kind === 'other' ? null : 'tubes';
+  if (wanted !== null && stock.kind !== wanted) return `${kind} uses stock kind ${wanted}, not ${stock.kind}`;
+  if (stock.kind === 'count' && stock.strips > 0 && unitsPerStrip(medication.pack) === null) {
+    return 'stock has strips but the pack has no strip size';
+  }
+  return null;
+}
+
 // ---------- MedEvent (append-only history: start, adjust, stop, resume; there is no edit) ----------
 
 export const STOP_REASONS = ['หมอสั่ง', 'แพ้ยา', 'ใช้ยาไม่ได้ / ผลข้างเคียง', 'อื่น ๆ'] as const; // list not final (DECISIONS.md)
@@ -358,6 +387,13 @@ export const rootSchema = z
   .refine((r) => r.persons.filter((p) => p.relation === SELF_RELATION && p.removedAt === undefined).length <= 1, {
     path: ['persons'],
     message: 'at most one active person can be "ตัวฉัน"',
+  })
+  .superRefine((r, ctx) => {
+    r.assignments.forEach((a, i) => {
+      const medication = r.medications.find((m) => m.id === a.medicationId);
+      const problem = medication ? stockProblem(medication, a.stock) : null;
+      if (problem) ctx.addIssue({ code: 'custom', path: ['assignments', i, 'stock'], message: problem });
+    });
   });
 
 export type Person = z.infer<typeof personSchema>;
