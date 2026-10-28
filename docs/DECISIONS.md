@@ -410,3 +410,35 @@ Order page, price boxes, "ข้อความสั่งยาไปร้า
 ### Font size card in Settings (done in the V2 PR; the rest of Settings stays for V5)
 - Card "ขนาดตัวอักษร" is the first card on the settings page: 3 buttons (ปกติ / กลาง / ใหญ่, 48px tall, `aria-pressed`), a sample medicine line and the hint "ถ้าผู้สูงอายุใช้ร่วมด้วย แนะนำ กลาง หรือ ใหญ่" (no quotes around กลาง / ใหญ่, as the owner wrote it). Uses `useFontSize`; the choice is applied at once and stored under `judya.fontsize` only.
 - The text "จัดการยา ไม่ใช่คำแนะนำทางการแพทย์" is not added here (V5).
+
+
+## M4 PR 1 — schema v3, storage key, fixtures (28 ต.ค. 2569)
+Everything is new code under `src/domain/v3/`. No v2 file, page, component or test was changed.
+
+### Where the prompt and v2 differ (v2 name kept, as instructed)
+- Root tables are `persons` and `events` (the prompt wrote "people" and did not list `events`). `events` stays: MedEvent needs a table.
+- `Price` keeps the v2 field `price` (the prompt wrote `unitPrice`) and the `item` reference (`{kind:'med', medicationId}` or `{kind:'house', houseItemId}`). `perSellUnit` is now optional (v2: required); for house items it must be 1 when given. `Price` is `.strict()`, so `receipt` and photo fields are rejected.
+- `OrderLine` keeps `unitPrice` (prompt name; there is no v2 order). `source.kind = 'assignment'` uses `assignmentId` as the prompt says (M4-GAP section 4 said `medicationId`).
+- Settings keep the v2 fields `expiryWarnDays`, `orderTemplate`, `orderDays`; `fontSize` is new inside settings (in v2 it is the separate key `judya.fontsize`, not touched). `lowStockDays` now accepts any positive number up to 60 (v2: integer 1..60).
+- Schedule shape copied from v2 as is (`meal` / `interval`); v3 does not import any v2 file, so v2 can be deleted later.
+- Stop reasons: the 4 v2 reasons are used as is. **Waiting for the owner: check the final list against the board "MedDetailStop".** Adjust reasons: `doctor` | `self_or_other`.
+
+### Decisions taken (easy to change)
+- Relation list is `ตัวฉัน พ่อ แม่ คู่สมรส ลูก ญาติ อื่นๆ` exactly as the prompt wrote it ("อื่นๆ" without a space, unlike v2 "อื่น ๆ").
+- "ตัวฉัน" at most once: counted among people **without** `removedAt`, so a removed "ตัวฉัน" does not block a new one. Not specified; say if removed people should count too.
+- Birth year: 2400 up to (this year + 543), checked when the data is validated (uses the phone clock). Still optional, as in v2.
+- Avatar names are `avatar-01` … `avatar-12` (the file names in `src/assets/visual/avatars`); a test compares the list with the files. The list is copied into the schema (not imported from `src/visual.ts`, which uses Vite-only code). `avatar` is required.
+- `allergies` is required on Person (use `{status:'unknown'}` for a new member). Each listed item needs a non-empty drug and reaction.
+- `coverage` is optional; `.strict()` rejects any other field. `company` only when `type = 'private'`.
+- Medication keeps v2 `unit` as **optional** display text and `suggestionId`; the prompt did not say whether `unit` stays. Open: derive it from `kind` in a later PR or drop it.
+- Kind and pack rule is loose: every kind may use `{type:'none'}`; tablet/capsule → strip or box; liquid → container in ml; cream → container in g; drops → any container; sachet → sachetBox; `other` → anything. Not checked: whether an Assignment's stock kind fits the medicine's kind (count/volume/tubes) — that needs two tables and is left to the PR that writes stock.
+- Stock `count`: `strips` whole number ≥ 0, `loose` in 0.5 steps (like v2 pills). `volume`: `ml` 0..99999. `tubes`: `spare` whole number ≥ 0. Assignment `stock` stays nullable as in v2.
+- `sideEffects` is on Assignment (max 500 characters), as the prompt says; M4-GAP Q6 asked about Medication.
+- MedEvent: one strict object per type. start has `to` only; adjust needs `from` and `to` (different schedules); stop needs a reason; resume has nothing else. `note` (max 200) allowed on all. `edit` is rejected, and Snapshot holds only `schedule`.
+- Order: no minimum or maximum number of lines (an order with zero lines is accepted). `unitPrice` may be 0 or missing. `leftover` is `waiting`, `dropped` or null.
+- Settings: `lowStockDays` and `fontSize` have defaults (14 and `normal`) when missing from stored data, and `DEFAULT_SETTINGS_V3` carries the same values.
+- Storage v3 is the v2 logic in a new file (`v3/storage.ts`); function names are the same (`loadRoot`, `saveRoot`, `startFresh`, `restoreRoot`) and live in the v3 module. Wrong-version here means anything but `version: 3`.
+- Fixtures: `blankRootV3()` and `sampleRootV3()` in `v3/fixtures.ts`, fixed dates (2026-10-28), made-up names only. `sampleRootV3()` is separate from the v2 `sample.ts`.
+
+### Not done in this PR (later PRs)
+Backup file (`backup.ts`) for v3, the v3 version of `sample.ts` that follows "today", any UI, `judya.fontsize` handling.

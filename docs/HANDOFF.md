@@ -2,6 +2,24 @@
 
 Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every session.
 
+## M4 PR 1 — data: schema v3 + storage key + fixtures (28 ต.ค. 2569)
+
+Branch `m4/pr1-schema-v3`. Data only, no UI. New files under `src/domain/v3/`: `schema.ts`, `storage.ts`, `fixtures.ts` and a test file each for schema and storage. v2 files, `src/pages`, `src/components`, `src/App.tsx` and old tests untouched (checked with `git diff --stat origin/main`). CLAUDE.md now allows `judya.v3` / `judya.v3.prev` for v3 code, keeps `judya.v2` off limits until PR 7b, and points to `docs/M4-GAP.md`.
+
+### Status
+Done for PR 1. `npm test`: 887 before, 933 after (46 new: 32 schema, 14 storage); `npm run build` passes. More numbers and all choices made on the way are in `docs/DECISIONS.md` ("M4 PR 1").
+
+### Waiting for the owner
+- Stop reasons list: check against the board "MedDetailStop" (v2's 4 reasons are used for now).
+- Should a removed "ตัวฉัน" still count toward the "only one" rule? (now: no)
+- Keep `unit` on Medication or derive from `kind`? (now: optional)
+
+### Next
+PR 2 — stock / days / weeks logic (M4-GAP section 5). The v3 backup file (`version: 3`, PR 3) is not written yet.
+
+### Owner's S24 test for PR 1
+No UI in this PR, so nothing to test on the phone. Just open the app and see that the old app works as before.
+
 ## Step V2 — home screen, mockup round 9 screens 1-3 (21 ต.ค. 2569)
 
 Branch `claude/homepage-v2-mockup-r9-s6keiw`. Look only: `src/domain/**`, `src/state/**`, `judya.v2` untouched; nothing new is written to storage. The mockup was read from the branch of PR #20 (`docs/design/mockup-r9-reference.html`), which was not merged yet when this was built.
