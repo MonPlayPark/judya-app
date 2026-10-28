@@ -442,3 +442,28 @@ Everything is new code under `src/domain/v3/`. No v2 file, page, component or te
 
 ### Not done in this PR (later PRs)
 Backup file (`backup.ts`) for v3, the v3 version of `sample.ts` that follows "today", any UI, `judya.fontsize` handling.
+
+
+## M4 PR 2 — stock / days left / weeks / refill logic (28 ต.ค. 2569)
+New files under `src/domain/v3/`: `schedule.ts`, `stock.ts`, `stockText.ts` (+ test each, + `schemaStock.test.ts`). Only v3 file edited: `schema.ts` (rule (จ), below). v3 imports only the date helpers of `src/domain/calc.ts`; no v2 file, page, component or old test touched. No UI.
+
+### Where the prompt and M4-GAP differ
+- Weeks: the prompt says N = days / 7 **rounded to nearest**; M4-GAP section 5 / board DoseChangeWeeks said floor. The prompt is used (26 days → "ประมาณ 4 สัปดาห์", floor would give 3). Say if the board's floor is what you want.
+
+### Decisions taken (easy to change)
+- **Function signatures changed from v2**: `stockNow`, `daysLeft`, `isLowStock` now take the `Medication` (pack size is there): `daysLeft(assignment, medication, today, events)`. `targetDoses` does not need it.
+- `stockUnits` returns `none | tubes | units | error` (a value, never a throw). `daysLeft` adds two statuses to v2's: `tubes` (with `opened`, `spare`) and `error` (with a Thai message). `stockNow` returns `null` for error data; `daysLeft` is where the error shows. `isLowStock` is false for error.
+- A **stopped** assignment is `unknown` first, even for tubes (same as v2). So a stopped cream shows no spare tubes in `daysLeft`.
+- `count` with strips but a pack without a strip size (`none`, and also `container`) is an error. Prompt only named `none`; `container` is the same case (no strip size) and `other` kind may carry it.
+- **Schema rule (จ)** is a root-level refinement: each assignment is checked against its medication. An assignment whose `medicationId` is not in the list gets no stock issue from this rule (cross-reference checks are not part of it). The same helper `stockProblem` is used by `stockUnits`, so schema and logic agree. PR 1 fixtures already obey the rule; no fixture was changed.
+- Not-daily means a **meal** schedule with `days.kind` of `alt` or `weekdays`. An interval schedule counts as daily (it has no days rule). "Any period" is read as: before **or** after a dose change (`unitFor(beforeSchedule, afterSchedule)`), so both sides use weeks if either is not daily.
+- Texts (proposed, change freely): days left 0 for a daily medicine = "ไม่พอสำหรับวันนี้" (same as v2; the prompt only said "N วัน"); weeks mode at 0..14 days = "ไม่ถึง 2 สัปดาห์"; enough = "พอใช้ตลอดคอร์ส"; unknown = "ยังไม่ได้นับ" (both as the prompt wrote); tubes = "นับเป็นหลอด ไม่คำนวณวัน"; error = "ข้อมูลสต็อกไม่ตรงกับยา"; change text = "ก่อน → หลัง".
+- `refillStock(assignment, medication, events, today, amount, newExpiry?)` also takes the medication (strip size). Result is `{ok:true, assignment} | {ok:false, error}`. After a count refill the total is written back as whole strips + loose (e.g. 34 pills of 10 = 3 strips + 4). With stock = null the amount is stored as entered. Adding 0 (or less) is an error. Adding a different kind than the stock holds (e.g. ml to a count stock) is an error. A **stopped** medicine can be refilled (the stop events are used for the quantity); status is not changed.
+- Refill of tubes adds to `spare` and keeps `opened`; with no stock yet it starts at `opened: false`. No `countedOn` for tubes.
+- Expiry: nearer date wins; one alone is used; none stays none (the `expiry` key is then absent).
+- `openNewTube(assignment)`: only for tubes stock; spare 0 → error "ไม่มีหลอดสำรองให้เปิด".
+
+### Waiting for the owner
+- **Low-stock rule for cream / drops**: the design gives none, so `isLowStock` is always false for tubes. Decide what "ใกล้หมด" means for them (e.g. no spare tube left and the open one marked empty?).
+- **Liquid dose limit**: the v3 schedule keeps v2's `pills` between 0.5 and 4. For a liquid that is ml per dose, so a 5 ml spoon cannot be written. Not changed here (schedule shape is PR 1 / owner's call). Decide the ml range for liquids before the add-medicine screen (PR 6).
+- Weeks: nearest (prompt) or floor (M4-GAP)? See above.
