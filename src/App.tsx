@@ -3,6 +3,7 @@ import { SaveErrorBar } from './components/SaveErrorBar';
 import { UpdateBar } from './components/UpdateBar';
 import { AddMedicineStep1, AddMedicineStep2, AddMedicineStep3 } from './pages/AddMedicine';
 import { HomePage } from './pages/HomePage';
+import { HomeV3Route } from './pages/v3/HomeV3Page';
 import { AddHousePage, EditHousePage } from './pages/HousePages';
 import { MedDetailPage } from './pages/MedDetail';
 import { MedsPage } from './pages/MedsPage';
@@ -23,6 +24,9 @@ import styles from './App.module.css';
 
 /** `getToday` is only for tests: it replaces the real clock. */
 export function App({ getToday }: { getToday?: () => IsoDate }) {
+  const { path } = useRoute();
+  // v3 Home (M4 PR 4): outside DataProvider on purpose, so this route never opens the v2 data (`judya.v2`).
+  if (path === '/n') return <HomeV3Route getToday={getToday} />;
   return (
     <DataProvider getToday={getToday}>
       <DraftProvider>

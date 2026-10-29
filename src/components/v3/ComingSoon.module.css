@@ -1,0 +1,40 @@
+/* A place with no destination yet: faded content, a readable badge, not clickable. Tokens only. */
+.soon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  color: inherit;
+  text-align: inherit;
+  cursor: not-allowed;
+}
+
+/* the faded part: everything the button would normally show */
+.faded {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: inherit;
+  width: 100%;
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+
+/* the badge stays at full strength so it can be read: a word, never colour alone */
+.badge {
+  display: inline-block;
+  padding: 0 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-tint);
+  color: var(--color-ink);
+  font-size: var(--text-chip-size);
+  line-height: var(--text-chip-line);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+}
