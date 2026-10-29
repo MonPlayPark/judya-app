@@ -2,6 +2,19 @@
 
 Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every session.
 
+## M4 PR 4 — Home v3 (29 ต.ค. 2569)
+
+Branch `m4/pr4-home`. First UI of v3, at `#/n` (the old home at `#/` is untouched). New: `src/domain/v3/home.ts`, `homeDemo.ts`, `src/pages/v3/HomeV3.tsx|HomeV3Page.tsx|css`, `src/components/v3/ComingSoon`, `V3Nav` + tests. Edited: `src/App.tsx` (the `#/n` route), `scripts/check-overflow.mjs` (7 v3 routes, text >= 14px and tap target >= 48px checks), docs. All choices: `docs/DECISIONS.md` "M4 PR 4".
+
+### Status
+`npm test`: 1,073 before, 1,134 after (61 new: 31 logic, 30 screen); `npm run build` passes; `npm run check:overflow` 234 page checks, 0 problems (360 and 412px, 3 font sizes). Screenshots at 360px of all six states were taken with Chromium and looked at; the mockup picture was compared by eye (differences in DECISIONS). Not checked on a real phone.
+
+### Next
+Every place that says "เร็ว ๆ นี้" is a `<ComingSoon>`; a later PR swaps it for a real button or link (PR 5 list, PR 6-9 add, PR 12 order, etc.).
+
+### Owner's S24 test (after merge and deploy)
+Open the GitHub Pages link of the repo + `#/n?demo=normal` (also `alert`, `empty0`, `empty1`, `notoday`, `backup`). Check: badge "โหมดตัวอย่าง ไม่บันทึกข้อมูล"; tap a member to switch; tap "รอจัด" / "จัดแล้ว" (changes until you reload, nothing saved); grey places say "เร็ว ๆ นี้" and do nothing; no "ตารางยา" anywhere. `#/n` alone is the real v3 data (new user = empty state S0). The old app at `#/` works as before.
+
 ## M4 PR 3 — data: backup / restore v3, cross-table checks, weeks rounding (29 ต.ค. 2569)
 
 Branch `m4/pr3-backup-v3`. Data only, no UI. New: `src/domain/v3/backup.ts`, `backup.test.ts`, `schemaRefs.test.ts`. Edited v3 files: `schema.ts` (cross-table rule), `stockText.ts` (weeks round down) and the PR 1–2 tests that depended on them. v2 files, `src/pages`, `src/components`, `src/App.tsx` and old v2 tests untouched (`git diff --name-only origin/main` lists only `src/domain/v3/*` and `docs/*`).

@@ -497,3 +497,31 @@ New: `src/domain/v3/backup.ts` (+ `backup.test.ts`, `schemaRefs.test.ts`). Edite
 - **Waiting for the owner: keep the "more than 14 days" reminder or not?** Ported as a separate function so it can be dropped by deleting one function and one branch of `backupBanner`.
 - `backupBanner(root, today)` returns one banner or null: never backed up → `{kind:'never', text:'ยังไม่ได้สำรองข้อมูล'}`; backed up but over 14 days → `{kind:'old', text:'ไม่ได้สำรองข้อมูลมา N วันแล้ว', daysAgo}`; otherwise null. Texts are proposed (the second is the v2 Home text).
 - A backup date after `today` (phone clock moved back) gives no warning.
+
+
+## M4 PR 4 — Home v3 (29 ต.ค. 2569)
+New: `src/domain/v3/home.ts`, `homeDemo.ts` (+ tests), `src/pages/v3/HomeV3*.tsx|css`, `src/components/v3/ComingSoon`, `V3Nav`. Edited: `src/App.tsx` (route `#/n` only), `scripts/check-overflow.mjs`, docs. No v2 file and no earlier v3 file changed. Route `#/n` is rendered **outside** `DataProvider`, so it never reads `judya.v2`.
+
+### Where the prompt, board and picture differ (prompt wins)
+- Not copied from the picture: bell / profile icon, clock times (08:00), the "ตารางยา" card, the date in the picture. Date pill = today's Thai date, plain text like the board (not a button: it has no destination).
+- **Colours**: the board and picture use navy headings (#013073) and a light band (#EAF3FF). Not in `tokens.css`, so tokens are used instead (ink headings, `--color-band`). Owner: add a navy token if the navy look matters.
+- **Logo mark**: the repo has no JY-house mark. The app icon `public/icons/judya-appicon.svg` (bag) is used as the mark. Owner: send the mark file if it must match the picture. Mascot = `mascot/wave.svg` (looks like the picture's character).
+- **Shortcuts**: 3 tiles in the order given (สั่งซื้อยา, แชร์ให้แพทย์, รายการยา); the third is full width so no cell is empty. The board's 2x2 grid would leave a hole.
+- **Dose keys** in `prepLog`: `<assignmentId>:<slot>` (morning/noon/evening/bedtime), as the PR 1 fixture (`a1:morning`). The interval key `<id>:HH:MM` is not shown by any v3 file; it follows v2. Owner: confirm.
+- Ticks older than 14 days are dropped on each tick (v2 rule). Self-managed members are left out of today's doses (BRIEF: "ไม่ขึ้นยาวันนี้"); their chip says "จัดยาเอง".
+- The "today" card title and the care rows are plain (the board links them to `#`): no destination yet. "ดูทั้งหมด N" is replaced by at most 3 rows + "และอีก N รายการ".
+- Care order: expired, out, low, expiring; a medicine is listed once under its worst problem. Texts I set (board has the first, third, fourth): "ยาหมดอายุแล้ว N รายการ", **"ยาหมดแล้ว N รายการ"** (house medicine at 0), "ยาใกล้หมด N รายการ", "ยาใกล้หมดอายุ N รายการ". Chips: "เลิกใช้", "หมดแล้ว", days-left from `formatDaysLeft`, "เหลือ N หน่วย" (house), "N วัน" / "วันนี้" (expiry). Cream / drops are not warned about low stock (`isLowStock`), expiry still counts.
+- Backup banner (`backupBanner()`) is the last warning, so a care warning shows first and the backup becomes part of "+N เรื่อง". The "มียาที่ต้องซื้อ" sub-line is the orange warning itself; no extra sub-line.
+- Greeting sub-lines: S0/S1 "มาเริ่มจัดยากันเลย"; no dose today "วันนี้ไม่มียาที่ต้องจัด"; all ticked "จัดยาครบแล้ววันนี้" (green); else "วันนี้มี N รายการที่ต้องจัดยา". Member with no dose: "วันนี้ไม่มียาที่ต้องกิน" (board).
+- **Interval medicines** (every N hours) have no meal period. Rows are placed by clock hour: 04–10 เช้า, 11–15 กลางวัน, 16–20 เย็น, 21–03 ก่อนนอน, with the text "ทุก N ชั่วโมง". Owner: confirm or choose another way.
+- Dose unit word: medicine `unit` text if any, else by kind: เม็ด, แคปซูล, มล., ซอง; cream and drops "ครั้ง", other "หน่วย".
+- Default member shown = first with doses today, else first not self-managed.
+- Data that cannot be opened (corrupt, other version, blocked storage) shows one red sentence and nothing is overwritten (no recovery screen yet). A tick that cannot be saved shows "บันทึกไม่ได้ ข้อมูลเดิมยังอยู่ …" and the tick is not shown.
+- Locked step 2 in S0 ("ต้องเพิ่มสมาชิกก่อน") is plain text, not a disabled button.
+- Bottom nav: Home is current (not a link); the other 3 tabs are "เร็ว ๆ นี้". The nav is taller because of the badges.
+
+### Demo mode
+`#/n?demo=normal|alert|empty0|empty1|notoday|backup`: made-up house built in memory from the PR 1 fixtures, date fixed to 2026-10-28 (a Wednesday) so every state looks the same any day. No storage call of any kind (tests spy on every `Storage` method, `loadRoot`, `saveRoot`). Badge "โหมดตัวอย่าง ไม่บันทึกข้อมูล". No link to it from the normal screens.
+
+### Waiting for the owner
+Navy colour token · logo mark file · interval key and interval periods · "ดูทั้งหมด N" and row destinations (PR 5) · low-stock rule for cream / drops (from PR 2) · whether the sample house should hide the "never backed up" banner (PR 3).
