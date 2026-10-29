@@ -467,3 +467,33 @@ New files under `src/domain/v3/`: `schedule.ts`, `stock.ts`, `stockText.ts` (+ t
 - **Low-stock rule for cream / drops**: the design gives none, so `isLowStock` is always false for tubes. Decide what "ใกล้หมด" means for them (e.g. no spare tube left and the open one marked empty?).
 - **Liquid dose limit**: the v3 schedule keeps v2's `pills` between 0.5 and 4. For a liquid that is ml per dose, so a 5 ml spoon cannot be written. Not changed here (schedule shape is PR 1 / owner's call). Decide the ml range for liquids before the add-medicine screen (PR 6).
 - Weeks: nearest (prompt) or floor (M4-GAP)? See above.
+
+
+## M4 PR 3 — backup / restore v3, cross-table checks, weeks rounding (29 ต.ค. 2569)
+New: `src/domain/v3/backup.ts` (+ `backup.test.ts`, `schemaRefs.test.ts`). Edited v3 files: `schema.ts`, `stockText.ts` and the PR 1–2 tests that depended on them. v3 imports only the date helper `diffDays` from `src/domain/calc.ts` (the Thai-date helper is written again inside `backup.ts` as `bangkokDate`, so `src/domain/today.ts` is not imported). No v2 file, page, component or old v2 test touched. No UI.
+
+### Changed from PR 2
+- **Weeks now round down** (`Math.floor(days / 7)`), as the board DoseChangeWeeks says: 14 → "ไม่ถึง 2 สัปดาห์", 15 and 20 → "ประมาณ 2 สัปดาห์", 21 and 26 → "ประมาณ 3 สัปดาห์". This replaces the PR 2 choice (nearest) and closes the PR 2 question. Tests changed: `stockText.test.ts` (rounding test), `stock.test.ts` example 8 (26 days is now 3 weeks, was 4).
+
+### Cross-table checks (root-level rule in `schema.ts`)
+- Refused, with a message that names the table, the row id and the missing target (e.g. `assignments "a1": medicationId "x" is not in medications`): assignment → medication, person; event → assignment; price → shop, medication / house item; order → shop; order line (assignment / house) → assignment / house item. A `free` line is not checked.
+- The same id twice in one table is refused (`persons: id "p1" is used more than once`), for all 8 tables. The same id in two different tables is fine.
+- A removed person (`removedAt`) stays in `persons`, so it can still be referenced. Same for removed house items and stopped assignments.
+- The PR 2 stock rule still skips a medication that is not found; the new rule catches that case first (one message only). The old PR 2 test about this was changed to expect the refusal.
+- Fixtures of PR 1 already obey the rules; none was changed. Three storage tests used `shops: []` as a "different data" example; that now breaks references, so they use `prepLog: {}` instead.
+- A refused file/data is `invalid` (backup) or `corrupt` (load); the screen shows the usual "file is damaged" message. The detailed message is for developers and tests, not for the owner.
+
+### Backup file
+- The file is the v3 root as JSON (`version: 3`), nothing around it, with `meta.lastBackupAt` stamped (same as v2). So a restored house differs from the original only in that stamp.
+- **File name**: `judya-backup-YYYY-MM-DD-v3.json` (v2: `judya-backup-YYYY-MM-DD.json`), date = Thai date of `nowIso`.
+- `summarizeBackup(text)` order: size (> 5 MB = `too_big`, counted in bytes) → JSON (`not_json`) → a `version` that is not 3 (`wrong_version`; v2, v4, even the text "3") → full schema (`invalid`, also when there is no `version` at all, or the JSON is `null` / a list).
+- Summary = `{ members, medicines, houseItems, orders, text }`. Members and house medicines exclude removed ones; medicines (assignments) include stopped ones; orders include every status. Text: `สมาชิก 7 คน ยา 7 รายการ ยาสามัญ 2 รายการ ใบสั่ง 4 ใบ` (proposed, change freely).
+- Restore = `summarizeBackup` then `restoreRoot` (PR 1; copies the old text to `judya.v3.prev` first). There is no other way to restore in this file. "No restore unless the owner confirms" is the screen's job (later PR); the functions here never write.
+- `makeBackup` does not save the stamp into storage. `markBackedUp(root, nowIso)` returns a new root with `meta.lastBackupAt`; the screen should save it only after the file was really handed over, so the banner does not disappear when the user cancels.
+
+### Home banner functions (no UI yet)
+- `shouldShowNeverBackedUp(root)`: has medicines (at least 1 assignment, or at least 1 house medicine that is not removed) and no `lastBackupAt`. Written exactly as asked, so the **sample house also counts** (it has medicines and no stamp). Decide later if the sample should hide the banner (v2 did).
+- `needsBackupWarning(root, today)` / `backupAge`: ported from v2, more than 14 days since `lastBackupAt` (Thai dates). Two changes from v2: it is false when the house has no medicines, and false when there was never a backup (that case is the function above, so the two do not overlap).
+- **Waiting for the owner: keep the "more than 14 days" reminder or not?** Ported as a separate function so it can be dropped by deleting one function and one branch of `backupBanner`.
+- `backupBanner(root, today)` returns one banner or null: never backed up → `{kind:'never', text:'ยังไม่ได้สำรองข้อมูล'}`; backed up but over 14 days → `{kind:'old', text:'ไม่ได้สำรองข้อมูลมา N วันแล้ว', daysAgo}`; otherwise null. Texts are proposed (the second is the v2 Home text).
+- A backup date after `today` (phone clock moved back) gives no warning.
