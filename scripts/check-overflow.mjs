@@ -12,6 +12,10 @@ const SIZES = ['n', 'm', 'l'];
 const STATIC_ROUTES = ['/', '/today', '/meds', '/meds?tab=house', '/meds/new', '/meds/new/schedule', '/meds/new/stock',
   '/house/new', '/members', '/members/new', '/order', '/settings', '/no-such-page'];
 
+// v3 Home (M4 PR 4): the real data route (a new user = S0) and the six demo states. Checked for sideways overflow
+// like every page, and also for text under the minimum size and tap targets under 48px.
+const V3_ROUTES = ['/n', '/n?demo=normal', '/n?demo=alert', '/n?demo=empty0', '/n?demo=empty1', '/n?demo=notoday', '/n?demo=backup'];
+
 const chromePath = process.env.CHROMIUM_PATH
   ?? ['/opt/pw-browsers/chromium', '/usr/bin/chromium', '/usr/bin/google-chrome'].find((p) => existsSync(p));
 
@@ -49,6 +53,26 @@ const measure = () => {
   return out.slice(0, 5).join('; ');
 };
 
+/** v3 pages only: text smaller than `minPx`, and enabled buttons / links shorter than 48px. */
+const measureV3 = (minPx) => {
+  const out = [];
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  while (walker.nextNode()) {
+    const text = walker.currentNode.textContent.trim();
+    const el = walker.currentNode.parentElement;
+    if (!text || !el) continue;
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) continue;
+    const size = parseFloat(getComputedStyle(el).fontSize);
+    if (size < minPx) out.push(`text "${text.slice(0, 20)}" ${size.toFixed(2)}px`);
+  }
+  for (const el of document.querySelectorAll('button:not([disabled]), a[href]')) {
+    const r = el.getBoundingClientRect();
+    if (r.height > 0 && r.height < 47.5) out.push(`tap target ${el.tagName.toLowerCase()} "${(el.textContent ?? '').trim().slice(0, 20)}" ${Math.round(r.height)}px high`);
+  }
+  return out.slice(0, 5).join('; ');
+};
+
 await waitForServer();
 const browser = await chromium.launch({ executablePath: chromePath });
 let problems = 0;
@@ -73,6 +97,13 @@ for (const width of WIDTHS) {
 
     // 1) empty house
     for (const r of STATIC_ROUTES) await visit(r, 'empty');
+
+    // 1b) v3 Home: all states, plus the text size and tap target checks (14px at "normal", 15px at the larger sizes)
+    for (const r of V3_ROUTES) {
+      await visit(r, 'v3');
+      const small = await page.evaluate(measureV3, fs === 'n' ? 13.9 : 14.9);
+      if (small) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 ${r}: ${small}`); }
+    }
 
     // 2) house with the sample data (pages that need ids too)
     await page.goto(`${BASE}#/`);
