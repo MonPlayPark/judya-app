@@ -14,7 +14,7 @@ export const isNotDaily = (schedule: Schedule): boolean => schedule.kind === 'me
 /** Weeks if any of the given schedules (e.g. before and after a dose change) is not taken every day, else days. */
 export const unitFor = (...schedules: Schedule[]): LeftUnit => (schedules.some(isNotDaily) ? 'weeks' : 'days');
 
-/** Days left as text. weeks: <= 14 days "ไม่ถึง 2 สัปดาห์", more "ประมาณ N สัปดาห์" (N = days / 7, nearest whole number).
+/** Days left as text. weeks: <= 14 days "ไม่ถึง 2 สัปดาห์", more "ประมาณ N สัปดาห์" (N = days / 7, rounded down).
  * days: "N วัน" ("ไม่พอสำหรับวันนี้" at 0, as in v2). */
 export function formatDaysLeft(d: DaysLeft, unit: LeftUnit): string {
   switch (d.status) {
@@ -28,7 +28,7 @@ export function formatDaysLeft(d: DaysLeft, unit: LeftUnit): string {
       return 'ข้อมูลสต็อกไม่ตรงกับยา';
     case 'ok':
       if (unit === 'weeks') {
-        return d.days <= WEEKS_THRESHOLD_DAYS ? 'ไม่ถึง 2 สัปดาห์' : `ประมาณ ${Math.round(d.days / 7)} สัปดาห์`;
+        return d.days <= WEEKS_THRESHOLD_DAYS ? 'ไม่ถึง 2 สัปดาห์' : `ประมาณ ${Math.floor(d.days / 7)} สัปดาห์`;
       }
       return d.days === 0 ? 'ไม่พอสำหรับวันนี้' : `${d.days} วัน`;
   }

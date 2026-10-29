@@ -59,9 +59,12 @@ describe('the root schema applies the stock rule', () => {
     expect(rootSchema.safeParse(r).success).toBe(false); // a1 holds 2 strips
   });
 
-  it('an assignment of an unknown medicine adds no stock issue (not this rule\'s job)', () => {
+  it('an assignment of an unknown medicine adds no stock issue (the cross-table rule catches it first)', () => {
     const r = sampleRootV3();
     r.assignments[0]!.medicationId = 'missing';
-    expect(rootSchema.safeParse(r).success).toBe(true);
+    const res = rootSchema.safeParse(r);
+    expect(res.success).toBe(false);
+    const messages = res.success ? [] : res.error.issues.map((i) => i.message);
+    expect(messages).toEqual(['assignments "a1": medicationId "missing" is not in medications']);
   });
 });

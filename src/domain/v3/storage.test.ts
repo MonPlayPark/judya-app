@@ -82,7 +82,7 @@ describe('storage v3 (key judya.v3)', () => {
     expect(saveRoot(old, s).ok).toBe(true);
     const before = s.data.get(STORAGE_KEY);
     s.failQuota = true;
-    expect(saveRoot({ ...old, shops: [] }, s)).toMatchObject({ ok: false, reason: 'quota' });
+    expect(saveRoot({ ...old, prepLog: {} }, s)).toMatchObject({ ok: false, reason: 'quota' });
     expect(s.data.get(STORAGE_KEY)).toBe(before);
   });
 
@@ -92,7 +92,7 @@ describe('storage v3 (key judya.v3)', () => {
     saveRoot(old, s);
     const before = s.data.get(STORAGE_KEY);
     s.garbleNextSet = true;
-    expect(saveRoot({ ...old, shops: [] }, s)).toMatchObject({ ok: false, reason: 'verify-failed' });
+    expect(saveRoot({ ...old, prepLog: {} }, s)).toMatchObject({ ok: false, reason: 'verify-failed' });
     expect(s.data.get(STORAGE_KEY)).toBe(before);
   });
 
@@ -119,7 +119,7 @@ describe('storage v3 (key judya.v3)', () => {
     const oldMain = s.data.get(STORAGE_KEY);
     s.data.set(PREV_KEY, 'older copy');
 
-    expect(restoreRoot({ ...first, shops: [] }, s)).toEqual({ ok: true });
+    expect(restoreRoot({ ...first, prepLog: {} }, s)).toEqual({ ok: true });
     expect(s.data.get(PREV_KEY)).toBe(oldMain);
 
     const afterMain = s.data.get(STORAGE_KEY);

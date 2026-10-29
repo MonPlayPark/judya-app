@@ -365,6 +365,75 @@ export const settingsSchema = z.object({
 // date -> doseKey -> true
 export const prepLogSchema = z.record(isoDate, z.record(z.string(), z.literal(true)));
 
+// ---------- Cross-table checks (M4 PR 3) ----------
+
+type TableName = 'persons' | 'medications' | 'assignments' | 'events' | 'houseItems' | 'shops' | 'prices' | 'orders';
+type Tables = {
+  persons: Person[];
+  medications: Medication[];
+  assignments: Assignment[];
+  events: MedEvent[];
+  houseItems: HouseItem[];
+  shops: Shop[];
+  prices: Price[];
+  orders: Order[];
+};
+
+/** Every id that is used twice in one table, and every reference to a row that does not exist. A removed person
+ * stays in `persons`, so history can still point to them. Each message names the table, the row's id and the
+ * missing target. A `free` order line points to nothing and is not checked. Returns [] when all is well. */
+function referenceProblems(r: Tables): { path: (string | number)[]; message: string }[] {
+  const out: { path: (string | number)[]; message: string }[] = [];
+  const ids = (rows: { id: string }[]): Set<string> => new Set(rows.map((row) => row.id));
+  const persons = ids(r.persons);
+  const medications = ids(r.medications);
+  const assignments = ids(r.assignments);
+  const houseItems = ids(r.houseItems);
+  const shops = ids(r.shops);
+  const missing = (table: TableName, rowId: string, index: number, field: string, target: TableName, targetId: string): void => {
+    out.push({ path: [table, index, field], message: `${table} "${rowId}": ${field} "${targetId}" is not in ${target}` });
+  };
+
+  const tables: TableName[] = ['persons', 'medications', 'assignments', 'events', 'houseItems', 'shops', 'prices', 'orders'];
+  for (const table of tables) {
+    const seen = new Set<string>();
+    r[table].forEach((row, i) => {
+      if (seen.has(row.id)) out.push({ path: [table, i, 'id'], message: `${table}: id "${row.id}" is used more than once` });
+      seen.add(row.id);
+    });
+  }
+
+  r.assignments.forEach((a, i) => {
+    if (!medications.has(a.medicationId)) missing('assignments', a.id, i, 'medicationId', 'medications', a.medicationId);
+    if (!persons.has(a.personId)) missing('assignments', a.id, i, 'personId', 'persons', a.personId);
+  });
+  r.events.forEach((e, i) => {
+    if (!assignments.has(e.assignmentId)) missing('events', e.id, i, 'assignmentId', 'assignments', e.assignmentId);
+  });
+  r.prices.forEach((p, i) => {
+    if (!shops.has(p.shopId)) missing('prices', p.id, i, 'shopId', 'shops', p.shopId);
+    if (p.item.kind === 'med' && !medications.has(p.item.medicationId)) {
+      missing('prices', p.id, i, 'item.medicationId', 'medications', p.item.medicationId);
+    }
+    if (p.item.kind === 'house' && !houseItems.has(p.item.houseItemId)) {
+      missing('prices', p.id, i, 'item.houseItemId', 'houseItems', p.item.houseItemId);
+    }
+  });
+  r.orders.forEach((o, i) => {
+    if (!shops.has(o.shopId)) missing('orders', o.id, i, 'shopId', 'shops', o.shopId);
+    o.lines.forEach((line, j) => {
+      const { source } = line;
+      if (source.kind === 'assignment' && !assignments.has(source.assignmentId)) {
+        out.push({ path: ['orders', i, 'lines', j, 'source'], message: `orders "${o.id}" line ${j}: assignmentId "${source.assignmentId}" is not in assignments` });
+      }
+      if (source.kind === 'house' && !houseItems.has(source.houseItemId)) {
+        out.push({ path: ['orders', i, 'lines', j, 'source'], message: `orders "${o.id}" line ${j}: houseItemId "${source.houseItemId}" is not in houseItems` });
+      }
+    });
+  });
+  return out;
+}
+
 export const rootSchema = z
   .object({
     version: z.literal(DATA_VERSION_V3),
@@ -394,6 +463,9 @@ export const rootSchema = z
       const problem = medication ? stockProblem(medication, a.stock) : null;
       if (problem) ctx.addIssue({ code: 'custom', path: ['assignments', i, 'stock'], message: problem });
     });
+  })
+  .superRefine((r, ctx) => {
+    for (const problem of referenceProblems(r)) ctx.addIssue({ code: 'custom', path: problem.path, message: problem.message });
   });
 
 export type Person = z.infer<typeof personSchema>;

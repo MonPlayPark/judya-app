@@ -2,6 +2,30 @@
 
 Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every session.
 
+## M4 PR 3 — data: backup / restore v3, cross-table checks, weeks rounding (29 ต.ค. 2569)
+
+Branch `m4/pr3-backup-v3`. Data only, no UI. New: `src/domain/v3/backup.ts`, `backup.test.ts`, `schemaRefs.test.ts`. Edited v3 files: `schema.ts` (cross-table rule), `stockText.ts` (weeks round down) and the PR 1–2 tests that depended on them. v2 files, `src/pages`, `src/components`, `src/App.tsx` and old v2 tests untouched (`git diff --name-only origin/main` lists only `src/domain/v3/*` and `docs/*`).
+
+### Status
+Done for PR 3. `npm test`: 1,010 before, 1,073 after (63 new: 38 backup, 25 cross-table; the weeks tests were changed in place); `npm run build` passes. All choices are in `docs/DECISIONS.md` ("M4 PR 3").
+
+### What it does
+- Weeks round down: 14 → "ไม่ถึง 2 สัปดาห์", 15 / 20 → "ประมาณ 2 สัปดาห์", 21 / 26 → "ประมาณ 3 สัปดาห์".
+- The data is refused when a row points to something that does not exist (assignment → medicine / person, event → assignment, price → shop / item, order → shop / line source) or an id is used twice in one table. Removed people can still be pointed to.
+- Backup file = v3 data as JSON, named `judya-backup-<date>-v3.json`. `summarizeBackup` gives `not_json`, `wrong_version` (a v2 file), `invalid` or `too_big` (over 5 MB). Restore uses `restoreRoot` (old data goes to `judya.v3.prev`). Round-trip test: back up → wipe → restore returns every table unchanged.
+- Home banner functions: "ยังไม่ได้สำรองข้อมูล" when there are medicines and no backup; "ไม่ได้สำรองข้อมูลมา N วันแล้ว" after 14 days; otherwise nothing.
+
+### Waiting for the owner
+- Keep the "more than 14 days" backup reminder, or only "never backed up"?
+- Should the sample house hide the "never backed up" banner? (As written, it shows.)
+- Still open from PR 2: low-stock rule for cream / drops, ml range for liquid doses.
+
+### Next
+PR 4 — Home screen (uses `backupBanner`).
+
+### Owner's S24 test for PR 3
+No UI in this PR. Just open the app and see that the old app works as before.
+
 ## M4 PR 2 — data: stock / days left / weeks / refill logic (28 ต.ค. 2569)
 
 Branch `m4/pr2-stock-logic`. Data only, no UI. New in `src/domain/v3/`: `schedule.ts` (units per day), `stock.ts` (units, stockNow, daysLeft, targetDoses, isLowStock, houseStatus, refillStock, openNewTube), `stockText.ts` (days / weeks texts), a test file for each, and `schemaStock.test.ts`. `schema.ts` got the rule "stock must fit the medicine kind" (+ count with strips needs a pack with a strip size). v2 files, `src/pages`, `src/components`, `src/App.tsx` and old tests untouched (`git diff --stat origin/main` shows only `src/domain/v3/*` and `docs/*`).
