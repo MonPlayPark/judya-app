@@ -20,10 +20,10 @@ describe('weeks text (not-daily medicines)', () => {
     expect(formatDaysLeft(ok(1), 'weeks')).toBe('ไม่ถึง 2 สัปดาห์');
   });
 
-  it('N is days / 7 rounded to the nearest week (17 -> 2, 18 -> 3, 26 -> 4, 28 -> 4)', () => {
-    // 17 / 7 = 2.43 -> 2 · 18 / 7 = 2.57 -> 3 · 26 / 7 = 3.71 -> 4 · 28 / 7 = 4
-    expect([17, 18, 26, 28].map((d) => formatDaysLeft(ok(d), 'weeks'))).toEqual([
-      'ประมาณ 2 สัปดาห์', 'ประมาณ 3 สัปดาห์', 'ประมาณ 4 สัปดาห์', 'ประมาณ 4 สัปดาห์',
+  it('N is days / 7 rounded down (15 -> 2, 20 -> 2, 21 -> 3, 26 -> 3, 28 -> 4)', () => {
+    // 15 / 7 = 2.14 · 20 / 7 = 2.86 -> 2 (not 3) · 21 / 7 = 3 · 26 / 7 = 3.71 -> 3 (not 4) · 28 / 7 = 4
+    expect([15, 20, 21, 26, 28].map((d) => formatDaysLeft(ok(d), 'weeks'))).toEqual([
+      'ประมาณ 2 สัปดาห์', 'ประมาณ 2 สัปดาห์', 'ประมาณ 3 สัปดาห์', 'ประมาณ 3 สัปดาห์', 'ประมาณ 4 สัปดาห์',
     ]);
   });
 });
@@ -65,7 +65,7 @@ describe('unit choice and before -> after', () => {
   });
 
   it('enough / unknown sides keep their own text inside a change', () => {
-    expect(formatDaysLeftChange({ status: 'enough' }, ok(20), 'weeks')).toBe('พอใช้ตลอดคอร์ส → ประมาณ 3 สัปดาห์');
+    expect(formatDaysLeftChange({ status: 'enough' }, ok(21), 'weeks')).toBe('พอใช้ตลอดคอร์ส → ประมาณ 3 สัปดาห์');
     expect(formatDaysLeftChange({ status: 'unknown' }, { status: 'unknown' }, 'days')).toBe('ยังไม่ได้นับ → ยังไม่ได้นับ');
   });
 });

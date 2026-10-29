@@ -89,7 +89,7 @@ describe('worked examples (re-check by hand)', () => {
   it('example 6: Thursday only, 2 pills -> day 15 -> "ประมาณ 2 สัปดาห์"', () => {
     // Today is Wednesday. Thursdays are day 1, 8, 15, 22 ... Stock 2 pills, 1 pill each Thursday.
     // Day 1 takes (1 left), day 8 takes (0 left), day 15 needs 1 but has 0 -> days = 15.
-    // Not daily -> weeks. 15 > 14, N = round(15 / 7) = round(2.14) = 2 -> "ประมาณ 2 สัปดาห์".
+    // Not daily -> weeks. 15 > 14, N = floor(15 / 7) = floor(2.14) = 2 -> "ประมาณ 2 สัปดาห์".
     const a = asg(count(0, 2), meal(1, 0, { kind: 'weekdays', days: [4] }));
     const d = daysLeft(a, med(), TODAY);
     expect(d).toEqual({ status: 'ok', days: 15, depletionDate: addDays(TODAY, 15) });
@@ -105,13 +105,13 @@ describe('worked examples (re-check by hand)', () => {
     expect(formatDaysLeft(d, unitFor(a.schedule))).toBe('ไม่ถึง 2 สัปดาห์');
   });
 
-  it('example 8: Monday only, 3 pills -> 26 days -> rounds UP to 4 weeks', () => {
+  it('example 8: Monday only, 3 pills -> 26 days -> rounds DOWN to 3 weeks', () => {
     // Mondays: day 5, 12, 19, 26. Stock 3 covers day 5, 12, 19. Day 26 has 0 -> days = 26.
-    // 26 / 7 = 3.71 -> nearest = 4 -> "ประมาณ 4 สัปดาห์" (rounding down would say 3).
+    // 26 / 7 = 3.71 -> rounded down = 3 -> "ประมาณ 3 สัปดาห์" (nearest would say 4; changed in PR 3).
     const a = asg(count(0, 3), meal(1, 0, { kind: 'weekdays', days: [1] }));
     const d = daysLeft(a, med(), TODAY);
     expect(d).toMatchObject({ status: 'ok', days: 26 });
-    expect(formatDaysLeft(d, unitFor(a.schedule))).toBe('ประมาณ 4 สัปดาห์');
+    expect(formatDaysLeft(d, unitFor(a.schedule))).toBe('ประมาณ 3 สัปดาห์');
   });
 
   it('example 9: stop for 2 days, then resume', () => {
