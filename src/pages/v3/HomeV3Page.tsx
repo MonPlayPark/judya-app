@@ -8,6 +8,7 @@ import { DEMO_TODAY, demoRoot, isDemoName, type DemoName } from '../../domain/v3
 import { emptyRoot, type Root } from '../../domain/v3/schema';
 import { loadRoot, saveRoot, type KeyValueStore, type LoadResult, type SaveResult } from '../../domain/v3/storage';
 import { HomeView } from './HomeV3';
+import '../../styles/v3theme.css';
 import styles from './HomeV3.module.css';
 
 export interface HomePageProps {
@@ -109,11 +110,13 @@ function LiveHome({ getToday, store }: HomePageProps) {
 
   if (loaded.kind === 'problem' || !model) {
     return (
-      <main className={styles.body}>
-        <p className={styles.saveError} role="alert">
-          {loaded.kind === 'problem' ? loaded.text : ''}
-        </p>
-      </main>
+      <div className={`v3theme ${styles.page}`}>
+        <main className={styles.body}>
+          <p className={styles.saveError} role="alert">
+            {loaded.kind === 'problem' ? loaded.text : ''}
+          </p>
+        </main>
+      </div>
     );
   }
   return <HomeView model={model} demo={false} saveError={saveError} onPick={setPicked} onToggle={onToggle} />;
