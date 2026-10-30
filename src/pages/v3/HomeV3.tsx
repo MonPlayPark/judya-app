@@ -1,7 +1,8 @@
 // The v3 Home screen (M4 PR 4): view only. All decisions come from `buildHome` (src/domain/v3/home.ts); the page that
 // owns the data and the clock is HomeV3Page. Places with no destination yet use <ComingSoon>.
-import { CheckIcon, MoonIcon, SunIcon, SunriseIcon, SunsetIcon, WarningIcon, InfoIcon, PlusIcon } from '../../components/icons';
+import { CheckIcon, WarningIcon, InfoIcon, PlusIcon } from '../../components/icons';
 import { ComingSoon } from '../../components/v3/ComingSoon';
+import { EveningIcon, MorningIcon, NightIcon, NoonIcon } from '../../components/v3/PeriodIcons';
 import { V3Nav } from '../../components/v3/V3Nav';
 import { PERIOD_LABEL, type CareItem, type DoseRow, type HomeModel, type Period } from '../../domain/v3/home';
 import { avatarUrl, iconUrl } from '../../visual';
@@ -18,10 +19,10 @@ export interface HomeViewProps {
 }
 
 const PERIOD_ICON: Record<Period, () => JSX.Element> = {
-  morning: SunriseIcon,
-  noon: SunIcon,
-  evening: SunsetIcon,
-  bedtime: MoonIcon,
+  morning: MorningIcon,
+  noon: NoonIcon,
+  evening: EveningIcon,
+  bedtime: NightIcon,
 };
 
 /** The brand mark only (no word): public/icons/judya-mark.svg. */
@@ -182,7 +183,7 @@ function TodayCard({ model, onToggle }: { model: HomeModel; onToggle: (key: stri
       </h2>
       {model.selectedRows.length === 0 ? (
         <div className={styles.row}>
-          <span className={styles.rowIcon}>
+          <span className={`${styles.rowIcon} ${styles.rowIconCheck}`}>
             <CheckIcon />
           </span>
           <span className={styles.rowText}>
@@ -201,7 +202,7 @@ function DoseLine({ row, onToggle }: { row: DoseRow; onToggle: (key: string) => 
   const Icon = PERIOD_ICON[row.period];
   return (
     <div className={styles.row}>
-      <span className={`${styles.rowIcon} ${styles[row.period]}`}>
+      <span className={styles.rowIcon}>
         <Icon />
       </span>
       <span className={styles.rowText}>

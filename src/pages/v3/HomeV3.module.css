@@ -52,6 +52,7 @@
   font-size: var(--text-hero-title-size);
   line-height: var(--text-hero-title-line);
   font-weight: var(--weight-bold);
+  color: var(--color-navy);
 }
 .headline {
   display: flex;
@@ -348,21 +349,14 @@
   align-items: center;
   justify-content: center;
   width: 32px;
-  color: var(--color-primary-ink);
 }
 .rowIcon svg {
   width: 28px;
   height: 28px;
 }
-.morning {
+/* the check in the "no medicine today" row is a plain line icon: it takes its colour from here */
+.rowIconCheck {
   color: var(--color-primary-ink);
-}
-.noon,
-.evening {
-  color: var(--color-warning-ink);
-}
-.bedtime {
-  color: var(--color-ink);
 }
 .rowText {
   display: flex;

@@ -2,6 +2,16 @@
 
 Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every session.
 
+## M4 PR 4c — period icons + navy greeting (30 ต.ค. 2569)
+
+Branch `m4/pr4c-period-icons`. Small PR, no layout or logic change. The 4 period icons on the Home "ยาของวันนี้" card are now copied as-is from the locked board (canvas v87) into `src/components/v3/PeriodIcons.tsx` (`MorningIcon`, `NoonIcon`, `EveningIcon`, `NightIcon`); `HomeV3.tsx` uses them; the period colour classes and the `.rowIcon` colour were removed from `HomeV3.module.css`. "สวัสดีค่ะ" is `var(--color-navy)`. Details and the contrast report: `docs/DECISIONS.md` "M4 PR 4c".
+
+### Status
+`npm test`: 1,134 before, 1,142 after (8 new, in `HomeV3.test.tsx`); `npm run build` passes; `npm run check:overflow` 234 checks, 0 problems. Chromium 360px shots of `normal` and `alert`, all 4 icons seen on the sample members.
+
+### Owner's S24 test (after merge and deploy)
+Open the GitHub Pages link + `#/n?demo=normal`: morning = blue sun behind a cloud, evening = orange setting sun, "สวัสดีค่ะ" dark navy. Tap the other members to see noon = yellow sun and bedtime = navy moon. Rows are the same height as before.
+
 ## M4 PR 4b — brand swap (30 ต.ค. 2569)
 
 Branch `m4/pr4b-brand`. Home v3 now shows `judya-mark.svg` (mark only) before "สวัสดีค่ะ" and the clipboard mascot `pharmacist-clipboard.svg`; favicon = `judya-mark.svg`; token `--color-navy`. Choices and the open point: `docs/DECISIONS.md` "M4 PR 4b".
@@ -10,10 +20,10 @@ Branch `m4/pr4b-brand`. Home v3 now shows `judya-mark.svg` (mark only) before "�
 `npm test`: 1,134 before, 1,134 after (no new test; `visual.test.ts` count 48 -> 49); `npm run build` passes; `npm run check:overflow` 234 checks, 0 problems. Chromium 360px shots of `normal` and `empty0`: both images loaded and inside the band, nothing cut.
 
 ### Waiting for the owner
-The four app-icon PNGs on `assets-incoming` are the OLD icons (identical bytes), so the home-screen icon is unchanged. Upload the new PNGs, copy them over `public/icons/icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`.
+Nothing. (Update from PR 4c: the four app-icon PNGs — 192, 512, maskable, apple-touch — were updated in PR #28, merged.)
 
 ### Owner's S24 test (after merge and deploy)
-Open the GitHub Pages link + `#/n?demo=normal` (and `#/n?demo=empty0`): small blue mark before "สวัสดีค่ะ", mascot holding a clipboard on the right, not cut. Browser tab icon = the mark. Home-screen icon stays the old one until the new PNGs are added.
+Open the GitHub Pages link + `#/n?demo=normal` (and `#/n?demo=empty0`): small blue mark before "สวัสดีค่ะ", mascot holding a clipboard on the right, not cut. Browser tab icon = the mark. Home-screen icon: new PNGs came with PR #28 (merged).
 
 ## M4 PR 4 — Home v3 (29 ต.ค. 2569)
 
