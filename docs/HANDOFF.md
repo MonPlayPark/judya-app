@@ -7,7 +7,7 @@ Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every
 Branch `m4/pr5a-meds-list`. Item 0 (sparkles removed, v3 tap target 44px, CLAUDE.md line, docs), V3Nav `current` with real links, new route `#/n/meds` (read only), `medsList.ts` model, demo houses, `KindIcon`, `check:overflow` limit 43.5px for v3 only. Schema: house item has an optional `kind` (owner chose A). Details and my own decisions: `docs/DECISIONS.md`, "PR 5a".
 
 ### Status
-`npm test` 1,231 (1,181 before) pass; `npm run build` passes; `npm run check:overflow` 282 checks, 0 problems. Looked at 360px pictures of the own-medicine tab (stopped section open) and the house tab.
+`npm test` 1,234 (1,181 before) pass; `npm run build` passes; `npm run check:overflow` 282 checks, 0 problems. Looked at 360px pictures of the own-medicine tab (stopped section open) and the house tab.
 
 ### Waiting for the owner
 See "ต่างจากบอร์ด" in the PR: house kind picture is a guess (round circle + SVG), "(40 เม็ด)" of paracetamol is not shown (house stock has no pack size), "เร็ว ๆ นี้" shows inside the floating add button, expired medicine chip. Rows and member heads are not pressable yet (PR 5b).

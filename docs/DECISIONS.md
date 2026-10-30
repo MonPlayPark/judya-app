@@ -583,7 +583,8 @@ Small PR: images and one token only, no layout or logic change.
   3. Filter "ใกล้หมด" keeps low and out; "ใกล้หมดอายุ" keeps expiring and expired. Tab counts ignore the filter; member header counts only the matching rows. Members with no matching row are hidden.
   4. Stopped / deleted sections: sorted newest first; hidden while a filter or search is on. Stopped date = the latest `stop` event.
   5. "เหลือ" is put before days / weeks (`เหลือ 14 วัน`, `เหลือประมาณ 5 สัปดาห์`); "ไม่พอสำหรับวันนี้", "ยังไม่ได้นับ" are shown as they are.
-  6. Filter chips and search stay visible in the empty states (board text does not say to hide them).
+  6. (Changed after review) Filter chips and the search button are hidden in the three empty states (no member / no own medicine / no house medicine), as the board says (`showChips` / `showSearchBtn` = not an empty state). "ไม่พบยาที่ตรงกัน" keeps both so the filter can be cleared. The two tabs stay in every state.
+  6b. Home shortcut "รายการยา" is a real link to `#/n/meds` (same card, no badge); the other shortcuts stay coming-soon. Tab names on the list are 15px x `--fs`, line 22px (board).
   7. Deleted house section uses the existing `delete` icon (board gives none). Floating "เพิ่มยา" is a ComingSoon, so it shows the word "เร็ว ๆ นี้" inside the button.
   8. Period icons: one icon per period of the medicine (not only the first). Interval schedules say "ทุก N ชั่วโมง · 1 เม็ด".
   9. House kind picture = the owner's guess: 44px round #E4F0FE circle with the 28px SVG inside (the board uses a round photo that could not be fetched).

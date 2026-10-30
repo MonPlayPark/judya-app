@@ -97,8 +97,11 @@ describe('no "ตารางยา" and no dead controls', () => {
   it.each(DEMO_NAMES)('%s: no word ตารางยา, no # links, every control has a job', (name) => {
     const { container } = renderDemo(name);
     expect(container.textContent).not.toContain('ตารางยา');
-    // only the two real nav links exist (home and the medicine list); nothing else is a link, so nothing can be a dead link
-    expect(Array.from(container.querySelectorAll('a')).map((a) => a.getAttribute('href'))).toEqual(['#/n', '#/n/meds']);
+    // only real links exist; nothing else is a link, so nothing can be a dead link
+    // the "รายการยา" shortcut and the two nav tabs
+    const hrefs = Array.from(container.querySelectorAll('a')).map((a) => a.getAttribute('href'));
+    expect(hrefs.slice(-2)).toEqual(['#/n', '#/n/meds']);
+    expect(hrefs.slice(0, -2).every((h) => h === '#/n/meds')).toBe(true);
     for (const b of Array.from(container.querySelectorAll('button'))) {
       if (b.hasAttribute('aria-pressed')) {
         expect(b).toBeEnabled(); // member picker or tick: a real handler (tested below)
@@ -117,9 +120,13 @@ describe('no "ตารางยา" and no dead controls', () => {
     expect(b).not.toHaveAttribute('href');
     expect(b).toHaveTextContent('เร็ว ๆ นี้');
   });
-  it('the three shortcuts and the bottom tabs are coming soon', () => {
-    renderDemo('normal');
-    for (const t of ['สั่งซื้อยา', 'แชร์ให้แพทย์', 'รายการยา', 'สมาชิก', 'ตั้งค่า', 'จัดการ', 'เพิ่มสมาชิก']) {
+  it('the "รายการยา" shortcut is a real link without a badge; the other shortcuts and tabs are coming soon', () => {
+    const { container } = renderDemo('normal');
+    const tile = container.querySelector('main a[href="#/n/meds"]');
+    expect(tile).not.toBeNull();
+    expect(tile).toHaveTextContent('รายการยาดูและจัดการยา');
+    expect(tile).not.toHaveTextContent('เร็ว ๆ นี้');
+    for (const t of ['สั่งซื้อยา', 'แชร์ให้แพทย์', 'สมาชิก', 'ตั้งค่า', 'จัดการ', 'เพิ่มสมาชิก']) {
       const hit = screen.getAllByText(t).map((e) => e.closest('button')).filter((b) => b !== null);
       expect(hit.length, t).toBeGreaterThan(0);
       for (const b of hit) expect(b).toBeDisabled();

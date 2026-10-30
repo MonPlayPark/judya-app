@@ -146,6 +146,37 @@ describe('empty states', () => {
   });
 });
 
+describe('chips and search button', () => {
+  it('shown on a list, hidden in the three empty states', () => {
+    demo('normal');
+    expect(screen.getByRole('button', { name: 'ค้นหายา' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'กรองรายการยา' })).toBeInTheDocument();
+    document.body.innerHTML = '';
+    for (const [name, extra] of [['nomember', ''], ['nomeds', ''], ['nohouse', '&tab=house']] as const) {
+      const { unmount } = demo(name, extra);
+      expect(screen.queryByRole('button', { name: 'ค้นหายา' }), name).toBeNull();
+      expect(screen.queryByRole('group', { name: 'กรองรายการยา' }), name).toBeNull();
+      expect(screen.queryByRole('button', { name: 'ใกล้หมด' }), name).toBeNull();
+      expect(screen.getByRole('tablist')).toBeInTheDocument(); // tabs stay
+      unmount();
+    }
+  });
+  it('"no match" keeps both, so the filter can be cleared', () => {
+    demo('normal');
+    fireEvent.click(screen.getByRole('button', { name: 'ค้นหายา' }));
+    fireEvent.change(screen.getByPlaceholderText('ค้นหาชื่อยา'), { target: { value: 'zzz' } });
+    expect(screen.getByRole('heading', { name: 'ไม่พบยาที่ตรงกัน' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'ค้นหายา' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'กรองรายการยา' })).toBeInTheDocument();
+  });
+  it('tab names are 15px x --fs with a 22px line', () => {
+    const css = readFileSync(resolve(process.cwd(), 'src/pages/v3/MedsListV3.module.css'), 'utf8');
+    const rule = /\n\.tab \{[^}]*\}/.exec(css)?.[0] ?? '';
+    expect(rule).toContain('font-size: calc(15px * var(--fs))');
+    expect(rule).toContain('line-height: calc(22px * var(--fs))');
+  });
+});
+
 describe('no dead buttons, no storage in demo', () => {
   it.each(MEDS_DEMO_NAMES)('%s: every control is a real control or a coming-soon button', (name) => {
     demo(name, '&open=stopped');

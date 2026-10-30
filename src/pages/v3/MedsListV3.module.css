@@ -129,8 +129,8 @@
   background: transparent;
   color: var(--color-ink-muted);
   font-family: inherit;
-  font-size: calc(14px * var(--fs));
-  line-height: calc(20px * var(--fs));
+  font-size: calc(15px * var(--fs));
+  line-height: calc(22px * var(--fs));
   font-weight: var(--weight-medium);
   cursor: pointer;
 }

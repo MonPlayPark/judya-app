@@ -82,6 +82,8 @@ export function MedsListView({ root, today, demo, initial }: MedsListViewProps) 
   const [deletedOpen, setDeletedOpen] = useState(initial?.open === 'deleted');
   const m = useMemo(() => buildMedsList(root, today, { tab, filter, query }), [root, today, tab, filter, query]);
 
+  // the board: chips and search button are for a list, not for the three empty states ("no match" keeps them)
+  const listEmpty = m.empty !== null && m.empty !== 'no-match';
   const closeSearch = (): void => {
     setSearchOpen(false);
     setQuery('');
@@ -103,13 +105,16 @@ export function MedsListView({ root, today, demo, initial }: MedsListViewProps) 
       <header className={styles.head}>
         <img className={styles.logo} src={LOGO_URL} alt="JudYa" />
         <h1 className={styles.title}>รายการยา</h1>
-        <button type="button" className={styles.searchButton} aria-label="ค้นหายา" aria-expanded={searchOpen} onClick={() => (searchOpen ? closeSearch() : setSearchOpen(true))}>
-          <SearchGlyph />
-        </button>
+        {!listEmpty && (
+          <button type="button" className={styles.searchButton} aria-label="ค้นหายา" aria-expanded={searchOpen} onClick={() => (searchOpen ? closeSearch() : setSearchOpen(true))}>
+            <SearchGlyph />
+          </button>
+
+        )}
       </header>
 
       <main className={styles.body}>
-        {searchOpen && (
+        {searchOpen && !listEmpty && (
           <div className={styles.searchBox}>
             <input
               className={styles.searchInput}
@@ -132,13 +137,16 @@ export function MedsListView({ root, today, demo, initial }: MedsListViewProps) 
           <TabButton selected={tab === 'house'} onClick={() => setTab('house')} label="ยาสามัญประจำบ้าน" count={m.counts.house} />
         </div>
 
-        <div className={styles.chips} role="group" aria-label="กรองรายการยา">
-          {FILTERS.map((f) => (
-            <button key={f.id} type="button" className={filter === f.id ? `${styles.chipButton} ${styles.chipOn}` : styles.chipButton} aria-pressed={filter === f.id} onClick={() => setFilter(f.id)}>
-              {f.label}
-            </button>
-          ))}
-        </div>
+        {!listEmpty && (
+          <div className={styles.chips} role="group" aria-label="กรองรายการยา">
+            {FILTERS.map((f) => (
+              <button key={f.id} type="button" className={filter === f.id ? `${styles.chipButton} ${styles.chipOn}` : styles.chipButton} aria-pressed={filter === f.id} onClick={() => setFilter(f.id)}>
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+        )}
 
         {m.empty === 'no-match' && <NoMatch onClear={clearAll} />}
         {m.empty !== null && m.empty !== 'no-match' && <EmptyCard kind={m.empty} />}
