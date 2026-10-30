@@ -1,11 +1,12 @@
 // The v3 medicine list screen (M4 PR 5a): view only. What to show comes from `buildMedsList`
-// (src/domain/v3/medsList.ts); MedsListPage owns the data and the clock. Nothing here writes data: rows are not
-// pressable yet (details = PR 5b) and every place with no destination yet is <ComingSoon>.
+// (src/domain/v3/medsList.ts); MedsListPage owns the data and the clock. Own-medicine rows are links to the detail
+// page (PR 5b); house rows open a bottom sheet (details, refill). Every place with no destination yet is <ComingSoon>.
 import { useMemo, useState } from 'react';
 import { CheckCircleIcon, ChevronRightIcon, ClockIcon, InfoIcon, PlusIcon, WarningIcon, XCircleIcon } from '../../components/icons';
 import { ComingSoon } from '../../components/v3/ComingSoon';
 import { KindIcon } from '../../components/v3/KindIcon';
 import { EveningIcon, MorningIcon, NightIcon, NoonIcon } from '../../components/v3/PeriodIcons';
+import { Toast, useToast } from '../../components/v3/Toast';
 import { V3Nav } from '../../components/v3/V3Nav';
 import type { IsoDate } from '../../domain/calc';
 import type { Period } from '../../domain/v3/home';
@@ -23,14 +24,19 @@ import type { Root } from '../../domain/v3/schema';
 import { avatarUrl, iconUrl, type IconName } from '../../visual';
 import mascotUrl from '../../assets/visual/mascot/pharmacist-clipboard.svg?url';
 import '../../styles/v3theme.css';
+import { HouseInfoSheet, HouseRefillSheet, type HouseSheetKind } from './HouseSheets';
 import styles from './MedsListV3.module.css';
 
 export interface MedsListViewProps {
   root: Root;
   today: IsoDate;
   demo: boolean;
-  /** Test links only: which tab and which folded section start open. */
-  initial?: { tab?: MedsTab; open?: 'stopped' | 'deleted' };
+  /** Saves a changed root (house refill). Demo: in memory, saves nothing. */
+  persist?: (root: Root) => { ok: true } | { ok: false; text: string };
+  /** Added to the link of a row: '' or '?demo=normal', so a demo stays a demo on the detail page and back. */
+  linkSuffix?: string;
+  /** Test links only: which tab and which folded section start open; `item` / `sheet` open a house medicine sheet. */
+  initial?: { tab?: MedsTab; open?: 'stopped' | 'deleted'; item?: string; sheet?: 'refill' };
 }
 
 const LOGO_URL = `${import.meta.env.BASE_URL}icons/judya-mark.svg`;
@@ -73,8 +79,13 @@ const CartGlyph = () => (
   </svg>
 );
 
-export function MedsListView({ root, today, demo, initial }: MedsListViewProps) {
-  const [tab, setTab] = useState<MedsTab>(initial?.tab ?? (initial?.open === 'deleted' ? 'house' : 'mine'));
+export function MedsListView({ root: initialRoot, today, demo, persist, linkSuffix = '', initial }: MedsListViewProps) {
+  const [root, setRoot] = useState(initialRoot);
+  const [sheet, setSheet] = useState<{ id: string; kind: HouseSheetKind } | null>(
+    initial?.item ? { id: initial.item, kind: initial.sheet === 'refill' ? 'refill' : 'info' } : null,
+  );
+  const [toast, showToast] = useToast();
+  const [tab, setTab] = useState<MedsTab>(initial?.tab ?? (initial?.open === 'deleted' || initial?.item ? 'house' : 'mine'));
   const [filter, setFilter] = useState<MedsFilter>('all');
   const [query, setQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
@@ -87,6 +98,15 @@ export function MedsListView({ root, today, demo, initial }: MedsListViewProps) 
   const closeSearch = (): void => {
     setSearchOpen(false);
     setQuery('');
+  };
+  /** Refill of a house item: save (or keep it in memory in a demo), show it, close the sheet. Returns an error text. */
+  const commitHouse = (next: Root): string | null => {
+    const res = persist ? persist(next) : ({ ok: true } as const);
+    if (!res.ok) return res.text;
+    setRoot(next);
+    setSheet(null);
+    showToast('เติมสต็อกแล้ว');
+    return null;
   };
   const clearAll = (): void => {
     setFilter('all');
@@ -151,14 +171,14 @@ export function MedsListView({ root, today, demo, initial }: MedsListViewProps) 
         {m.empty === 'no-match' && <NoMatch onClear={clearAll} />}
         {m.empty !== null && m.empty !== 'no-match' && <EmptyCard kind={m.empty} />}
 
-        {tab === 'mine' && m.groups.map((g) => <MemberCard key={g.personId} group={g} />)}
+        {tab === 'mine' && m.groups.map((g) => <MemberCard key={g.personId} group={g} suffix={linkSuffix} />)}
         {tab === 'house' && m.houseRows.length > 0 && (
           <>
             <p className={styles.hint}>เรียงจากที่ต้องดูแลก่อน</p>
             <section className={styles.card} aria-label="ยาสามัญประจำบ้าน">
               <ul className={styles.rows}>
                 {m.houseRows.map((r) => (
-                  <HouseItemRow key={r.id} row={r} />
+                  <HouseItemRow key={r.id} row={r} onOpen={() => setSheet({ id: r.id, kind: 'info' })} />
                 ))}
               </ul>
               {m.houseOrderCount > 0 && <OrderButton text={`สั่งยาสามัญที่ใกล้หมด (${m.houseOrderCount} รายการ)`} />}
@@ -169,7 +189,7 @@ export function MedsListView({ root, today, demo, initial }: MedsListViewProps) 
         {m.stopped.length > 0 && (
           <Fold title={`ยาที่หยุดแล้ว (${m.stopped.length})`} open={stoppedOpen} onToggle={() => setStoppedOpen((o) => !o)} icon={<ClockIcon />}>
             {m.stopped.map((r) => (
-              <FoldRow key={r.id} name={r.name} sub={r.subText} action="กลับมาใช้" />
+              <FoldRow key={r.id} name={r.name} sub={r.subText} action="กลับมาใช้" href={`#/n/meds/${encodeURIComponent(r.id)}${linkSuffix}`} />
             ))}
           </Fold>
         )}
@@ -191,6 +211,9 @@ export function MedsListView({ root, today, demo, initial }: MedsListViewProps) 
         </div>
       )}
       <V3Nav current="meds" />
+      {sheet?.kind === 'info' && <HouseInfoSheet root={root} id={sheet.id} today={today} onClose={() => setSheet(null)} onRefill={() => setSheet({ id: sheet.id, kind: 'refill' })} />}
+      {sheet?.kind === 'refill' && <HouseRefillSheet root={root} id={sheet.id} onClose={() => setSheet(null)} commit={commitHouse} />}
+      <Toast text={toast} />
     </div>
   );
 }
@@ -233,7 +256,7 @@ function OrderButton({ text }: { text: string }) {
   );
 }
 
-function MemberCard({ group }: { group: MemberGroup }) {
+function MemberCard({ group, suffix }: { group: MemberGroup; suffix: string }) {
   const headId = `member-${group.personId}`;
   return (
     <section className={styles.card} aria-labelledby={headId}>
@@ -248,7 +271,7 @@ function MemberCard({ group }: { group: MemberGroup }) {
       </div>
       <ul className={styles.rows}>
         {group.rows.map((r) => (
-          <MedItemRow key={r.id} row={r} />
+          <MedItemRow key={r.id} row={r} href={`#/n/meds/${encodeURIComponent(r.id)}${suffix}`} />
         ))}
       </ul>
       {group.orderCount > 0 && <OrderButton text={`สั่งยาที่ใกล้หมด (${group.orderCount} รายการ)`} />}
@@ -256,42 +279,52 @@ function MemberCard({ group }: { group: MemberGroup }) {
   );
 }
 
-function MedItemRow({ row }: { row: MedRow }) {
+function MedItemRow({ row, href }: { row: MedRow; href: string }) {
   return (
     <li className={styles.row}>
-      <div className={styles.rowMain}>
-        <p className={styles.medName}>{row.name}</p>
-        <p className={styles.medSub}>
-          {row.periods.map((p) => {
-            const Icon = PERIOD_ICON[p];
-            return <Icon key={p} size={20} />;
-          })}
-          <span>{row.doseText}</span>
-        </p>
-        {row.expiryNote && <ExpiryNote text={row.expiryNote} />}
-      </div>
-      <div className={styles.rowSide}>
-        <Chip chip={row.chip} />
-        {row.leftText && <span className={styles.left}>{row.leftText}</span>}
-      </div>
+      <a className={styles.rowLink} href={href} aria-label={`${row.name} เปิดรายละเอียด`}>
+        <div className={styles.rowMain}>
+          <p className={styles.medName}>{row.name}</p>
+          <p className={styles.medSub}>
+            {row.periods.map((p) => {
+              const Icon = PERIOD_ICON[p];
+              return <Icon key={p} size={20} />;
+            })}
+            <span>{row.doseText}</span>
+          </p>
+          {row.expiryNote && <ExpiryNote text={row.expiryNote} />}
+        </div>
+        <div className={styles.rowSide}>
+          <Chip chip={row.chip} />
+          {row.leftText && <span className={styles.left}>{row.leftText}</span>}
+        </div>
+        <span className={styles.arrow}>
+          <ChevronRightIcon />
+        </span>
+      </a>
     </li>
   );
 }
 
-function HouseItemRow({ row }: { row: HouseRow }) {
+function HouseItemRow({ row, onOpen }: { row: HouseRow; onOpen: () => void }) {
   return (
     <li className={`${styles.row} ${styles.houseRow}`}>
-      <span className={styles.kindCircle}>
-        <KindIcon kind={row.kind} size={28} />
-      </span>
-      <div className={styles.rowMain}>
-        <p className={styles.medName}>{row.name}</p>
-        <p className={styles.medSub}>{row.subText}</p>
-        {row.expiryNote && <ExpiryNote text={row.expiryNote} />}
-      </div>
-      <div className={styles.rowSide}>
-        <Chip chip={row.chip} />
-      </div>
+      <button type="button" className={styles.rowLink} aria-label={`${row.name} เปิดรายละเอียด`} onClick={onOpen}>
+        <span className={styles.kindCircle}>
+          <KindIcon kind={row.kind} size={28} />
+        </span>
+        <div className={styles.rowMain}>
+          <p className={styles.medName}>{row.name}</p>
+          <p className={styles.medSub}>{row.subText}</p>
+          {row.expiryNote && <ExpiryNote text={row.expiryNote} />}
+        </div>
+        <div className={styles.rowSide}>
+          <Chip chip={row.chip} />
+        </div>
+        <span className={styles.arrow}>
+          <ChevronRightIcon />
+        </span>
+      </button>
     </li>
   );
 }
@@ -311,13 +344,22 @@ function Fold({ title, open, onToggle, icon, children }: { title: string; open: 
   );
 }
 
-function FoldRow({ name, sub, action }: { name: string; sub: string; action: string }) {
+function FoldRow({ name, sub, action, href }: { name: string; sub: string; action: string; href?: string }) {
+  const text = (
+    <div className={styles.rowMain}>
+      <p className={styles.medName}>{name}</p>
+      <p className={styles.medSub}>{sub}</p>
+    </div>
+  );
   return (
     <li className={`${styles.row} ${styles.foldRow}`}>
-      <div className={styles.rowMain}>
-        <p className={styles.medName}>{name}</p>
-        <p className={styles.medSub}>{sub}</p>
-      </div>
+      {href ? (
+        <a className={styles.rowLink} href={href} aria-label={`${name} เปิดรายละเอียด`}>
+          {text}
+        </a>
+      ) : (
+        text
+      )}
       <ComingSoon className={styles.foldAction}>{action}</ComingSoon>
     </li>
   );

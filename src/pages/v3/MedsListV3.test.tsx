@@ -131,7 +131,7 @@ describe('empty states', () => {
     demo('nomember');
     expect(screen.getByRole('heading', { name: 'ยังไม่มีสมาชิก' })).toBeInTheDocument();
     expect(screen.getByText('ต้องเพิ่มสมาชิกก่อน จึงเพิ่มยาได้')).toBeInTheDocument();
-    expect(screen.getByText('เพิ่มสมาชิก').closest('button')).toBeDisabled();
+    expect(screen.getByText('เพิ่มสมาชิก').closest('button')).toHaveAttribute('aria-disabled', 'true');
     expect(screen.queryByText('เพิ่มยา')).toBeNull();
     document.body.innerHTML = '';
     demo('nomeds');
@@ -181,13 +181,13 @@ describe('no dead buttons, no storage in demo', () => {
   it.each(MEDS_DEMO_NAMES)('%s: every control is a real control or a coming-soon button', (name) => {
     demo(name, '&open=stopped');
     for (const b of Array.from(document.querySelectorAll('button'))) {
-      if (b.disabled) {
-        expect(b).toHaveAttribute('aria-disabled', 'true');
-        expect(b.textContent).toContain('เร็ว ๆ นี้');
-      }
+      if (b.getAttribute('aria-disabled') === 'true') expect(b.textContent).not.toContain('เร็ว ๆ นี้');
     }
-    // rows and member heads are not links or buttons yet (details = PR 5b)
-    expect(Array.from(document.querySelectorAll('a')).map((a) => a.getAttribute('href'))).toEqual(['#/n', '#/n/meds']);
+    // own-medicine rows (and rows of the stopped fold) are links to their detail page; the demo name is carried along
+    const hrefs = Array.from(document.querySelectorAll('a')).map((a) => a.getAttribute('href'));
+    expect(hrefs.filter((h) => h?.startsWith('#/n/meds/')).length).toBe(name === 'nomember' || name === 'nomeds' ? 0 : name === 'normal' || name === 'nohouse' || name === 'stopped' ? 8 : 9);
+    for (const h of hrefs.filter((x) => x?.startsWith('#/n/meds/'))) expect(h).toMatch(new RegExp(`\\?demo=${name}$`));
+    expect(hrefs.slice(-2)).toEqual(['#/n', '#/n/meds']);
   });
   it('demo mode: no localStorage call of any kind, no loadRoot / saveRoot', () => {
     const calls = (['getItem', 'setItem', 'removeItem', 'clear', 'key'] as const).map((m) => vi.spyOn(Storage.prototype, m));
@@ -248,7 +248,12 @@ describe('route and nav', () => {
     expect(links.map((l) => l.getAttribute('href'))).toEqual(['#/n', '#/n/meds']);
     expect(screen.getByRole('link', { name: /รายการยา/ })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: /หน้าหลัก/ })).not.toHaveAttribute('aria-current');
-    expect(screen.getAllByText('เร็ว ๆ นี้')).toHaveLength(2);
+    // the bar is as short as a normal bar: no word under the two tabs; pressing one says it in a floating message
+    expect(screen.queryByText('เร็ว ๆ นี้')).toBeNull();
+    const soon = screen.getByText('สมาชิก').closest('button');
+    expect(soon).toHaveAttribute('aria-disabled', 'true');
+    fireEvent.click(screen.getByText('ตั้งค่า').closest('button')!);
+    expect(screen.getByRole('status')).toHaveTextContent('เร็ว ๆ นี้');
   });
 });
 

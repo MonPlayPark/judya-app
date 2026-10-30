@@ -1,0 +1,250 @@
+/* Parts inside a bottom sheet (M4 PR 5b): buttons, number boxes, date button, summary box, option buttons.
+   Colours from the .v3theme tokens of the page. Every tap target is 44px or more; the main buttons are 52px. */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 14px;
+}
+.label {
+  margin: 0;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-ink);
+}
+.hint {
+  margin: 0;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  color: var(--color-ink-muted);
+}
+.error {
+  margin: 0;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-error-ink);
+}
+
+/* ----- number boxes: [ 12 | กล่อง ] + [ 3 | แผง ] ----- */
+.fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.plus {
+  font-size: calc(18px * var(--fs));
+  font-weight: var(--weight-bold);
+  color: var(--color-ink-muted);
+}
+.numberBox {
+  display: flex;
+  align-items: stretch;
+  flex: 1 1 96px;
+  min-width: 0;
+  height: 48px;
+  overflow: hidden;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: 12px;
+  background: var(--color-surface);
+}
+.numberBox:focus-within {
+  border-color: var(--color-primary);
+}
+.numberInput {
+  flex: 1;
+  min-width: 0;
+  padding: 0 10px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: calc(18px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-ink);
+  text-align: right;
+}
+.unit {
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  border-left: 1.5px solid var(--color-border);
+  background: var(--color-background);
+  font-size: calc(14px * var(--fs));
+  color: var(--color-ink-muted);
+  white-space: nowrap;
+}
+.textInput {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: 12px;
+  background: var(--color-surface);
+  font-family: inherit;
+  font-size: calc(16px * var(--fs));
+  color: var(--color-ink);
+}
+.textInput:focus {
+  border-color: var(--color-primary);
+  outline: 0;
+}
+
+/* ----- summary box ----- */
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-background);
+}
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  color: var(--color-ink-muted);
+}
+.summaryRow strong {
+  color: var(--color-navy);
+  font-weight: var(--weight-bold);
+  text-align: right;
+}
+
+/* ----- date: a label that looks like a button; the real <input type="date"> lies on top, invisible ----- */
+.dateRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.datePick {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 12px;
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+  font-size: calc(15px * var(--fs));
+  font-weight: var(--weight-semibold);
+  overflow: hidden;
+}
+.dateInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.dateClear {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--color-primary-ink);
+  font-family: inherit;
+  font-size: calc(15px * var(--fs));
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+
+/* ----- option buttons (stop / resume reasons) ----- */
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 14px;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: 12px;
+  background: var(--color-surface);
+  color: var(--color-navy);
+  font-family: inherit;
+  font-size: calc(16px * var(--fs));
+  font-weight: var(--weight-bold);
+  text-align: left;
+  cursor: pointer;
+}
+.optionOn {
+  border: 2px solid var(--color-primary);
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+}
+.radio {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  box-sizing: border-box;
+  border: 2px solid var(--color-border-strong);
+  border-radius: 50%;
+  color: #fff;
+}
+.optionOn .radio {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+}
+.radio svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ----- buttons ----- */
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+.primary,
+.danger,
+.cancel {
+  min-height: 52px;
+  border: 0;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: calc(16px * var(--fs));
+  font-weight: var(--weight-bold);
+  cursor: pointer;
+}
+.primary {
+  background: var(--color-primary);
+  color: #fff;
+}
+.danger {
+  background: var(--color-error-ink);
+  color: #fff;
+}
+.cancel {
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+}
+.primary:disabled,
+.danger:disabled {
+  background: var(--color-border);
+  color: var(--color-ink-muted);
+  cursor: not-allowed;
+}
+
+.expiryPart {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
