@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -5,6 +7,7 @@ vi.mock('virtual:pwa-register', () => ({ registerSW: () => async () => {} }));
 
 import { App } from '../../App';
 import { ComingSoon } from '../../components/v3/ComingSoon';
+import { EveningIcon, MorningIcon, NightIcon, NoonIcon } from '../../components/v3/PeriodIcons';
 import { DEMO_NAMES, DEMO_TODAY, demoRoot, type DemoName } from '../../domain/v3/homeDemo';
 import { rootSchema } from '../../domain/v3/schema';
 import * as storage from '../../domain/v3/storage';
@@ -218,5 +221,57 @@ describe('route #/n in the app', () => {
     go('#/');
     render(<App />);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('ยินดีต้อนรับค่ะ');
+  });
+});
+
+const homeCss = readFileSync(resolve(process.cwd(), 'src/pages/v3/HomeV3.module.css'), 'utf8');
+
+describe('period icons follow the locked board (canvas v87)', () => {
+  const svgOf = (el: JSX.Element) => render(el).container.querySelector('svg') as SVGSVGElement;
+  it('morning: sun behind a cloud, blue', () => {
+    const svg = svgOf(<MorningIcon />);
+    expect(svg).toHaveAttribute('stroke', '#1A6FD6');
+    expect(svg.querySelector('path[fill="#CFE4FF"]')).not.toBeNull();
+  });
+  it('noon: full sun, yellow', () => {
+    const svg = svgOf(<NoonIcon />);
+    expect(svg).toHaveAttribute('stroke', '#F29900');
+    expect(svg.querySelector('circle[fill="#FBBC05"]')).not.toBeNull();
+  });
+  it('evening: setting sun, orange-red', () => {
+    const svg = svgOf(<EveningIcon />);
+    expect(svg).toHaveAttribute('stroke', '#D9480F');
+    expect(svg.querySelector('path[fill="#FF9F43"]')).not.toBeNull();
+  });
+  it('night: solid navy moon, no stroke', () => {
+    const svg = svgOf(<NightIcon />);
+    expect(svg.querySelector('path')).toHaveAttribute('fill', '#013073');
+    expect(svg).not.toHaveAttribute('stroke');
+  });
+  it('all four are decorative 28px icons', () => {
+    for (const C of [MorningIcon, NoonIcon, EveningIcon, NightIcon]) {
+      const svg = svgOf(<C />);
+      expect(svg).toHaveAttribute('aria-hidden', 'true');
+      expect(svg).toHaveAttribute('width', '28');
+    }
+  });
+  it('each dose row shows its own period icon, in the board colours', () => {
+    const { container } = renderDemo('normal');
+    const strokes = new Set([...container.querySelectorAll('section[aria-labelledby="today-h"] svg[width="28"][stroke]')].map((s) => s.getAttribute('stroke')));
+    expect(strokes.size).toBeGreaterThan(1);
+    for (const s of strokes) expect(['#1A6FD6', '#F29900', '#D9480F']).toContain(s);
+  });
+  it('no warning colour or period colour class is tied to the dose rows any more', () => {
+    const css = homeCss;
+    expect(css).not.toMatch(/\.(morning|noon|evening|bedtime)\b/);
+    const rowIcon = css.match(/\.rowIcon\s*\{[^}]*\}/)?.[0] ?? '';
+    expect(rowIcon).not.toMatch(/color/);
+    const { container } = renderDemo('alert');
+    for (const el of container.querySelectorAll('section[aria-labelledby="today-h"] *')) {
+      expect(el.className.toString()).not.toMatch(/warning/);
+    }
+  });
+  it('the greeting uses the navy token', () => {
+    expect(homeCss).toMatch(/\.greeting\s*\{[^}]*color:\s*var\(--color-navy\)/);
   });
 });
