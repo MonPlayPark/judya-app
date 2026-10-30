@@ -571,3 +571,21 @@ Small PR: images and one token only, no layout or logic change.
 - **V3Nav** takes `current: 'home' | 'meds'`; home and meds tabs are real `<a href>` (`#/n`, `#/n/meds`).
 - **check:overflow:** the "too short button" limit is 43.5px for v3 pages only (routes starting with `#/n`, function `measureV3`); v2 pages keep 47.5px. Owner approved editing the script. The nav tab keeps `min-height: 52px` (board value).
 - **Count:** 7 Home spots changed to 44px (the brief said 9, from an old report); the owner confirmed 7.
+
+### PR 5a — medicine list v3: what was built and what was decided
+- **Schema (owner chose A):** `houseItemSchema` got `kind: z.enum(MED_KINDS).optional()`. Old data without it still loads (test `schemaHouseKind.test.ts`); no kind = picture "other". Nothing else in `schema.ts` / `stock.ts` changed. `home.ts`: only `MONTHS` is now exported (short Thai month names).
+- **Files:** `domain/v3/medsList.ts` (pure model), `medsListDemo.ts` (demo houses), `components/v3/KindIcon.tsx` (7 inline SVGs from the owner's text, no new file in `assets/visual`), `pages/v3/MedsListV3.tsx` + `.module.css` (view), `MedsListPage.tsx` (data and clock). `PeriodIcons` got an optional `size` (default 28, drawn at 20 here). `HomeV3Page` now exports `openRoot`, `useBangkokToday`, `Loaded` so the two pages share them.
+- **Read only:** `#/n/meds` only calls `loadRoot`; demo links (`?demo=normal|nomember|nomeds|nohouse`, `&tab=house`, `&open=stopped|deleted`) call no storage at all. Today in demos = `DEMO_TODAY`.
+- **Rules reused, not re-written:** days left / low stock = `daysLeft`, `isLowStock`, `formatDaysLeft`, `unitFor`; house status = `houseStatus`; expiry = `expiryStatus` with the settings (low <= 14 days, expiry <= 15 days). Cream / drops with tubes say "สำรอง N หลอด/ขวด" (no days).
+- **Decided on my own (the board / brief does not say):**
+  1. Own medicine that is expired: red chip "หมดอายุแล้ว" + line "หมดอายุ <date>"; days left = 0 gives red chip "หมด". An expired medicine is not counted by the order button.
+  2. House item: expired beats out beats low beats expiring (same order as Home care card). The order button counts out + low only.
+  3. Filter "ใกล้หมด" keeps low and out; "ใกล้หมดอายุ" keeps expiring and expired. Tab counts ignore the filter; member header counts only the matching rows. Members with no matching row are hidden.
+  4. Stopped / deleted sections: sorted newest first; hidden while a filter or search is on. Stopped date = the latest `stop` event.
+  5. "เหลือ" is put before days / weeks (`เหลือ 14 วัน`, `เหลือประมาณ 5 สัปดาห์`); "ไม่พอสำหรับวันนี้", "ยังไม่ได้นับ" are shown as they are.
+  6. Filter chips and search stay visible in the empty states (board text does not say to hide them).
+  7. Deleted house section uses the existing `delete` icon (board gives none). Floating "เพิ่มยา" is a ComingSoon, so it shows the word "เร็ว ๆ นี้" inside the button.
+  8. Period icons: one icon per period of the medicine (not only the first). Interval schedules say "ทุก N ชั่วโมง · 1 เม็ด".
+  9. House kind picture = the owner's guess: 44px round #E4F0FE circle with the 28px SVG inside (the board uses a round photo that could not be fetched).
+- **Row and member head are not pressable in 5a** (detail pages = PR 5b, member page does not exist). No arrow either.
+- **check:overflow** now also visits 8 meds-list routes (real data, 4 demos, house tab, both folded sections open).

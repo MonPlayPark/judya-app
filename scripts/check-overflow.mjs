@@ -14,7 +14,10 @@ const STATIC_ROUTES = ['/', '/today', '/meds', '/meds?tab=house', '/meds/new', '
 
 // v3 Home (M4 PR 4): the real data route (a new user = S0) and the six demo states. Checked for sideways overflow
 // like every page, and also for text under the minimum size and tap targets under 44px on v3 pages (route starts with #/n).
-const V3_ROUTES = ['/n', '/n?demo=normal', '/n?demo=alert', '/n?demo=empty0', '/n?demo=empty1', '/n?demo=notoday', '/n?demo=backup'];
+const V3_ROUTES = ['/n', '/n?demo=normal', '/n?demo=alert', '/n?demo=empty0', '/n?demo=empty1', '/n?demo=notoday', '/n?demo=backup',
+  // v3 medicine list (M4 PR 5a): real data (empty), every demo, the house tab and both folded sections open
+  '/n/meds', '/n/meds?demo=normal', '/n/meds?demo=normal&open=stopped', '/n/meds?demo=normal&tab=house', '/n/meds?demo=normal&open=deleted',
+  '/n/meds?demo=nomember', '/n/meds?demo=nomeds', '/n/meds?demo=nohouse&tab=house'];
 
 const chromePath = process.env.CHROMIUM_PATH
   ?? ['/opt/pw-browsers/chromium', '/usr/bin/chromium', '/usr/bin/google-chrome'].find((p) => existsSync(p));

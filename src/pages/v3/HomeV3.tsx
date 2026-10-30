@@ -19,7 +19,7 @@ export interface HomeViewProps {
   onToggle: (key: string) => void;
 }
 
-const PERIOD_ICON: Record<Period, () => JSX.Element> = {
+const PERIOD_ICON: Record<Period, (p: { size?: number }) => JSX.Element> = {
   morning: MorningIcon,
   noon: NoonIcon,
   evening: EveningIcon,

@@ -1,0 +1,499 @@
+/* v3 medicine list (M4 PR 5a). Values copied from the board MedsList: text as px at "normal" times var(--fs);
+   colours come from the `.v3theme` tokens (src/styles/v3theme.css). Tap targets 44px (48px where the board says 48). */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--color-background);
+  font-family: var(--font-sans);
+}
+
+.demo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 6px var(--screen-pad);
+  background: var(--color-warning-tint);
+  color: var(--color-warning-ink);
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+}
+
+/* ---------- head ---------- */
+.head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 12px 4px;
+}
+.logo {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+.title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: calc(20px * var(--fs));
+  line-height: calc(28px * var(--fs));
+  font-weight: var(--weight-bold);
+  color: var(--color-navy);
+}
+.searchButton {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+  cursor: pointer;
+}
+
+.body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px 12px 76px;
+}
+
+/* ---------- search ---------- */
+.searchBox {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 2px 0 14px;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: 12px;
+  background: var(--color-surface);
+}
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: calc(16px * var(--fs));
+  color: var(--color-ink);
+}
+.searchBox:focus-within {
+  border-color: var(--color-primary);
+}
+.searchClose {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+}
+
+/* ---------- tabs ---------- */
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 16px;
+  background: var(--color-primary-tint);
+}
+.tab {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  min-height: 44px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--color-ink-muted);
+  font-family: inherit;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+.tabOn {
+  background: var(--color-surface);
+  box-shadow: 0 0 0 2px var(--color-primary);
+  color: var(--color-navy);
+  font-weight: var(--weight-bold);
+}
+.count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 7px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-ink-muted);
+  font-size: calc(14px * var(--fs));
+  font-weight: var(--weight-semibold);
+}
+.tabOn .count {
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+}
+
+/* ---------- filter chips ---------- */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chipButton {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-navy);
+  font-family: inherit;
+  font-size: calc(14px * var(--fs));
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+.chipOn {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.hint {
+  margin: 0;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  color: var(--color-ink-muted);
+}
+
+/* ---------- cards and rows ---------- */
+.card {
+  border-radius: 16px;
+  background: var(--color-surface);
+  box-shadow: var(--elevation-1);
+}
+.memberHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 12px 6px;
+}
+.avatar {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+}
+.memberName {
+  margin: 0;
+  font-size: calc(16px * var(--fs));
+  line-height: calc(22px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-navy);
+}
+.memberCount {
+  margin: 0;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  color: var(--color-ink-muted);
+}
+.rows {
+  margin: 0;
+  padding: 0 12px;
+  list-style: none;
+}
+.row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 64px;
+  padding: 10px 0;
+  border-top: 1px solid var(--color-border);
+}
+.rows > .row:first-child {
+  border-top: 0;
+}
+.houseRow {
+  align-items: center;
+  min-height: 72px;
+}
+.foldRow {
+  align-items: center;
+}
+.rowMain {
+  flex: 1;
+  min-width: 0;
+}
+.rowSide {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  max-width: 46%;
+  text-align: right;
+}
+.medName {
+  margin: 0;
+  font-size: calc(15px * var(--fs));
+  line-height: calc(21px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
+}
+.medSub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin: 2px 0 0;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  color: var(--color-ink-muted);
+}
+.expiryNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  margin: 2px 0 0;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-warning-ink);
+}
+.expiryNote svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+}
+.left {
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  color: var(--color-ink-muted);
+}
+.kindCircle {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-primary-tint);
+}
+
+/* status chip: icon + word, colour is only a help */
+.statusChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px 3px 8px;
+  border-radius: var(--radius-pill);
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+.statusChip svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+.tone_ok {
+  background: var(--color-success-tint);
+  color: var(--color-success-ink);
+}
+.tone_low {
+  background: var(--color-warning-tint);
+  color: var(--color-warning-ink);
+}
+.tone_out {
+  background: var(--color-error-tint);
+  color: var(--color-error-ink);
+}
+
+/* a "coming soon" button that keeps its label and badge on one row */
+.orderButton,
+.foldAction,
+.emptyButton,
+.fabButton {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+.orderButton > :first-child,
+.emptyButton > :first-child,
+.fabButton > :first-child {
+  width: auto;
+}
+.orderButton {
+  width: calc(100% - 24px);
+  min-height: 48px;
+  margin: 4px 12px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+  font-size: calc(15px * var(--fs));
+  font-weight: var(--weight-semibold);
+}
+.orderButton > :first-child {
+  gap: 8px;
+}
+.foldAction {
+  flex: none;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+  font-size: calc(14px * var(--fs));
+  font-weight: var(--weight-semibold);
+}
+
+/* ---------- folded sections ---------- */
+.foldButton {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 12px;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.foldIcon {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-primary-tint);
+  color: var(--color-navy);
+}
+.foldIcon svg {
+  width: 20px;
+  height: 20px;
+}
+.foldTitle {
+  flex: 1;
+  min-width: 0;
+  font-size: calc(15px * var(--fs));
+  line-height: calc(21px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-navy);
+}
+.chevron {
+  flex: none;
+  display: flex;
+  color: var(--color-ink-muted);
+}
+.chevronOpen {
+  transform: rotate(90deg);
+}
+
+/* ---------- empty states ---------- */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 16px 24px;
+  text-align: center;
+}
+.emptyCircle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  background: var(--color-primary-tint);
+}
+.noMatchMascot {
+  width: 112px;
+  height: auto;
+}
+.emptyTitle {
+  margin: 16px 0 0;
+  font-size: calc(17px * var(--fs));
+  line-height: calc(24px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-navy);
+}
+.emptyText {
+  margin: 4px 0 0;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  color: var(--color-ink-muted);
+}
+.emptyButton,
+.clearButton {
+  width: 100%;
+  max-width: 240px;
+  min-height: 48px;
+  margin-top: 20px;
+  border-radius: var(--radius-pill);
+  font-size: calc(15px * var(--fs));
+  font-weight: var(--weight-semibold);
+}
+.emptyButton {
+  background: var(--color-primary);
+  color: #fff;
+}
+.clearButton {
+  border: 0;
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* ---------- floating add button ---------- */
+.fab {
+  position: fixed;
+  right: 16px;
+  bottom: 84px;
+  z-index: 2;
+}
+.fabButton {
+  min-height: 52px;
+  padding: 0 20px 0 16px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: #fff;
+  font-size: calc(15px * var(--fs));
+  font-weight: var(--weight-semibold);
+  box-shadow: var(--elevation-2);
+}
+.fabButton > :first-child {
+  gap: 6px;
+}

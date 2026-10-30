@@ -267,6 +267,7 @@ export const houseItemSchema = z
   .object({
     id,
     name: z.string().min(2).max(60),
+    kind: z.enum(MED_KINDS).optional(), // picture of the form on the list; none = shown as 'other' (M4 PR 5a)
     stock: z.object({ qty: z.number().min(0), unit: z.string().min(1) }).optional(), // none = not counted, no low-stock reminder
     lowAt: z.number().min(0).optional(),
     expiry: isoDate.optional(),

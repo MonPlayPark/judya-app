@@ -1,0 +1,50 @@
+// The v3 medicine list page (route #/n/meds): owns the data and the clock, hands them to MedsListView.
+// Normal mode only READS `judya.v3` (loadRoot); it never calls saveRoot. Demo mode (#/n/meds?demo=...) works on a
+// made-up house in memory and never calls storage in any form (not even a read).
+import { useState } from 'react';
+import { useRoute } from '../../router';
+import { DEMO_TODAY } from '../../domain/v3/homeDemo';
+import { isMedsDemoName, medsDemoRoot, type MedsDemoName } from '../../domain/v3/medsListDemo';
+import { loadRoot } from '../../domain/v3/storage';
+import { openRoot, useBangkokToday, type HomePageProps, type Loaded } from './HomeV3Page';
+import { MedsListView, type MedsListViewProps } from './MedsListV3';
+import homeStyles from './HomeV3.module.css';
+
+/** `&tab=house` opens the house medicines, `&open=stopped|deleted` opens a folded section (test links). */
+function initialFrom(query: URLSearchParams): MedsListViewProps['initial'] {
+  const tab = query.get('tab');
+  const open = query.get('open');
+  return {
+    ...(tab === 'house' || tab === 'mine' ? { tab } : {}),
+    ...(open === 'stopped' || open === 'deleted' ? { open } : {}),
+  };
+}
+
+export function MedsListV3Route(props: HomePageProps) {
+  const { query } = useRoute();
+  const demo = query.get('demo');
+  const initial = initialFrom(query);
+  return isMedsDemoName(demo) ? <DemoMeds key={demo} name={demo} initial={initial} /> : <LiveMeds key="live" initial={initial} {...props} />;
+}
+
+function DemoMeds({ name, initial }: { name: MedsDemoName; initial: MedsListViewProps['initial'] }) {
+  const [root] = useState(() => medsDemoRoot(name));
+  return <MedsListView root={root} today={DEMO_TODAY} demo initial={initial} />;
+}
+
+function LiveMeds({ getToday, store, initial }: HomePageProps & { initial: MedsListViewProps['initial'] }) {
+  const today = useBangkokToday(getToday);
+  const [loaded] = useState<Loaded>(() => openRoot(store === undefined ? loadRoot() : loadRoot(store)));
+  if (loaded.kind === 'problem') {
+    return (
+      <div className={`v3theme ${homeStyles.page}`}>
+        <main className={homeStyles.body}>
+          <p className={homeStyles.saveError} role="alert">
+            {loaded.text}
+          </p>
+        </main>
+      </div>
+    );
+  }
+  return <MedsListView root={loaded.root} today={today} demo={false} initial={initial} />;
+}

@@ -2,9 +2,18 @@
 
 Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every session.
 
-## M4 PR 5a — in progress (30 ต.ค. 2569), branch `m4/pr5a-meds-list`
+## M4 PR 5a — Home fixes + medicine list v3 (30 ต.ค. 2569)
 
-Done: item 0 (sparkles removed, v3 tap target 44px, CLAUDE.md line, docs) and item 1 (V3Nav `current`, real links). **Not done:** items 2–3 (route `/n/meds`, demo data, the medicine list page): the task text was cut off in the middle of section 3 (after the tab pill number style), so the rest of the board values are unknown. Waiting for the owner to send the rest. Also open: `scripts/check-overflow.mjs` 48px rule for v3 pages.
+Branch `m4/pr5a-meds-list`. Item 0 (sparkles removed, v3 tap target 44px, CLAUDE.md line, docs), V3Nav `current` with real links, new route `#/n/meds` (read only), `medsList.ts` model, demo houses, `KindIcon`, `check:overflow` limit 43.5px for v3 only. Schema: house item has an optional `kind` (owner chose A). Details and my own decisions: `docs/DECISIONS.md`, "PR 5a".
+
+### Status
+`npm test` 1,231 (1,181 before) pass; `npm run build` passes; `npm run check:overflow` 282 checks, 0 problems. Looked at 360px pictures of the own-medicine tab (stopped section open) and the house tab.
+
+### Waiting for the owner
+See "ต่างจากบอร์ด" in the PR: house kind picture is a guess (round circle + SVG), "(40 เม็ด)" of paracetamol is not shown (house stock has no pack size), "เร็ว ๆ นี้" shows inside the floating add button, expired medicine chip. Rows and member heads are not pressable yet (PR 5b).
+
+### Owner's S24 test (after merge and deploy)
+Open `#/n/meds?demo=normal`: two tabs with counts, dad has 2 yellow "ใกล้หมด" chips and a disabled order button, mom's Atorvastatin shows "ใกล้หมดอายุ 5 พ.ย. 69"; fold "ยาที่หยุดแล้ว (2)" opens. `&tab=house`: five rows, worst first, kind pictures. Also `?demo=nomember`, `nomeds`, `nohouse&tab=house`. Home: no sparkle strokes near the mascot; bottom menu "รายการยา" is a real link.
 
 ## M4 PR 4d — v3 theme sync (30 ต.ค. 2569)
 
