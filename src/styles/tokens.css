@@ -22,6 +22,7 @@
   --color-surface: #ffffff;
   --color-border: #dadce0; /* decoration only */
   --color-border-strong: #80868b; /* boundary of controls */
+  --color-navy: #013073; /* brand mark colour (M4 PR 4b) */
 
   /* type */
   --font-sans: 'Noto Sans Thai', system-ui, sans-serif;

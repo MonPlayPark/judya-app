@@ -525,3 +525,18 @@ New: `src/domain/v3/home.ts`, `homeDemo.ts` (+ tests), `src/pages/v3/HomeV3*.tsx
 
 ### Waiting for the owner
 Navy colour token · logo mark file · interval key and interval periods · "ดูทั้งหมด N" and row destinations (PR 5) · low-stock rule for cream / drops (from PR 2) · whether the sample house should hide the "never backed up" banner (PR 3).
+
+## M4 PR 4b — brand swap: logo, mascot, app icon (30 ต.ค. 2569)
+
+Small PR: images and one token only, no layout or logic change.
+
+- **Mascot pose changed by the owner (30 ต.ค.):** from waving (`wave`) to holding a clipboard (`pharmacist-clipboard.svg`). Alt text is now "น้องเภสัชถือคลิปบอร์ด". `wave.svg` and the other 7 poses stay (v2 uses them).
+- **Token:** `--color-navy: #013073` added to `tokens.css` (after `--color-border-strong`); no existing colour touched. Nothing uses it yet (the mark carries its own colour inside the SVG).
+- **Files:** `public/icons/judya-mark.svg` (9,802 B), `src/assets/visual/mascot/pharmacist-clipboard.svg` (92,949 B, about 3x `wave.svg`; the app grew by about 64 KB). Both are copied byte for byte (`cmp`), no `<script>`, no external link (only the `xmlns` text), used only through `<img>`. `judya-appicon.svg` is kept.
+- **Decided on my own:**
+  1. The incoming file was named `judya-mark-1.svg` (its `<title>` says `judya-mark`); installed under the requested name `judya-mark.svg`.
+  2. The mascot is imported in `HomeV3.tsx` directly (`?url`) instead of adding a pose to the typed list in `visual.ts` (outside this PR's file list).
+  3. The old v2 test `visual.test.ts` counted 48 SVG files in the mascot / icon / avatar folders; changed to 49 (one number and the title). Needed because the mascot lives in the same folder as the others, as asked.
+  4. Logo box stays 32px; the mark is wider than tall (1241x1100), so it shows about 30x27px inside it, not stretched.
+  5. `theme-color` (`#1A73E8`) and manifest colours were not changed; the brief only asked for the token.
+- **Open:** the four PNG app icons in `origin/assets-incoming` (`icon-192`, `icon-512`, `icon-maskable-512`, `apple-touch-icon`) are byte-identical (same SHA-256) to the ones already in `main` (the old white-bag-on-blue icon). So the home-screen icon did **not** change. The manifest already pointed at those paths with the right sizes, so it is unchanged. When the new PNGs arrive, copy them over the same four names; no code change needed. Only the browser-tab favicon is new (`judya-mark.svg`).
