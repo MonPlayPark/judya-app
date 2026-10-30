@@ -2,6 +2,19 @@
 
 Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every session.
 
+## M4 PR 4d — v3 theme sync (30 ต.ค. 2569)
+
+Branch `m4/pr4d-v3-theme`. Look only: no structure, text or logic change. New `src/styles/v3theme.css` (`.v3theme`: board colours, shadows, `--fs`) + `v3theme.test.ts`; `HomeV3.module.css` and `V3Nav.module.css` now use the board's px sizes x `var(--fs)`, spacing and radii; `HomeV3.tsx` adds the class `v3theme` on the root and a few modifier classes. `:root` in `tokens.css`, `src/domain`, `icons.tsx` and all v2 files untouched (`git diff` of them is empty). Rules and deviations: `docs/DECISIONS.md` "M4 PR 4d"; the board-vs-code table is in the PR description.
+
+### Status
+`npm test`: 1,142 before, 1,181 after (39 new, all in `v3theme.test.ts`); `npm run build` passes; `npm run check:overflow` 234 checks, 0 problems. Chromium 360 and 390px, `demo=normal` and `demo=alert`: computed styles equal the board (page #F6FAFF, header #EAF3FF / 184px, greeting 26/35 navy, tick button #006DF5 88px, row 58px, divider #E3E8EF, card radius 16px).
+
+### Waiting for the owner
+See "พบแต่ไม่ได้แก้" in the PR (calendar icon in the date pill, chevrons, 4th tile "ตารางยา", start-card pictures, tap target 44 vs 48, headline touches the sparkles at 360px).
+
+### Owner's S24 test (after merge and deploy)
+Open the GitHub Pages link + `#/n?demo=normal` (and `alert`): pale-blue page, light-blue header with two soft clouds, "สวัสดีค่ะ" navy, white cards with rounded corners, blue "จัดแล้ว" pill, grey-outlined "รอจัด" pill, the chosen member has a blue ring. Try text size ปกติ / กลาง / ใหญ่ in Settings of the old app (`#/settings`) and come back: Home grows with it, nothing cut. The old app at `#/` must look exactly as before.
+
 ## M4 PR 4c — period icons + navy greeting (30 ต.ค. 2569)
 
 Branch `m4/pr4c-period-icons`. Small PR, no layout or logic change. The 4 period icons on the Home "ยาของวันนี้" card are now copied as-is from the locked board (canvas v87) into `src/components/v3/PeriodIcons.tsx` (`MorningIcon`, `NoonIcon`, `EveningIcon`, `NightIcon`); `HomeV3.tsx` uses them; the period colour classes and the `.rowIcon` colour were removed from `HomeV3.module.css`. "สวัสดีค่ะ" is `var(--color-navy)`. Details and the contrast report: `docs/DECISIONS.md` "M4 PR 4c".

@@ -549,3 +549,16 @@ Small PR: images and one token only, no layout or logic change.
 - **Greeting:** "สวัสดีค่ะ" uses `var(--color-navy)` (#013073). Contrast on the hero: 9.93:1 on `--color-band` (#d6e6fd), 9.84:1 on `--color-band-done` (#cdebd6).
 - **For the owner to decide (not changed):** icon colours on the white card, from the board: blue #1A6FD6 4.90:1, orange-red #D9480F 4.30:1, navy #013073 12.56:1, yellow #F29900 only 2.25:1. The icon sits next to a text label, so it is not alone, but yellow is below the 3:1 usually wanted for graphics.
 - **Decided on my own:** the check icon in the "no medicine today" row took its colour from `.rowIcon`; to keep it looking the same, a new class `.rowIconCheck` carries `--color-primary-ink`.
+
+## M4 PR 4d — v3 theme sync (30 ต.ค. 2569)
+
+- **Rule: v3 pages use `.v3theme` (`src/styles/v3theme.css`); `:root` of `tokens.css` (v2) is not changed until the switch at PR 7.** At PR 7: move the values of `.v3theme` to `:root` as the defaults, then delete `v3theme.css` and the `v3theme` classes. `src/styles/v3theme.test.ts` checks every colour of the board and that `:root` is still v2 (primary #1a73e8, background #f8f9fa).
+- **Rule kept: the locked board is the spec** (colours, px sizes, spacing, radii copied as they are; nothing tuned by hand). The board file is `project/HomeV3.dc.html`. Where the board and a picture disagree, the board wins.
+- **Text size:** v3 text is written as `calc(<px at normal> * var(--fs))`. `--fs` is 1 / 1.075 / 1.24 for n / m / l. Checked in `src/prefs/fontSize.ts`: n / m / l = ปกติ / กลาง / ใหญ่ = 93% / 100% / 115%, default n. The board's own factor is 0.93 / 1 / 1.15 on bigger px numbers (28 x 0.93 = 26); the owner's table is that result at "normal", so the numbers are the same.
+- **Tap target stays 48px where the board says 44px** (the "จัดแล้ว / รอจัด" button, member heading rows). CLAUDE.md and `check:overflow` require 48px. Width 88px as in the board.
+- **Text under 14px:** the board has 13px at "normal" for the sub-line and the "เสร็จแล้ว" chip of the start card (14 x 0.93). The owner's table says secondary = 14/19, and CLAUDE.md says 14px minimum, so 14px is used there.
+- **Band colour when all done:** the board keeps `--color-band` (#EAF3FF); only the headline turns green (`--color-success-ink`). The old v2 green band is gone from Home v3.
+- **Header decoration without new elements:** the two clouds and four sparkle strokes of the board are drawn with `::before` / `::after` of the header (CSS only, from the right-bottom corner so they stay beside the mascot at 360px). No element was added to the JSX.
+- **Outside the root:** `V3Nav` and `ComingSoon` render inside `.page`, so they get the theme. The "can't open the data" state of `HomeV3Page` had no root; it is now wrapped in `v3theme page`.
+- **Not touched:** the demo bar, the save-error bar, the "และอีก N รายการ" line and the "เร็ว ๆ นี้" badge are not on the board; they keep their v2 rem sizes.
+- Found but not changed (structure; needs the owner): see the PR description, section "พบแต่ไม่ได้แก้".
