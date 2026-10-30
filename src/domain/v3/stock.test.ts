@@ -29,7 +29,7 @@ const asg = (stock: Stock | null, schedule: Schedule, extra: Partial<Assignment>
 });
 const ev = (type: 'stop' | 'resume', effectiveOn: string): MedEvent =>
   type === 'stop'
-    ? { id: `e-${type}-${effectiveOn}`, assignmentId: 'a', type, reason: 'อื่น ๆ', effectiveOn, at: `${effectiveOn}T08:00:00+07:00` }
+    ? { id: `e-${type}-${effectiveOn}`, assignmentId: 'a', type, reason: 'อื่น ๆ', note: 'ทดสอบ', effectiveOn, at: `${effectiveOn}T08:00:00+07:00` }
     : { id: `e-${type}-${effectiveOn}`, assignmentId: 'a', type, effectiveOn, at: `${effectiveOn}T08:00:00+07:00` };
 
 const days = (a: Assignment, m: Medication, events: MedEvent[] = []) => {
