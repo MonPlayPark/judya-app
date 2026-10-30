@@ -569,4 +569,5 @@ Small PR: images and one token only, no layout or logic change.
 - **v3 tap target = 44px** (the board value), v2 stays 48px. Done with `--touch-min: 44px` inside `.v3theme` plus explicit `44px` on the Home rows that had 48px. 48px stays only where the board says 48px: the "สั่งยา" button of the care card (`.orderButton`, now written as `48px`), the full-width button of an empty state and "ล้างตัวกรอง" (the last two come with the medicine list). The board wins over CLAUDE.md when they differ; CLAUDE.md line updated.
 - **Stale notes fixed:** "app icon unchanged / waiting for PNG" no longer true; the four PNGs are in the repo (PR #28).
 - **V3Nav** takes `current: 'home' | 'meds'`; home and meds tabs are real `<a href>` (`#/n`, `#/n/meds`).
-- **Not changed, needs the owner:** `scripts/check-overflow.mjs` still reports v3 buttons under 47.5px as problems; with 44px targets it must be lowered (outside this PR's file list). The nav tab keeps `min-height: 52px` (not a 48px spot).
+- **check:overflow:** the "too short button" limit is 43.5px for v3 pages only (routes starting with `#/n`, function `measureV3`); v2 pages keep 47.5px. Owner approved editing the script. The nav tab keeps `min-height: 52px` (board value).
+- **Count:** 7 Home spots changed to 44px (the brief said 9, from an old report); the owner confirmed 7.
