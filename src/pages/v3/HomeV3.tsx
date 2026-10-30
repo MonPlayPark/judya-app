@@ -4,7 +4,8 @@ import { CheckIcon, MoonIcon, SunIcon, SunriseIcon, SunsetIcon, WarningIcon, Inf
 import { ComingSoon } from '../../components/v3/ComingSoon';
 import { V3Nav } from '../../components/v3/V3Nav';
 import { PERIOD_LABEL, type CareItem, type DoseRow, type HomeModel, type Period } from '../../domain/v3/home';
-import { avatarUrl, iconUrl, mascotUrl } from '../../visual';
+import { avatarUrl, iconUrl } from '../../visual';
+import mascotUrl from '../../assets/visual/mascot/pharmacist-clipboard.svg?url';
 import styles from './HomeV3.module.css';
 
 export interface HomeViewProps {
@@ -23,8 +24,8 @@ const PERIOD_ICON: Record<Period, () => JSX.Element> = {
   bedtime: MoonIcon,
 };
 
-/** The app mark only (no word): the app icon in public/icons. */
-const LOGO_URL = `${import.meta.env.BASE_URL}icons/judya-appicon.svg`;
+/** The brand mark only (no word): public/icons/judya-mark.svg. */
+const LOGO_URL = `${import.meta.env.BASE_URL}icons/judya-mark.svg`;
 
 export function HomeView({ model, demo, saveError, onPick, onToggle }: HomeViewProps) {
   const m = model;
@@ -57,7 +58,7 @@ export function HomeView({ model, demo, saveError, onPick, onToggle }: HomeViewP
           {m.extraWarnings > 0 && <p className={styles.extra}>+{m.extraWarnings} เรื่อง</p>}
           <span className={styles.datePill}>{m.dateText}</span>
         </div>
-        <img className={styles.mascot} src={mascotUrl('wave')} alt="น้องเภสัชโบกมือทักทาย" />
+        <img className={styles.mascot} src={mascotUrl} alt="น้องเภสัชถือคลิปบอร์ด" />
       </header>
 
       <main className={styles.body}>

@@ -14,8 +14,8 @@ describe('visual image helper', () => {
     for (const n of MASCOT_POSES) expect(mascotUrl(n)).toMatch(/svg/);
   });
 
-  it('has no unused image files (48 svg in total)', () => {
+  it('has no unused image files (49 svg in total: 48 + pharmacist-clipboard)', () => {
     const all = import.meta.glob('./assets/visual/*/*.svg');
-    expect(Object.keys(all)).toHaveLength(48);
+    expect(Object.keys(all)).toHaveLength(49);
   });
 });

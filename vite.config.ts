@@ -26,7 +26,7 @@ export default defineConfig({
     VitePWA({
       // 'prompt': a new version waits until the person taps "โหลดใหม่" (BRIEF 3.4), never reloads mid-form.
       registerType: 'prompt',
-      includeAssets: ['icons/apple-touch-icon.png', 'icons/judya-appicon.svg'],
+      includeAssets: ['icons/apple-touch-icon.png', 'icons/judya-mark.svg'],
       manifest: {
         name: 'JudYa',
         short_name: 'JudYa',

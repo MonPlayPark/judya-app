@@ -2,6 +2,19 @@
 
 Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every session.
 
+## M4 PR 4b — brand swap (30 ต.ค. 2569)
+
+Branch `m4/pr4b-brand`. Home v3 now shows `judya-mark.svg` (mark only) before "สวัสดีค่ะ" and the clipboard mascot `pharmacist-clipboard.svg`; favicon = `judya-mark.svg`; token `--color-navy`. Choices and the open point: `docs/DECISIONS.md` "M4 PR 4b".
+
+### Status
+`npm test`: 1,134 before, 1,134 after (no new test; `visual.test.ts` count 48 -> 49); `npm run build` passes; `npm run check:overflow` 234 checks, 0 problems. Chromium 360px shots of `normal` and `empty0`: both images loaded and inside the band, nothing cut.
+
+### Waiting for the owner
+The four app-icon PNGs on `assets-incoming` are the OLD icons (identical bytes), so the home-screen icon is unchanged. Upload the new PNGs, copy them over `public/icons/icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`.
+
+### Owner's S24 test (after merge and deploy)
+Open the GitHub Pages link + `#/n?demo=normal` (and `#/n?demo=empty0`): small blue mark before "สวัสดีค่ะ", mascot holding a clipboard on the right, not cut. Browser tab icon = the mark. Home-screen icon stays the old one until the new PNGs are added.
+
 ## M4 PR 4 — Home v3 (29 ต.ค. 2569)
 
 Branch `m4/pr4-home`. First UI of v3, at `#/n` (the old home at `#/` is untouched). New: `src/domain/v3/home.ts`, `homeDemo.ts`, `src/pages/v3/HomeV3.tsx|HomeV3Page.tsx|css`, `src/components/v3/ComingSoon`, `V3Nav` + tests. Edited: `src/App.tsx` (the `#/n` route), `scripts/check-overflow.mjs` (7 v3 routes, text >= 14px and tap target >= 48px checks), docs. All choices: `docs/DECISIONS.md` "M4 PR 4".
