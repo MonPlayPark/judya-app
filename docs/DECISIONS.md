@@ -590,3 +590,35 @@ Small PR: images and one token only, no layout or logic change.
   9. House kind picture = the owner's guess: 44px round #E4F0FE circle with the 28px SVG inside (the board uses a round photo that could not be fetched).
 - **Row and member head are not pressable in 5a** (detail pages = PR 5b, member page does not exist). No arrow either.
 - **check:overflow** now also visits 8 meds-list routes (real data, 4 demos, house tab, both folded sections open).
+
+## M4 PR 5b — medicine detail v3 (30 ต.ค. 2569)
+
+What was built: route `#/n/meds/:id` (outside DataProvider), `medActions.ts` (stop / resume, pure), `medDetail.ts` (screen model + refill preview), `houseDetail.ts` (house sheet), `Sheet` / `Toast` / `sheetParts` components, house-medicine sheets on the list, own-medicine rows are links, demo houses `cream | notdaily | stopped`.
+
+### Owner's decisions (from the PR brief)
+- `STOP_REASONS` = 5 (หมอสั่ง, แพ้ยา, ใช้ยาไม่ได้ / ผลข้างเคียง, ยาหมดไม่ซื้อต่อ, อื่น ๆ). Stored value keeps the old spelling; the screen text comes from `STOP_REASON_LABEL` (หมอสั่งหยุด, ..., อื่นๆ). Stop note: required for อื่น ๆ (schema refine, spaces only fails), optional "symptom" for แพ้ยา / ใช้ยาไม่ได้, none for the others. Nothing is written into `allergies` (PR 10).
+- `RESUME_REASONS` = 4; `reason` is optional in the schema so old data and backups still pass; the screen always forces a choice.
+- Refill and "open a new tube" reuse `refillStock` / `openNewTube`; no MedEvent. Stop / resume never touch stock, expiry or schedule.
+- Creams / drops: big number "สำรอง N หลอด/ขวด", no days line, "ไม่ตัดสต็อกอัตโนมัติ".
+- The "เร็ว ๆ นี้" badge is gone from the bottom menu.
+
+### Decided on my own
+1. **ComingSoon is now a pressable button for every use** (not only the two nav tabs): faded, `aria-disabled="true"`, no word inside; pressing shows the floating "เร็ว ๆ นี้" (role="status", 3 s). The brief said the other uses "keep the text as a floating message", so Home and list buttons lost their inline badge too. `badgeClassName` is still accepted and ignored (Home still passes it; the unused badge CSS classes in `HomeV3.module.css` are left, Home was not edited). Tests of Home / list / V3Nav / ComingSoon updated.
+2. **Adjust reason text:** `doctor` = "เหตุผล: หมอสั่ง"; `self_or_other` = "เหตุผล: ปรับเองหรือไม่ใช่หมอสั่ง" (my guess, as the brief said).
+3. **Days in the stock card:** "ประมาณ N วัน" for daily medicines (the board's text; `formatDaysLeft` itself says "N วัน", used unchanged in the refill summary "26 วัน → 41 วัน"). Weeks come from `formatDaysLeft` as is.
+4. **Cream / drops chip:** เพียงพอ when spare > 0, ใกล้หมด when spare = 0 but a tube is open, หมด when nothing at all (the owner's rule). The list page still shows "ปกติ" for every tube medicine (`isLowStock` has no tube rule) — not changed, listed in HANDOFF.
+5. **Medicine never counted (stock = null):** big text "ยังไม่ได้นับ", hint "ใส่จำนวนยาที่มีเมื่อเติมสต็อก", no chip, refill allowed (counting then starts from the amount added). Stopped + never counted: no hint.
+6. **Stopped medicine quantity:** shown as of today with paused days skipped (`stockNow` on an "active copy"), chip / days / buttons hidden.
+7. **Pack text:** "N กล่อง + N แผง + N เม็ด" only for box / strip / sachetBox packs (sachet box = "กล่อง"); a medicine with no pack shows only the big number. Zero left = "ไม่มียาเหลือ".
+8. **Dose rows:** days text = ทุกวัน / วันเว้นวัน / เฉพาะวันจันทร์ พุธ ...; interval = one row "ทุก N ชั่วโมง" with "1 เม็ด · เริ่ม 08:00 น. · ต่อเนื่อง|N วัน". The interval row uses the noon icon.
+9. **Drops wording:** "กำลังใช้ขวดที่เปิดอยู่ / ยังไม่ได้เปิดขวด" (the brief only gives the หลอด text).
+10. **Refill sheet:** liquid = มล.; sachetBox = กล่อง + ซอง; no pack = one box. Typed values must be numbers (digits, optional decimals); `refillStock` decides everything else and its Thai error is shown under the boxes. Expiry sentence without any date: "ยาตัวนี้ยังไม่มีวันหมดอายุ ถ้าใส่วันที่ จะใช้วันที่ของกล่องใหม่".
+11. **Date choice:** a label styled as a button with the browser's `<input type="date">` lying on it, invisible (tap opens the phone's picker); shows the Thai date after; "ล้าง" clears.
+12. **House items do have an expiry field** (`houseItemSchema.expiry`), so the sheet always shows the "วันหมดอายุ" row ("ไม่ได้ระบุ" when empty) and the refill sheet always has the optional date. House refill adds to `stock.qty` (decimals allowed) and keeps the nearer expiry (`mergeExpiry`).
+13. **House sheet status chip** uses `houseStatus` (ปกติ / ใกล้หมด / หมดแล้ว), not the expiry-first chip of the list row; expiry gets its own chip in the sheet. Kind names: ยาเม็ด, แคปซูล, ยาน้ำ, ครีม, ผงชงดื่ม (sachet), ยาหยอด, อื่นๆ.
+14. **Header icon** of the detail page is the "nav-medicines" capsule (the list header has the logo, which the detail page must not have). Card icons: rx-medicine, prepare-meds, restock, history (existing files).
+15. **Demo:** the VitaminD of dad now has a 3x10 box pack, 5 strips + 3 pills = 53 pills, expiry 2027-03-15, and all four event kinds; Brintellix (stopped) is stopped for แพ้ยา / ผื่นคัน with 10 pills left. Extra demo houses: `cream` (a9), `notdaily` (a10, Mon / Wed / Fri). The list demo `normal` keeps its 6 + 2 rows.
+16. **Demo wording:** the banner says "โหมดตัวอย่าง ไม่บันทึกข้อมูล" (same as Home and list).
+17. Test helper in `stock.test.ts` got a note on its `อื่น ๆ` stop event (the new schema rule).
+18. Toast sits 84px above the bottom (over the menu on list pages); it is drawn in `<body>` with literal colours.
+
