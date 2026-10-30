@@ -505,7 +505,7 @@ New: `src/domain/v3/home.ts`, `homeDemo.ts` (+ tests), `src/pages/v3/HomeV3*.tsx
 ### Where the prompt, board and picture differ (prompt wins)
 - Not copied from the picture: bell / profile icon, clock times (08:00), the "ตารางยา" card, the date in the picture. Date pill = today's Thai date, plain text like the board (not a button: it has no destination).
 - **Colours**: the board and picture use navy headings (#013073) and a light band (#EAF3FF). Not in `tokens.css`, so tokens are used instead (ink headings, `--color-band`). Owner: add a navy token if the navy look matters.
-- **Logo mark**: the repo has no JY-house mark. The app icon `public/icons/judya-appicon.svg` (bag) is used as the mark. Owner: send the mark file if it must match the picture. Mascot = `mascot/wave.svg` (looks like the picture's character).
+- **Logo mark**: the repo has no JY-house mark. (Old note, closed in PR 4b: the real mark is now `public/icons/judya-mark.svg`.) Mascot = `mascot/wave.svg` (looks like the picture's character).
 - **Shortcuts**: 3 tiles in the order given (สั่งซื้อยา, แชร์ให้แพทย์, รายการยา); the third is full width so no cell is empty. The board's 2x2 grid would leave a hole.
 - **Dose keys** in `prepLog`: `<assignmentId>:<slot>` (morning/noon/evening/bedtime), as the PR 1 fixture (`a1:morning`). The interval key `<id>:HH:MM` is not shown by any v3 file; it follows v2. Owner: confirm.
 - Ticks older than 14 days are dropped on each tick (v2 rule). Self-managed members are left out of today's doses (BRIEF: "ไม่ขึ้นยาวันนี้"); their chip says "จัดยาเอง".
@@ -555,10 +555,18 @@ Small PR: images and one token only, no layout or logic change.
 - **Rule: v3 pages use `.v3theme` (`src/styles/v3theme.css`); `:root` of `tokens.css` (v2) is not changed until the switch at PR 7.** At PR 7: move the values of `.v3theme` to `:root` as the defaults, then delete `v3theme.css` and the `v3theme` classes. `src/styles/v3theme.test.ts` checks every colour of the board and that `:root` is still v2 (primary #1a73e8, background #f8f9fa).
 - **Rule kept: the locked board is the spec** (colours, px sizes, spacing, radii copied as they are; nothing tuned by hand). The board file is `project/HomeV3.dc.html`. Where the board and a picture disagree, the board wins.
 - **Text size:** v3 text is written as `calc(<px at normal> * var(--fs))`. `--fs` is 1 / 1.075 / 1.24 for n / m / l. Checked in `src/prefs/fontSize.ts`: n / m / l = ปกติ / กลาง / ใหญ่ = 93% / 100% / 115%, default n. The board's own factor is 0.93 / 1 / 1.15 on bigger px numbers (28 x 0.93 = 26); the owner's table is that result at "normal", so the numbers are the same.
-- **Tap target stays 48px where the board says 44px** (the "จัดแล้ว / รอจัด" button, member heading rows). CLAUDE.md and `check:overflow` require 48px. Width 88px as in the board.
+- **(Replaced in PR 5a: v3 tap targets are 44px.)** Old note: tap target stayed 48px where the board says 44px (the "จัดแล้ว / รอจัด" button, member heading rows). CLAUDE.md and `check:overflow` require 48px. Width 88px as in the board.
 - **Text under 14px:** the board has 13px at "normal" for the sub-line and the "เสร็จแล้ว" chip of the start card (14 x 0.93). The owner's table says secondary = 14/19, and CLAUDE.md says 14px minimum, so 14px is used there.
 - **Band colour when all done:** the board keeps `--color-band` (#EAF3FF); only the headline turns green (`--color-success-ink`). The old v2 green band is gone from Home v3.
-- **Header decoration without new elements:** the two clouds and four sparkle strokes of the board are drawn with `::before` / `::after` of the header (CSS only, from the right-bottom corner so they stay beside the mascot at 360px). No element was added to the JSX.
+- **Header decoration without new elements:** the two clouds (the four sparkle strokes were removed in PR 5a) are drawn with `::before` / `::after` of the header (CSS only, from the right-bottom corner so they stay beside the mascot at 360px). No element was added to the JSX.
 - **Outside the root:** `V3Nav` and `ComingSoon` render inside `.page`, so they get the theme. The "can't open the data" state of `HomeV3Page` had no root; it is now wrapped in `v3theme page`.
 - **Not touched:** the demo bar, the save-error bar, the "และอีก N รายการ" line and the "เร็ว ๆ นี้" badge are not on the board; they keep their v2 rem sizes.
 - Found but not changed (structure; needs the owner): see the PR description, section "พบแต่ไม่ได้แก้".
+
+## M4 PR 5a — Home fixes + medicine list v3 (30 ต.ค. 2569)
+
+- **Sparkle strokes removed** from the Home header (`.hero::after` deleted). They sat on top of the text on the owner's S24, and the board (v92) no longer has them. The pale-blue circle behind the mascot stays. `--color-header-spark` is left in `v3theme.css` unused (that file is add-only in this PR).
+- **v3 tap target = 44px** (the board value), v2 stays 48px. Done with `--touch-min: 44px` inside `.v3theme` plus explicit `44px` on the Home rows that had 48px. 48px stays only where the board says 48px: the "สั่งยา" button of the care card (`.orderButton`, now written as `48px`), the full-width button of an empty state and "ล้างตัวกรอง" (the last two come with the medicine list). The board wins over CLAUDE.md when they differ; CLAUDE.md line updated.
+- **Stale notes fixed:** "app icon unchanged / waiting for PNG" no longer true; the four PNGs are in the repo (PR #28).
+- **V3Nav** takes `current: 'home' | 'meds'`; home and meds tabs are real `<a href>` (`#/n`, `#/n/meds`).
+- **Not changed, needs the owner:** `scripts/check-overflow.mjs` still reports v3 buttons under 47.5px as problems; with 44px targets it must be lowered (outside this PR's file list). The nav tab keeps `min-height: 52px` (not a 48px spot).

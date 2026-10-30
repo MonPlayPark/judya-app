@@ -97,7 +97,8 @@ describe('no "ตารางยา" and no dead controls', () => {
   it.each(DEMO_NAMES)('%s: no word ตารางยา, no # links, every control has a job', (name) => {
     const { container } = renderDemo(name);
     expect(container.textContent).not.toContain('ตารางยา');
-    expect(container.querySelectorAll('a')).toHaveLength(0); // nothing is a link yet, so nothing can be a dead link
+    // only the two real nav links exist (home and the medicine list); nothing else is a link, so nothing can be a dead link
+    expect(Array.from(container.querySelectorAll('a')).map((a) => a.getAttribute('href'))).toEqual(['#/n', '#/n/meds']);
     for (const b of Array.from(container.querySelectorAll('button'))) {
       if (b.hasAttribute('aria-pressed')) {
         expect(b).toBeEnabled(); // member picker or tick: a real handler (tested below)

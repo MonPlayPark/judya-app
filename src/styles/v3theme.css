@@ -38,6 +38,7 @@
   --color-period-dusk: #D9480F;
   --color-period-dusk-fill: #FF9F43;
   --shadow-selected-ring: 0 0 0 3px #006DF5;
+  --touch-min: 44px; /* v3 tap target (board); v2 keeps 48px. Board-48px spots write 48px themselves. */
 
   /* Text size: v3 sizes are written as px at "normal" times --fs. n / m / l = 93% / 100% / 115% (src/prefs/fontSize.ts),
      so the multiplier is 1 / 100/93 / 115/93 (same as the board's 0.93 / 1 / 1.15, relative to "normal"). */

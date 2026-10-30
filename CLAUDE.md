@@ -14,5 +14,5 @@ Read `docs/BRIEF.md` before any work. It is the approved spec for milestone M3 (
 ## Commands and layout
 - `npm test` (Vitest), `npm run build` (strict type check + Vite build), `npm run dev`. Run both test and build before every PR.
 - `src/domain/` pure logic (calc, zod schema, storage). No UI code in there. `src/pages/`, `src/components/` UI. Styles use the CSS variables in `src/styles/tokens.css` (Design System v2); do not invent colours or sizes.
-- No `any`. Smallest text 14px at the 'normal' font size (15px or more at 'medium'), tap targets at least 48px, status never by colour alone (icon + word).
+- No `any`. Smallest text 14px at the 'normal' font size (15px or more at 'medium'), tap targets at least 44px on v3 pages (48px on v2 pages), status never by colour alone (icon + word).
 - Decisions made while building and open questions: `docs/DECISIONS.md`.

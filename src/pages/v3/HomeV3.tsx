@@ -77,7 +77,7 @@ export function HomeView({ model, demo, saveError, onPick, onToggle }: HomeViewP
         {m.showTiles && <Shortcuts />}
       </main>
 
-      <V3Nav />
+      <V3Nav current="home" />
     </div>
   );
 }

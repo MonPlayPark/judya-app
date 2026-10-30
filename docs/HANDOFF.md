@@ -2,6 +2,10 @@
 
 Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every session.
 
+## M4 PR 5a — in progress (30 ต.ค. 2569), branch `m4/pr5a-meds-list`
+
+Done: item 0 (sparkles removed, v3 tap target 44px, CLAUDE.md line, docs) and item 1 (V3Nav `current`, real links). **Not done:** items 2–3 (route `/n/meds`, demo data, the medicine list page): the task text was cut off in the middle of section 3 (after the tab pill number style), so the rest of the board values are unknown. Waiting for the owner to send the rest. Also open: `scripts/check-overflow.mjs` 48px rule for v3 pages.
+
 ## M4 PR 4d — v3 theme sync (30 ต.ค. 2569)
 
 Branch `m4/pr4d-v3-theme`. Look only: no structure, text or logic change. New `src/styles/v3theme.css` (`.v3theme`: board colours, shadows, `--fs`) + `v3theme.test.ts`; `HomeV3.module.css` and `V3Nav.module.css` now use the board's px sizes x `var(--fs)`, spacing and radii; `HomeV3.tsx` adds the class `v3theme` on the root and a few modifier classes. `:root` in `tokens.css`, `src/domain`, `icons.tsx` and all v2 files untouched (`git diff` of them is empty). Rules and deviations: `docs/DECISIONS.md` "M4 PR 4d"; the board-vs-code table is in the PR description.
