@@ -1,4 +1,6 @@
-/* v3 Home (M4 PR 4). Only tokens from tokens.css; flat colours, no gradients. Text is never below --text-nav-size. */
+/* v3 Home (M4 PR 4, theme sync PR 4d). Colours come from tokens.css overridden by `.v3theme` (src/styles/v3theme.css).
+   Sizes, spacing and radii are copied from the locked board HomeV3.dc.html: text as px at "normal" times var(--fs).
+   Tap targets stay at 48px (CLAUDE.md) where the board has 44px. */
 
 .page {
   display: flex;
@@ -22,35 +24,64 @@
 
 /* ---------- hero ---------- */
 .hero {
-  display: flex;
-  align-items: flex-end;
-  gap: var(--space-1);
-  padding: var(--space-2) var(--screen-pad) 0 var(--screen-pad);
+  position: relative;
+  min-height: 184px;
+  overflow: hidden;
+  padding: 14px 18px 22px 20px;
   background: var(--color-band);
 }
+/* the two clouds, drawn from the right-bottom corner of a 390 x 184 box (board header svg) */
+.hero::before {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 390px;
+  height: 184px;
+  background:
+    radial-gradient(circle at 352px 120px, var(--color-header-cloud-2) 0 64px, transparent 64.5px),
+    radial-gradient(circle at 292px 176px, var(--color-header-cloud) 0 114px, transparent 114.5px);
+  pointer-events: none;
+}
+/* the four sparkle strokes (board: stroke 3, round caps), painted in --color-header-spark through a mask */
+.hero::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 390px;
+  height: 184px;
+  background: var(--color-header-spark);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='390' height='184' viewBox='0 0 390 184'%3E%3Cg stroke='%23000' stroke-width='3' stroke-linecap='round' fill='none'%3E%3Cpath d='M213 62l7 7'/%3E%3Cpath d='M205 82l10 3'/%3E%3Cpath d='M338 56l-8 8'/%3E%3Cpath d='M350 80l-10 2'/%3E%3C/g%3E%3C/svg%3E") no-repeat right bottom / 390px 184px;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='390' height='184' viewBox='0 0 390 184'%3E%3Cg stroke='%23000' stroke-width='3' stroke-linecap='round' fill='none'%3E%3Cpath d='M213 62l7 7'/%3E%3Cpath d='M205 82l10 3'/%3E%3Cpath d='M338 56l-8 8'/%3E%3Cpath d='M350 80l-10 2'/%3E%3C/g%3E%3C/svg%3E") no-repeat right bottom / 390px 184px;
+  pointer-events: none;
+}
+/* the board keeps the same band colour when everything is done: only the headline turns green */
 .heroDone {
-  background: var(--color-band-done);
+  background: var(--color-band);
 }
 .heroText {
-  flex: 1;
-  min-width: 0;
-  padding-bottom: var(--space-2);
+  position: relative;
+  z-index: 1; /* text and mascot above the clouds and sparkles */
+  width: 204px;
+  max-width: 100%;
+  margin-top: 6px;
 }
 .greetRow {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: 8px;
 }
 .logo {
   flex: none;
   display: block;
-  width: var(--icon-32);
-  height: var(--icon-32);
+  height: 32px;
+  width: auto;
 }
 .greeting {
   margin: 0;
-  font-size: var(--text-hero-title-size);
-  line-height: var(--text-hero-title-line);
+  font-size: calc(26px * var(--fs));
+  line-height: calc(35px * var(--fs));
   font-weight: var(--weight-bold);
   color: var(--color-navy);
 }
@@ -58,11 +89,11 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  margin: 2px 0 0;
-  font-size: var(--text-hero-sub-size);
-  line-height: var(--text-hero-sub-line);
+  margin: 0;
+  font-size: calc(16px * var(--fs));
+  line-height: calc(22px * var(--fs));
   font-weight: var(--weight-medium);
-  color: var(--color-ink);
+  color: var(--color-navy);
 }
 .headlineDone {
   color: var(--color-success-ink);
@@ -71,52 +102,64 @@
   display: flex;
   align-items: flex-start;
   gap: 6px;
-  margin: 4px 0 0;
-  font-size: var(--text-list-sub-size);
-  line-height: var(--text-list-sub-line);
+  margin: 2px 0 0;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
   font-weight: var(--weight-semibold);
   color: var(--color-warning-ink);
 }
 .warning svg {
   flex: none;
+  width: 18px;
+  height: 18px;
   margin-top: 2px;
 }
 .extra {
-  margin: 0;
-  padding-left: 30px;
-  font-size: var(--text-list-sub-size);
-  line-height: var(--text-list-sub-line);
+  margin: 4px 0 0;
+  padding-left: 24px;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
   font-weight: var(--weight-semibold);
   color: var(--color-primary-ink);
 }
 .datePill {
-  display: inline-block;
-  margin-top: var(--space-1);
-  padding: 2px 14px;
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  margin-top: 8px;
+  padding: 4px 14px;
   border-radius: var(--radius-pill);
   background: var(--color-surface);
-  box-shadow: var(--elevation-card);
-  font-size: var(--text-nav-size);
-  line-height: 1.5rem;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.18); /* board value, no token */
+  font-size: calc(14px * var(--fs));
+  line-height: calc(22px * var(--fs));
   font-weight: var(--weight-medium);
-  color: var(--color-ink);
+  color: var(--color-navy);
   white-space: nowrap;
 }
-/* the mascot stands on the bottom edge of the band */
+/* the mascot stands on the bottom edge of the band, right side */
 .mascot {
+  position: absolute;
+  z-index: 1;
+  right: 14px;
+  bottom: 0;
   display: block;
-  flex: none;
-  height: var(--mascot-hero);
-  width: auto;
+  width: 146px;
+  height: auto;
 }
 
 /* ---------- body ---------- */
 .body {
+  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--screen-pad) var(--space-3);
+  gap: 10px;
+  padding: 0 12px 16px;
+}
+/* the first card moves up over the band */
+.hero + .body {
+  margin-top: -10px;
 }
 
 .saveError {
@@ -138,30 +181,51 @@
 }
 
 .card {
-  padding: 4px var(--screen-pad) var(--space-1);
-  border-radius: var(--radius-card);
+  border-radius: 16px;
   background: var(--color-surface);
-  box-shadow: var(--elevation-card);
+  box-shadow: var(--elevation-1);
+}
+.cardStart {
+  padding: 4px 12px 14px;
+}
+.cardMembers {
+  padding: 6px 12px 8px;
+}
+.cardToday {
+  padding: 2px 12px 4px;
+}
+.cardCare {
+  padding: 2px 12px 12px;
 }
 .heading,
 .headingInline {
   margin: 0;
-  font-size: var(--text-list-title-size);
-  line-height: var(--text-list-title-line);
+  font-size: calc(16px * var(--fs));
+  line-height: calc(22px * var(--fs));
   font-weight: var(--weight-semibold);
-  color: var(--color-ink);
+  color: var(--color-navy);
 }
 .heading {
   display: flex;
   align-items: center;
-  min-height: 48px;
+}
+.cardStart .heading {
+  min-height: 52px;
+}
+.cardToday .heading {
+  min-height: 48px; /* board 44px; stays 48px (CLAUDE.md tap target) */
 }
 .cardHead {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-1);
-  min-height: 52px;
+  gap: 10px;
+}
+.cardMembers .cardHead {
+  min-height: 48px; /* board 44px; stays 48px */
+}
+.cardCare .cardHead {
+  min-height: 48px;
 }
 .headingInline {
   flex: 1;
@@ -172,9 +236,12 @@
 .step {
   display: flex;
   align-items: flex-start;
-  gap: var(--space-1);
-  padding: var(--space-1) 0 var(--space-2);
+  gap: 8px;
+  padding: 12px 0;
   border-top: 1px solid var(--color-border);
+}
+.step:last-child {
+  padding-bottom: 0;
 }
 .stepNo {
   flex: none;
@@ -186,8 +253,9 @@
   margin-top: 2px;
   border-radius: 50%;
   background: var(--color-ink-muted);
-  color: #fff;
-  font-size: var(--text-nav-size);
+  color: var(--color-surface);
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
   font-weight: var(--weight-bold);
 }
 .stepNoDone {
@@ -205,35 +273,35 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 6px;
-  font-size: var(--text-list-title-size);
-  line-height: var(--text-list-title-line);
+  font-size: calc(15px * var(--fs));
+  line-height: calc(20px * var(--fs));
   font-weight: var(--weight-semibold);
-  color: var(--color-ink);
+  color: var(--color-navy);
 }
 .stepSub {
-  font-size: var(--text-list-sub-size);
-  line-height: var(--text-list-sub-line);
+  font-size: calc(14px * var(--fs));
+  line-height: calc(19px * var(--fs));
   color: var(--color-ink-muted);
 }
 .doneChip {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 0 10px;
+  padding: 1px 10px;
   border-radius: var(--radius-pill);
   background: var(--color-primary-tint);
   color: var(--color-primary-ink);
-  font-size: var(--text-chip-size);
-  line-height: var(--text-chip-line);
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
   font-weight: var(--weight-semibold);
 }
 .stepButton {
   align-self: stretch;
   min-height: var(--touch-min);
-  margin-top: var(--space-1);
+  margin-top: 8px;
   border-radius: var(--radius-pill);
   background: var(--color-background);
-  font-size: var(--text-label-size);
+  font-size: calc(14px * var(--fs));
   font-weight: var(--weight-semibold);
 }
 .stepBadge {
@@ -244,12 +312,12 @@
   align-items: center;
   justify-content: center;
   min-height: var(--touch-min);
-  margin-top: var(--space-1);
+  margin-top: 8px;
   border-radius: var(--radius-pill);
   background: var(--color-border);
-  color: var(--color-ink);
-  font-size: var(--text-label-size);
-  line-height: var(--text-label-line);
+  color: var(--color-ink-muted);
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
   font-weight: var(--weight-semibold);
 }
 
@@ -259,8 +327,9 @@
   flex-direction: row;
   gap: 8px;
   min-height: var(--touch-min);
-  font-size: var(--text-label-size);
+  font-size: calc(14px * var(--fs));
   font-weight: var(--weight-semibold);
+  color: var(--color-primary-ink);
 }
 .manageBadge {
   flex: none;
@@ -287,12 +356,12 @@
 }
 .avatar {
   display: block;
-  width: var(--icon-56);
-  height: var(--icon-56);
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
 }
 .avatarOn {
-  box-shadow: 0 0 0 3px var(--color-primary);
+  box-shadow: var(--shadow-selected-ring);
 }
 .memberName {
   max-width: 100%;
@@ -300,14 +369,14 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: var(--text-nav-size);
-  line-height: 1.375rem;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
   font-weight: var(--weight-semibold);
-  color: var(--color-ink);
+  color: var(--color-navy);
 }
 .memberCount {
-  font-size: var(--text-nav-size);
-  line-height: 1.25rem;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(19px * var(--fs));
   font-weight: var(--weight-medium);
   color: var(--color-ink-muted);
 }
@@ -323,11 +392,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: var(--icon-56);
-  height: var(--icon-56);
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   background: var(--color-primary-tint);
   color: var(--color-primary-ink);
+}
+.addCircle svg {
+  width: 26px;
+  height: 26px;
 }
 .memberBadge {
   padding: 0 6px;
@@ -339,8 +412,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 62px;
-  padding: 4px 0;
+  min-height: 58px;
   border-top: 1px solid var(--color-border);
 }
 .rowIcon {
@@ -365,15 +437,20 @@
   flex-direction: column;
 }
 .rowName {
-  font-size: var(--text-list-title-size);
-  line-height: var(--text-list-title-line);
+  font-size: calc(15px * var(--fs));
+  line-height: calc(20px * var(--fs));
   font-weight: var(--weight-semibold);
   color: var(--color-ink);
   overflow-wrap: anywhere;
 }
+/* medicine name in "ยาที่ต้องดูแล": the board uses the label size here, not the row-title size */
+.careName {
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+}
 .rowSub {
-  font-size: var(--text-list-sub-size);
-  line-height: var(--text-list-sub-line);
+  font-size: calc(14px * var(--fs));
+  line-height: calc(19px * var(--fs));
   color: var(--color-ink-muted);
 }
 .tick {
@@ -382,32 +459,34 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
-  min-width: 92px;
-  min-height: var(--touch-min);
-  padding: 0 10px;
+  width: 88px;
+  min-height: var(--touch-min); /* board 44px; stays 48px (CLAUDE.md, check:overflow) */
+  padding: 0;
   border: 2px solid var(--color-border-strong);
   border-radius: var(--radius-pill);
   background: var(--color-surface);
-  color: var(--color-ink);
+  color: var(--color-navy);
   font-family: inherit;
-  font-size: var(--text-label-size);
-  line-height: var(--text-label-line);
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
   font-weight: var(--weight-semibold);
   cursor: pointer;
 }
 .tick svg {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
 }
 .tickDone {
   border-color: var(--color-primary);
   background: var(--color-primary);
   color: #fff;
 }
+/* the board's open circle: r 8.5, stroke 2.4 in a 24 box shown at 16px = 12.9px outside, 1.6px line */
 .circle {
-  width: 18px;
-  height: 18px;
-  border: 2px solid var(--color-primary-ink);
+  width: 12.9px;
+  height: 12.9px;
+  margin: 1.55px;
+  border: 1.6px solid var(--color-primary-ink);
   border-radius: 50%;
 }
 
@@ -415,8 +494,8 @@
 .careIcon {
   flex: none;
   display: block;
-  width: var(--icon-32);
-  height: var(--icon-32);
+  width: 32px;
+  height: 32px;
 }
 .chip {
   flex: none;
@@ -424,10 +503,10 @@
   align-items: center;
   gap: 4px;
   max-width: 48%;
-  padding: 2px 10px;
+  padding: 3px 12px;
   border-radius: var(--radius-pill);
-  font-size: var(--text-chip-size);
-  line-height: var(--text-chip-line);
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
   font-weight: var(--weight-semibold);
   text-align: left;
 }
@@ -461,8 +540,9 @@
   margin-top: 6px;
   border-radius: var(--radius-pill);
   background: var(--color-primary-tint);
-  font-size: var(--text-label-size);
-  line-height: var(--text-label-line);
+  color: var(--color-primary-ink);
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
   font-weight: var(--weight-semibold);
 }
 .orderIcon {
@@ -477,15 +557,15 @@
 .tiles {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-1);
+  gap: 10px;
 }
 .tile {
   align-items: stretch;
   min-height: 64px;
-  padding: var(--space-1);
-  border-radius: var(--radius-card);
+  padding: 8px 8px 8px 10px;
+  border-radius: 16px;
   background: var(--color-surface);
-  box-shadow: var(--elevation-card);
+  box-shadow: var(--elevation-1);
   min-width: 0;
 }
 .tileWide {
@@ -494,25 +574,26 @@
 .tileIcon {
   flex: none;
   display: block;
-  width: var(--icon-40);
-  height: var(--icon-40);
+  width: 40px;
+  height: 40px;
 }
 .tileText {
   display: flex;
   flex: 1;
   min-width: 0;
   flex-direction: column;
+  margin-left: 6px; /* the faded row already has a 2px gap: 2 + 6 = the board's 8px between icon and text */
   text-align: left;
 }
 .tileTitle {
-  font-size: var(--text-list-title-size);
-  line-height: var(--text-list-title-line);
+  font-size: calc(15px * var(--fs));
+  line-height: calc(20px * var(--fs));
   font-weight: var(--weight-semibold);
-  color: var(--color-ink);
+  color: var(--color-navy);
 }
 .tileSub {
-  font-size: var(--text-nav-size);
-  line-height: var(--text-nav-line);
+  font-size: calc(14px * var(--fs));
+  line-height: calc(19px * var(--fs));
   color: var(--color-ink-muted);
 }
 .tileBadge {

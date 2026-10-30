@@ -7,6 +7,7 @@ import { V3Nav } from '../../components/v3/V3Nav';
 import { PERIOD_LABEL, type CareItem, type DoseRow, type HomeModel, type Period } from '../../domain/v3/home';
 import { avatarUrl, iconUrl } from '../../visual';
 import mascotUrl from '../../assets/visual/mascot/pharmacist-clipboard.svg?url';
+import '../../styles/v3theme.css';
 import styles from './HomeV3.module.css';
 
 export interface HomeViewProps {
@@ -32,7 +33,7 @@ export function HomeView({ model, demo, saveError, onPick, onToggle }: HomeViewP
   const m = model;
   const hero = m.headline.done ? `${styles.hero} ${styles.heroDone}` : styles.hero;
   return (
-    <div className={styles.page}>
+    <div className={`v3theme ${styles.page}`}>
       {demo && (
         <p className={styles.demo} role="status">
           <InfoIcon />
@@ -84,7 +85,7 @@ export function HomeView({ model, demo, saveError, onPick, onToggle }: HomeViewP
 function StartCard({ model }: { model: HomeModel }) {
   const memberDone = model.state === 'S1';
   return (
-    <section className={styles.card} aria-labelledby="start-h">
+    <section className={`${styles.card} ${styles.cardStart}`} aria-labelledby="start-h">
       <h2 id="start-h" className={styles.heading}>
         เริ่มต้นใช้งาน
       </h2>
@@ -136,7 +137,7 @@ function StartCard({ model }: { model: HomeModel }) {
 
 function MembersCard({ model, onPick }: { model: HomeModel; onPick: (id: string) => void }) {
   return (
-    <section className={styles.card} aria-labelledby="members-h">
+    <section className={`${styles.card} ${styles.cardMembers}`} aria-labelledby="members-h">
       <div className={styles.cardHead}>
         <h2 id="members-h" className={styles.headingInline}>
           สมาชิกในครอบครัว
@@ -177,7 +178,7 @@ function MembersCard({ model, onPick }: { model: HomeModel; onPick: (id: string)
 
 function TodayCard({ model, onToggle }: { model: HomeModel; onToggle: (key: string) => void }) {
   return (
-    <section className={styles.card} aria-labelledby="today-h">
+    <section className={`${styles.card} ${styles.cardToday}`} aria-labelledby="today-h">
       <h2 id="today-h" className={styles.heading}>
         ยาของวันนี้ ({model.selectedName})
       </h2>
@@ -228,7 +229,7 @@ function DoseLine({ row, onToggle }: { row: DoseRow; onToggle: (key: string) => 
 
 function CareCard({ model }: { model: HomeModel }) {
   return (
-    <section className={styles.card} aria-labelledby="care-h">
+    <section className={`${styles.card} ${styles.cardCare}`} aria-labelledby="care-h">
       <div className={styles.cardHead}>
         <img className={styles.careIcon} src={iconUrl('expiry-alert')} alt="" />
         <h2 id="care-h" className={styles.headingInline}>
@@ -252,7 +253,7 @@ function CareLine({ item }: { item: CareItem }) {
   return (
     <div className={styles.careRow}>
       <span className={styles.rowText}>
-        <span className={styles.rowName}>{item.name}</span>
+        <span className={`${styles.rowName} ${styles.careName}`}>{item.name}</span>
         <span className={styles.rowSub}>
           {item.who} · {item.reason}
         </span>
