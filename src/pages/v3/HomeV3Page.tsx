@@ -40,7 +40,7 @@ export function HomeV3Route(props: HomePageProps) {
 }
 
 /** Re-reads the Thai date when the app comes back to the front and once a minute (midnight changes the day). */
-function useBangkokToday(getToday: (() => string) | undefined): string {
+export function useBangkokToday(getToday: (() => string) | undefined): string {
   const read = useCallback(() => getToday?.() ?? bangkokToday(), [getToday]);
   const [today, setToday] = useState(read);
   useEffect(() => {
@@ -72,9 +72,9 @@ function DemoHome({ name }: { name: DemoName }) {
   );
 }
 
-type Loaded = { kind: 'ok'; root: Root } | { kind: 'problem'; text: string };
+export type Loaded = { kind: 'ok'; root: Root } | { kind: 'problem'; text: string };
 
-function openRoot(result: LoadResult): Loaded {
+export function openRoot(result: LoadResult): Loaded {
   switch (result.status) {
     case 'ok':
       return { kind: 'ok', root: result.root };

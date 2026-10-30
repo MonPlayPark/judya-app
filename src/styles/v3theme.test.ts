@@ -52,6 +52,7 @@ const V3: Record<string, string> = {
   '--color-period-dusk': '#D9480F',
   '--color-period-dusk-fill': '#FF9F43',
   '--shadow-selected-ring': '0 0 0 3px #006DF5',
+  '--touch-min': '44px',
   '--fs': '1',
 };
 

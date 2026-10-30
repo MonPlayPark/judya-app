@@ -26,7 +26,7 @@ export const CARE_ROWS_SHOWN = 3;
 export const bangkokToday = (now: Date = new Date()): IsoDate => bangkokDate(now.toISOString());
 
 const WEEKDAYS = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัส', 'ศุกร์', 'เสาร์'];
-const MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+export const MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 
 /** '2026-10-22' -> 'พฤหัส 22 ต.ค. 2569' (the board writes the short weekday name). */
 export function thaiDateLabel(iso: IsoDate): string {

@@ -21,6 +21,7 @@
   font-size: calc(14px * var(--fs));
   line-height: calc(19px * var(--fs));
   font-weight: var(--weight-medium);
+  text-decoration: none;
 }
 .item[aria-current='page'] {
   color: var(--color-primary-ink);

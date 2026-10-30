@@ -19,7 +19,7 @@ export interface HomeViewProps {
   onToggle: (key: string) => void;
 }
 
-const PERIOD_ICON: Record<Period, () => JSX.Element> = {
+const PERIOD_ICON: Record<Period, (p: { size?: number }) => JSX.Element> = {
   morning: MorningIcon,
   noon: NoonIcon,
   evening: EveningIcon,
@@ -77,7 +77,7 @@ export function HomeView({ model, demo, saveError, onPick, onToggle }: HomeViewP
         {m.showTiles && <Shortcuts />}
       </main>
 
-      <V3Nav />
+      <V3Nav current="home" />
     </div>
   );
 }
@@ -271,19 +271,32 @@ function Shortcuts() {
     <div className={styles.tiles}>
       <Tile icon="order" title="สั่งซื้อยา" sub="เปรียบเทียบราคา" />
       <Tile icon="share-doctor" title="แชร์ให้แพทย์" sub="สรุปข้อมูลยา" />
-      <Tile icon="nav-medicines" title="รายการยา" sub="ดูและจัดการยา" wide />
+      <MedsTile />
     </div>
   );
 }
 
-function Tile({ icon, title, sub, wide }: { icon: 'order' | 'share-doctor' | 'nav-medicines'; title: string; sub: string; wide?: boolean }) {
+function Tile({ icon, title, sub }: { icon: 'order' | 'share-doctor'; title: string; sub: string }) {
   return (
-    <ComingSoon className={wide ? `${styles.tile} ${styles.tileWide}` : styles.tile} badgeClassName={styles.tileBadge}>
+    <ComingSoon className={styles.tile} badgeClassName={styles.tileBadge}>
       <img className={styles.tileIcon} src={iconUrl(icon)} alt="" />
       <span className={styles.tileText}>
         <span className={styles.tileTitle}>{title}</span>
         <span className={styles.tileSub}>{sub}</span>
       </span>
     </ComingSoon>
+  );
+}
+
+/** The only shortcut with a page so far: a real link to the medicine list (same card look, no "coming soon" badge). */
+function MedsTile() {
+  return (
+    <a href="#/n/meds" className={`${styles.tile} ${styles.tileWide} ${styles.tileLink}`}>
+      <img className={styles.tileIcon} src={iconUrl('nav-medicines')} alt="" />
+      <span className={styles.tileText}>
+        <span className={styles.tileTitle}>รายการยา</span>
+        <span className={styles.tileSub}>ดูและจัดการยา</span>
+      </span>
+    </a>
   );
 }

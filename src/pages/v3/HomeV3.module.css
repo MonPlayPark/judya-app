@@ -1,6 +1,6 @@
 /* v3 Home (M4 PR 4, theme sync PR 4d). Colours come from tokens.css overridden by `.v3theme` (src/styles/v3theme.css).
    Sizes, spacing and radii are copied from the locked board HomeV3.dc.html: text as px at "normal" times var(--fs).
-   Tap targets stay at 48px (CLAUDE.md) where the board has 44px. */
+   Tap targets are 44px on v3 pages (board value, CLAUDE.md); 48px only where the board says 48px (order button). */
 
 .page {
   display: flex;
@@ -43,26 +43,13 @@
     radial-gradient(circle at 292px 176px, var(--color-header-cloud) 0 114px, transparent 114.5px);
   pointer-events: none;
 }
-/* the four sparkle strokes (board: stroke 3, round caps), painted in --color-header-spark through a mask */
-.hero::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 390px;
-  height: 184px;
-  background: var(--color-header-spark);
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='390' height='184' viewBox='0 0 390 184'%3E%3Cg stroke='%23000' stroke-width='3' stroke-linecap='round' fill='none'%3E%3Cpath d='M213 62l7 7'/%3E%3Cpath d='M205 82l10 3'/%3E%3Cpath d='M338 56l-8 8'/%3E%3Cpath d='M350 80l-10 2'/%3E%3C/g%3E%3C/svg%3E") no-repeat right bottom / 390px 184px;
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='390' height='184' viewBox='0 0 390 184'%3E%3Cg stroke='%23000' stroke-width='3' stroke-linecap='round' fill='none'%3E%3Cpath d='M213 62l7 7'/%3E%3Cpath d='M205 82l10 3'/%3E%3Cpath d='M338 56l-8 8'/%3E%3Cpath d='M350 80l-10 2'/%3E%3C/g%3E%3C/svg%3E") no-repeat right bottom / 390px 184px;
-  pointer-events: none;
-}
 /* the board keeps the same band colour when everything is done: only the headline turns green */
 .heroDone {
   background: var(--color-band);
 }
 .heroText {
   position: relative;
-  z-index: 1; /* text and mascot above the clouds and sparkles */
+  z-index: 1; /* text and mascot above the clouds */
   width: 204px;
   max-width: 100%;
   margin-top: 6px;
@@ -213,7 +200,7 @@
   min-height: 52px;
 }
 .cardToday .heading {
-  min-height: 48px; /* board 44px; stays 48px (CLAUDE.md tap target) */
+  min-height: 44px;
 }
 .cardHead {
   display: flex;
@@ -222,10 +209,10 @@
   gap: 10px;
 }
 .cardMembers .cardHead {
-  min-height: 48px; /* board 44px; stays 48px */
+  min-height: 44px;
 }
 .cardCare .cardHead {
-  min-height: 48px;
+  min-height: 44px;
 }
 .headingInline {
   flex: 1;
@@ -460,7 +447,7 @@
   justify-content: center;
   gap: 4px;
   width: 88px;
-  min-height: var(--touch-min); /* board 44px; stays 48px (CLAUDE.md, check:overflow) */
+  min-height: var(--touch-min);
   padding: 0;
   border: 2px solid var(--color-border-strong);
   border-radius: var(--radius-pill);
@@ -536,7 +523,7 @@
   flex-wrap: wrap;
   gap: 4px 8px;
   width: 100%;
-  min-height: var(--touch-min);
+  min-height: 48px; /* board says 48px here */
   margin-top: 6px;
   border-radius: var(--radius-pill);
   background: var(--color-primary-tint);
@@ -570,6 +557,17 @@
 }
 .tileWide {
   grid-column: 1 / -1;
+}
+.tileLink {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  color: inherit;
+  text-decoration: none;
+}
+.tileLink .tileText {
+  margin-left: 0; /* the link has a real 8px gap (the coming-soon tiles get 2 + 6 from the faded row) */
 }
 .tileIcon {
   flex: none;

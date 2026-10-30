@@ -505,7 +505,7 @@ New: `src/domain/v3/home.ts`, `homeDemo.ts` (+ tests), `src/pages/v3/HomeV3*.tsx
 ### Where the prompt, board and picture differ (prompt wins)
 - Not copied from the picture: bell / profile icon, clock times (08:00), the "ตารางยา" card, the date in the picture. Date pill = today's Thai date, plain text like the board (not a button: it has no destination).
 - **Colours**: the board and picture use navy headings (#013073) and a light band (#EAF3FF). Not in `tokens.css`, so tokens are used instead (ink headings, `--color-band`). Owner: add a navy token if the navy look matters.
-- **Logo mark**: the repo has no JY-house mark. The app icon `public/icons/judya-appicon.svg` (bag) is used as the mark. Owner: send the mark file if it must match the picture. Mascot = `mascot/wave.svg` (looks like the picture's character).
+- **Logo mark**: the repo has no JY-house mark. (Old note, closed in PR 4b: the real mark is now `public/icons/judya-mark.svg`.) Mascot = `mascot/wave.svg` (looks like the picture's character).
 - **Shortcuts**: 3 tiles in the order given (สั่งซื้อยา, แชร์ให้แพทย์, รายการยา); the third is full width so no cell is empty. The board's 2x2 grid would leave a hole.
 - **Dose keys** in `prepLog`: `<assignmentId>:<slot>` (morning/noon/evening/bedtime), as the PR 1 fixture (`a1:morning`). The interval key `<id>:HH:MM` is not shown by any v3 file; it follows v2. Owner: confirm.
 - Ticks older than 14 days are dropped on each tick (v2 rule). Self-managed members are left out of today's doses (BRIEF: "ไม่ขึ้นยาวันนี้"); their chip says "จัดยาเอง".
@@ -555,10 +555,38 @@ Small PR: images and one token only, no layout or logic change.
 - **Rule: v3 pages use `.v3theme` (`src/styles/v3theme.css`); `:root` of `tokens.css` (v2) is not changed until the switch at PR 7.** At PR 7: move the values of `.v3theme` to `:root` as the defaults, then delete `v3theme.css` and the `v3theme` classes. `src/styles/v3theme.test.ts` checks every colour of the board and that `:root` is still v2 (primary #1a73e8, background #f8f9fa).
 - **Rule kept: the locked board is the spec** (colours, px sizes, spacing, radii copied as they are; nothing tuned by hand). The board file is `project/HomeV3.dc.html`. Where the board and a picture disagree, the board wins.
 - **Text size:** v3 text is written as `calc(<px at normal> * var(--fs))`. `--fs` is 1 / 1.075 / 1.24 for n / m / l. Checked in `src/prefs/fontSize.ts`: n / m / l = ปกติ / กลาง / ใหญ่ = 93% / 100% / 115%, default n. The board's own factor is 0.93 / 1 / 1.15 on bigger px numbers (28 x 0.93 = 26); the owner's table is that result at "normal", so the numbers are the same.
-- **Tap target stays 48px where the board says 44px** (the "จัดแล้ว / รอจัด" button, member heading rows). CLAUDE.md and `check:overflow` require 48px. Width 88px as in the board.
+- **(Replaced in PR 5a: v3 tap targets are 44px.)** Old note: tap target stayed 48px where the board says 44px (the "จัดแล้ว / รอจัด" button, member heading rows). CLAUDE.md and `check:overflow` require 48px. Width 88px as in the board.
 - **Text under 14px:** the board has 13px at "normal" for the sub-line and the "เสร็จแล้ว" chip of the start card (14 x 0.93). The owner's table says secondary = 14/19, and CLAUDE.md says 14px minimum, so 14px is used there.
 - **Band colour when all done:** the board keeps `--color-band` (#EAF3FF); only the headline turns green (`--color-success-ink`). The old v2 green band is gone from Home v3.
-- **Header decoration without new elements:** the two clouds and four sparkle strokes of the board are drawn with `::before` / `::after` of the header (CSS only, from the right-bottom corner so they stay beside the mascot at 360px). No element was added to the JSX.
+- **Header decoration without new elements:** the two clouds (the four sparkle strokes were removed in PR 5a) are drawn with `::before` / `::after` of the header (CSS only, from the right-bottom corner so they stay beside the mascot at 360px). No element was added to the JSX.
 - **Outside the root:** `V3Nav` and `ComingSoon` render inside `.page`, so they get the theme. The "can't open the data" state of `HomeV3Page` had no root; it is now wrapped in `v3theme page`.
 - **Not touched:** the demo bar, the save-error bar, the "และอีก N รายการ" line and the "เร็ว ๆ นี้" badge are not on the board; they keep their v2 rem sizes.
 - Found but not changed (structure; needs the owner): see the PR description, section "พบแต่ไม่ได้แก้".
+
+## M4 PR 5a — Home fixes + medicine list v3 (30 ต.ค. 2569)
+
+- **Sparkle strokes removed** from the Home header (`.hero::after` deleted). They sat on top of the text on the owner's S24, and the board (v92) no longer has them. The pale-blue circle behind the mascot stays. `--color-header-spark` is left in `v3theme.css` unused (that file is add-only in this PR).
+- **v3 tap target = 44px** (the board value), v2 stays 48px. Done with `--touch-min: 44px` inside `.v3theme` plus explicit `44px` on the Home rows that had 48px. 48px stays only where the board says 48px: the "สั่งยา" button of the care card (`.orderButton`, now written as `48px`), the full-width button of an empty state and "ล้างตัวกรอง" (the last two come with the medicine list). The board wins over CLAUDE.md when they differ; CLAUDE.md line updated.
+- **Stale notes fixed:** "app icon unchanged / waiting for PNG" no longer true; the four PNGs are in the repo (PR #28).
+- **V3Nav** takes `current: 'home' | 'meds'`; home and meds tabs are real `<a href>` (`#/n`, `#/n/meds`).
+- **check:overflow:** the "too short button" limit is 43.5px for v3 pages only (routes starting with `#/n`, function `measureV3`); v2 pages keep 47.5px. Owner approved editing the script. The nav tab keeps `min-height: 52px` (board value).
+- **Count:** 7 Home spots changed to 44px (the brief said 9, from an old report); the owner confirmed 7.
+
+### PR 5a — medicine list v3: what was built and what was decided
+- **Schema (owner chose A):** `houseItemSchema` got `kind: z.enum(MED_KINDS).optional()`. Old data without it still loads (test `schemaHouseKind.test.ts`); no kind = picture "other". Nothing else in `schema.ts` / `stock.ts` changed. `home.ts`: only `MONTHS` is now exported (short Thai month names).
+- **Files:** `domain/v3/medsList.ts` (pure model), `medsListDemo.ts` (demo houses), `components/v3/KindIcon.tsx` (7 inline SVGs from the owner's text, no new file in `assets/visual`), `pages/v3/MedsListV3.tsx` + `.module.css` (view), `MedsListPage.tsx` (data and clock). `PeriodIcons` got an optional `size` (default 28, drawn at 20 here). `HomeV3Page` now exports `openRoot`, `useBangkokToday`, `Loaded` so the two pages share them.
+- **Read only:** `#/n/meds` only calls `loadRoot`; demo links (`?demo=normal|nomember|nomeds|nohouse`, `&tab=house`, `&open=stopped|deleted`) call no storage at all. Today in demos = `DEMO_TODAY`.
+- **Rules reused, not re-written:** days left / low stock = `daysLeft`, `isLowStock`, `formatDaysLeft`, `unitFor`; house status = `houseStatus`; expiry = `expiryStatus` with the settings (low <= 14 days, expiry <= 15 days). Cream / drops with tubes say "สำรอง N หลอด/ขวด" (no days).
+- **Decided on my own (the board / brief does not say):**
+  1. Own medicine that is expired: red chip "หมดอายุแล้ว" + line "หมดอายุ <date>"; days left = 0 gives red chip "หมด". An expired medicine is not counted by the order button.
+  2. House item: expired beats out beats low beats expiring (same order as Home care card). The order button counts out + low only.
+  3. Filter "ใกล้หมด" keeps low and out; "ใกล้หมดอายุ" keeps expiring and expired. Tab counts ignore the filter; member header counts only the matching rows. Members with no matching row are hidden.
+  4. Stopped / deleted sections: sorted newest first; hidden while a filter or search is on. Stopped date = the latest `stop` event.
+  5. "เหลือ" is put before days / weeks (`เหลือ 14 วัน`, `เหลือประมาณ 5 สัปดาห์`); "ไม่พอสำหรับวันนี้", "ยังไม่ได้นับ" are shown as they are.
+  6. (Changed after review) Filter chips and the search button are hidden in the three empty states (no member / no own medicine / no house medicine), as the board says (`showChips` / `showSearchBtn` = not an empty state). "ไม่พบยาที่ตรงกัน" keeps both so the filter can be cleared. The two tabs stay in every state.
+  6b. Home shortcut "รายการยา" is a real link to `#/n/meds` (same card, no badge); the other shortcuts stay coming-soon. Tab names on the list are 15px x `--fs`, line 22px (board).
+  7. Deleted house section uses the existing `delete` icon (board gives none). Floating "เพิ่มยา" is a ComingSoon, so it shows the word "เร็ว ๆ นี้" inside the button.
+  8. Period icons: one icon per period of the medicine (not only the first). Interval schedules say "ทุก N ชั่วโมง · 1 เม็ด".
+  9. House kind picture = the owner's guess: 44px round #E4F0FE circle with the 28px SVG inside (the board uses a round photo that could not be fetched).
+- **Row and member head are not pressable in 5a** (detail pages = PR 5b, member page does not exist). No arrow either.
+- **check:overflow** now also visits 8 meds-list routes (real data, 4 demos, house tab, both folded sections open).

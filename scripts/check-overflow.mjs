@@ -13,8 +13,11 @@ const STATIC_ROUTES = ['/', '/today', '/meds', '/meds?tab=house', '/meds/new', '
   '/house/new', '/members', '/members/new', '/order', '/settings', '/no-such-page'];
 
 // v3 Home (M4 PR 4): the real data route (a new user = S0) and the six demo states. Checked for sideways overflow
-// like every page, and also for text under the minimum size and tap targets under 48px.
-const V3_ROUTES = ['/n', '/n?demo=normal', '/n?demo=alert', '/n?demo=empty0', '/n?demo=empty1', '/n?demo=notoday', '/n?demo=backup'];
+// like every page, and also for text under the minimum size and tap targets under 44px on v3 pages (route starts with #/n).
+const V3_ROUTES = ['/n', '/n?demo=normal', '/n?demo=alert', '/n?demo=empty0', '/n?demo=empty1', '/n?demo=notoday', '/n?demo=backup',
+  // v3 medicine list (M4 PR 5a): real data (empty), every demo, the house tab and both folded sections open
+  '/n/meds', '/n/meds?demo=normal', '/n/meds?demo=normal&open=stopped', '/n/meds?demo=normal&tab=house', '/n/meds?demo=normal&open=deleted',
+  '/n/meds?demo=nomember', '/n/meds?demo=nomeds', '/n/meds?demo=nohouse&tab=house'];
 
 const chromePath = process.env.CHROMIUM_PATH
   ?? ['/opt/pw-browsers/chromium', '/usr/bin/chromium', '/usr/bin/google-chrome'].find((p) => existsSync(p));
@@ -53,7 +56,7 @@ const measure = () => {
   return out.slice(0, 5).join('; ');
 };
 
-/** v3 pages only: text smaller than `minPx`, and enabled buttons / links shorter than 48px. */
+/** v3 pages only: text smaller than `minPx`, and enabled buttons / links shorter than 44px (v3 board value; v2 pages keep 48px in `measure`). */
 const measureV3 = (minPx) => {
   const out = [];
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
@@ -68,7 +71,7 @@ const measureV3 = (minPx) => {
   }
   for (const el of document.querySelectorAll('button:not([disabled]), a[href]')) {
     const r = el.getBoundingClientRect();
-    if (r.height > 0 && r.height < 47.5) out.push(`tap target ${el.tagName.toLowerCase()} "${(el.textContent ?? '').trim().slice(0, 20)}" ${Math.round(r.height)}px high`);
+    if (r.height > 0 && r.height < 43.5) out.push(`tap target ${el.tagName.toLowerCase()} "${(el.textContent ?? '').trim().slice(0, 20)}" ${Math.round(r.height)}px high`);
   }
   return out.slice(0, 5).join('; ');
 };
