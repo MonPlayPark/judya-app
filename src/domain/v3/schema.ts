@@ -58,7 +58,7 @@ export const coverageSchema = z
   });
 
 /** Buddhist-era years the app accepts: 2400 up to this year. Read at validation time. */
-const maxBirthYearBE = (): number => new Date().getFullYear() + 543;
+export const maxBirthYearBE = (): number => new Date().getFullYear() + 543;
 
 export const personSchema = z.object({
   id,

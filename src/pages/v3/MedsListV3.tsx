@@ -169,7 +169,7 @@ export function MedsListView({ root: initialRoot, today, demo, persist, linkSuff
         )}
 
         {m.empty === 'no-match' && <NoMatch onClear={clearAll} />}
-        {m.empty !== null && m.empty !== 'no-match' && <EmptyCard kind={m.empty} />}
+        {m.empty !== null && m.empty !== 'no-match' && <EmptyCard kind={m.empty} addMemberHref={`#/n/members/new${linkSuffix}`} />}
 
         {tab === 'mine' && m.groups.map((g) => <MemberCard key={g.personId} group={g} suffix={linkSuffix} />)}
         {tab === 'house' && m.houseRows.length > 0 && (
@@ -365,7 +365,7 @@ function FoldRow({ name, sub, action, href }: { name: string; sub: string; actio
   );
 }
 
-function EmptyCard({ kind }: { kind: Exclude<EmptyKind, 'no-match'> }) {
+function EmptyCard({ kind, addMemberHref }: { kind: Exclude<EmptyKind, 'no-match'>; addMemberHref: string }) {
   const e = EMPTY[kind];
   return (
     <section className={`${styles.card} ${styles.empty}`} aria-label={e.title}>
@@ -374,7 +374,13 @@ function EmptyCard({ kind }: { kind: Exclude<EmptyKind, 'no-match'> }) {
       </span>
       <h2 className={styles.emptyTitle}>{e.title}</h2>
       <p className={styles.emptyText}>{e.text}</p>
-      <ComingSoon className={styles.emptyButton}>{e.button}</ComingSoon>
+      {kind === 'no-member' ? (
+        <a className={`${styles.emptyButton} ${styles.linkButton}`} href={addMemberHref}>
+          {e.button}
+        </a>
+      ) : (
+        <ComingSoon className={styles.emptyButton}>{e.button}</ComingSoon>
+      )}
     </section>
   );
 }

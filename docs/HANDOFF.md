@@ -2,6 +2,21 @@
 
 Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every session.
 
+## M4 PR 6a — add member v3 (31 ต.ค. 2569)
+
+Branch `m4/pr6a-add-member`. New page `#/n/members/new` (3 cards, sticky save bar, no bottom menu, picture sheet, sheet after saving); `members.ts` domain; "เพิ่มสมาชิก" buttons linked (Home start card + "+" cell, list "no member"), demo carried by `?demo=`; list chip for cream / drops now uses the owner's rule (`tubeLevel`, shared with the detail page). Details and my own decisions: `docs/DECISIONS.md` "M4 PR 6a".
+
+### Status
+`npm test` 1,371 (1,306 before) pass; `npm run build` passes; `npm run check:overflow` 450 checks, 0 problems (new routes + typed states of the form at 360 / 412px, 3 font sizes). Looked at 390 and 360px pictures from the real build: empty, filled, wrong year, picture sheet, sheet after saving, "ตัวฉัน" taken + same-name warning, list with cream / low / out.
+
+### Left for later PRs
+- Insurance / allergy data of a member → PR 10. Member list page, edit member (reuse `MemberForm` with `initial`), bottom-menu "สมาชิก", "จัดการ" → PR 9.
+- "เพิ่มยาให้ {ชื่อ}" of the sheet → PR 6b (ComingSoon now).
+- Seen, not changed: Home's care card still ignores tubes (`isLowStock`).
+
+### Owner's S24 test (after merge and deploy)
+`#/n/members/new?demo=nomember` (empty: save is grey with the reason; type a name, pick ญาติ, birth year 2503 → "อายุ N ปี"; 2399 → red message), `?demo=normal` (type คุณพ่อ → same-name warning, still saves), `&sheet=avatars` (12 pictures), `&sheet=done` (sheet after saving). Press "เพิ่มสมาชิกอีกคน" after choosing ตัวฉัน → the ตัวฉัน chip is faded. Home `#/n?demo=empty0` → "เพิ่มสมาชิก" opens the page; `#/n/meds?demo=nomember` too. Nothing is saved in a demo.
+
 ## M4 PR 5b — medicine detail v3 (30 ต.ค. 2569)
 
 Branch `m4/pr5b-med-detail`. New page `#/n/meds/:id` (4 cards, no tabs, no bottom menu); sheets: refill, stop, resume, full history; "open a new tube" is immediate; own-medicine rows and stopped-fold rows on the list are links; house rows open a sheet (details, refill). `ComingSoon` is now a pressable faded button that shows a floating "เร็ว ๆ นี้" (badge removed everywhere, bottom menu is shorter). Schema: 5 stop reasons, `RESUME_REASONS`, `อื่น ๆ` needs a note. Details and my own decisions: `docs/DECISIONS.md` "M4 PR 5b".

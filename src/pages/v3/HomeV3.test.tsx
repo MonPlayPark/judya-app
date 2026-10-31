@@ -101,7 +101,8 @@ describe('no "ตารางยา" and no dead controls', () => {
     // the "รายการยา" shortcut and the two nav tabs
     const hrefs = Array.from(container.querySelectorAll('a')).map((a) => a.getAttribute('href'));
     expect(hrefs.slice(-2)).toEqual(['#/n', '#/n/meds']);
-    expect(hrefs.slice(0, -2).every((h) => h === '#/n/meds')).toBe(true);
+    // the other links are the "รายการยา" shortcut and (since PR 6a) the add-member links, which carry ?demo=
+    expect(hrefs.slice(0, -2).every((h) => h === '#/n/meds' || h === `#/n/members/new?demo=${name}`)).toBe(true);
     for (const b of Array.from(container.querySelectorAll('button'))) {
       if (b.hasAttribute('aria-pressed')) {
         expect(b).toBeEnabled(); // member picker or tick: a real handler (tested below)
@@ -136,12 +137,35 @@ describe('no "ตารางยา" and no dead controls', () => {
     expect(tile).not.toBeNull();
     expect(tile).toHaveTextContent('รายการยาดูและจัดการยา');
     expect(tile).not.toHaveTextContent('เร็ว ๆ นี้');
-    for (const t of ['สั่งซื้อยา', 'แชร์ให้แพทย์', 'สมาชิก', 'ตั้งค่า', 'จัดการ', 'เพิ่มสมาชิก']) {
+    for (const t of ['สั่งซื้อยา', 'แชร์ให้แพทย์', 'สมาชิก', 'ตั้งค่า', 'จัดการ']) {
       const hit = screen.getAllByText(t).map((e) => e.closest('button')).filter((b) => b !== null);
       expect(hit.length, t).toBeGreaterThan(0);
       for (const b of hit) expect(b).toHaveAttribute('aria-disabled', 'true');
     }
     expect(screen.getByText('หน้าหลัก').closest('[aria-current="page"]')).not.toBeNull();
+  });
+});
+
+describe('add-member buttons are real links (PR 6a)', () => {
+  it('S0 start card: "เพิ่มสมาชิก" goes to the add-member page and carries ?demo=', () => {
+    renderDemo('empty0');
+    const link = screen.getByText('เพิ่มสมาชิก').closest('a');
+    expect(link).toHaveAttribute('href', '#/n/members/new?demo=empty0');
+    expect(link?.closest('button')).toBeNull();
+  });
+  it('members card: the "+" cell is a link too', () => {
+    renderDemo('normal');
+    const link = screen.getByText('เพิ่มสมาชิก').closest('a');
+    expect(link).toHaveAttribute('href', '#/n/members/new?demo=normal');
+  });
+  it('real data: the link has no ?demo=', () => {
+    window.location.hash = '#/n';
+    render(<HomeV3Route store={memoryStore()} />);
+    expect(screen.getByText('เพิ่มสมาชิก').closest('a')).toHaveAttribute('href', '#/n/members/new');
+  });
+  it('the "จัดการ" button of the members card stays coming soon (PR 9)', () => {
+    renderDemo('normal');
+    expect(screen.getByText('จัดการ').closest('button')).toHaveAttribute('aria-disabled', 'true');
   });
 });
 

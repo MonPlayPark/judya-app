@@ -17,7 +17,8 @@ export interface ResumeInput {
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
-const defaultNewId = (): string =>
+/** A new 12-character id (also used by the member form). */
+export const defaultNewId = (): string =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID().replace(/-/g, '').slice(0, 12)
     : `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;

@@ -127,11 +127,13 @@ describe('search and filter', () => {
 });
 
 describe('empty states', () => {
-  it('no member / no medicine / no house medicine, each with a coming-soon button and no add button', () => {
+  it('no member (a real link to add a member) / no medicine / no house medicine (coming-soon buttons), no add button', () => {
     demo('nomember');
     expect(screen.getByRole('heading', { name: 'ยังไม่มีสมาชิก' })).toBeInTheDocument();
     expect(screen.getByText('ต้องเพิ่มสมาชิกก่อน จึงเพิ่มยาได้')).toBeInTheDocument();
-    expect(screen.getByText('เพิ่มสมาชิก').closest('button')).toHaveAttribute('aria-disabled', 'true');
+    const link = screen.getByText('เพิ่มสมาชิก').closest('a');
+    expect(link).toHaveAttribute('href', '#/n/members/new?demo=nomember'); // the demo is carried on
+    expect(screen.getByText('เพิ่มสมาชิก').closest('button')).toBeNull();
     expect(screen.queryByText('เพิ่มยา')).toBeNull();
     document.body.innerHTML = '';
     demo('nomeds');

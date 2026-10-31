@@ -109,6 +109,14 @@ export function isLowStock(
   return d.status === 'ok' && d.days <= lowStockDays;
 }
 
+export type TubeLevel = 'enough' | 'low' | 'out';
+
+/** The owner's rule for cream / drops (one place, used by the list and the detail page): a spare tube = enough; no spare
+ * but one is open and in use = low; nothing at all = out. */
+export function tubeLevel(s: { opened: boolean; spare: number }): TubeLevel {
+  return s.spare > 0 ? 'enough' : s.opened ? 'low' : 'out';
+}
+
 export type HouseStatus = 'untracked' | 'ok' | 'low' | 'out';
 
 /** No stock = not counted; qty 0 = out ("หมดแล้ว"); qty <= lowAt = low. */
