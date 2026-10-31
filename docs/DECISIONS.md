@@ -672,3 +672,22 @@ What was built: route `#/n/meds/new` (outside DataProvider, checked before `V3_M
 - A cream with the stand-in dose 1 reads "… · 1 ครั้ง" on Home and the list (`unitWord` for cream), as the existing demo cream already did.
 - The list's "ใกล้หมด" and Home's care card still do not treat tube medicines as low (unchanged since PR 6a).
 - Allergy check when adding a medicine → PR 10. Edit medicine, dose adjustment → PR 8.
+
+## M4 PR 6c — data and backup page v3 (31 ต.ค. 2569)
+
+Page `#/n/settings/data` (`DataPage.tsx` owns data and clock, `DataV3.tsx` is the view, `src/domain/v3/dataPage.ts` holds the texts and the two actions). No board exists for it (owner's decision of 25 Oct): it uses the standard card, the v3 header with a back button, `Sheet`, `Toast` and `V3Nav`. `backup.ts`, `storage.ts` and the schema are not changed.
+
+### Decided on my own
+1. **Settings are not in the file and not overwritten.** `root.settings` (font size, warning days, order text, order days) is part of a v3 root and the schema needs it, so a backup file carries the *default* settings as a stand-in (`backupFileOf`), and a restore puts the *current* house's settings on top of the file's root (`restoreFromBackup`). Round trip therefore returns every table except `meta.lastBackupAt` and the settings of that phone. The font size shown on screen (`judya.fontsize`) is another key and is never touched. If the owner wants the settings inside the file after all, remove the two spots named above.
+2. **When the stored data cannot be read** (corrupt, other version, storage blocked) the page shows the same one-line problem as the other v3 pages and offers neither back-up nor restore. The brief does not cover it. Restore would be the natural way out, but the way out for unreadable data (`startFresh`) belongs with the switch to v3 (PR 7). **Open question for the owner.**
+3. **Home reminder.** Only the *first* warning of Home is shown in the header, so the backup reminder is a link only when it is first (it is the only warning for a house with no care problems). When a care warning comes first the reminder is counted in "+N เรื่อง" and the way in is the Settings tab. The link is underlined and 44px high.
+4. **Settings tab** goes straight to this page (temporary, PR 14 makes it the list of 5 groups). The tab does not carry `?demo=` (same as the other two tabs).
+5. **Demo.** `?demo=` takes Home names (`normal`, `backup` = never backed up …) and list names (`nomeds` …); `normal` means Home's, which has a backup date. Both main buttons stay on screen, faded, `aria-disabled`, and say "โหมดตัวอย่าง ใช้สำรองหรือนำกลับข้อมูลไม่ได้" when pressed; a yellow strip at the top says it too. Test links only in a demo: `&backup=old` (20 days, shows the 14-day warning), `&error=not_json|wrong_version|invalid|too_big|save_failed` (opens on that message), `&sheet=confirm` (the confirm sheet with a made-up file).
+6. **Results.** Success and "cancelled" are floating messages (3 s); errors stay on screen (`role="alert"`) until the next try. "Cancelled" says "ยังไม่ได้สำรองข้อมูล เพราะปิดเมนูแชร์ก่อน" and does not touch the date. A file handed over but a date that could not be saved says so in red ("ส่งไฟล์สำรองออกไปแล้ว แต่บันทึกวันที่สำรองในแอปไม่ได้"). A download says where the file is. A file that cannot be read by the browser is shown as `not_json`.
+7. **Confirm sheet** shows the file's summary and its backup date above the current summary, the sentence "จะแทนที่ข้อมูลปัจจุบันทั้งหมดด้วยข้อมูลในไฟล์นี้", a red confirm button and "ยกเลิก ไม่เปลี่ยนอะไร". Dark curtain / Esc = cancel. It says one copy of the old data is kept on the phone (`judya.v3.prev`, the latest one only); no button in the app uses that copy yet.
+8. **Storage promise** is read when the page opens (`refreshPersistStatus`, no asking, no localStorage). ใช่ still says that clearing site data loses everything; ไม่ / ไม่รองรับ say to back up to a file regularly; before the answer arrives it says "กำลังตรวจ…".
+9. **Old tests changed on purpose:** Home and list tests that expected the Settings tab to be "coming soon" now expect the link (3 real tabs).
+
+### Seen, not changed
+- The backup reminder is the only Home warning that is a link; care warnings are plain text (not asked).
+- A restored file keeps its own `lastBackupAt` (the date the file was made), so after restoring, the status card shows that date.
