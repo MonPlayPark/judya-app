@@ -169,7 +169,7 @@ export function MedsListView({ root: initialRoot, today, demo, persist, linkSuff
         )}
 
         {m.empty === 'no-match' && <NoMatch onClear={clearAll} />}
-        {m.empty !== null && m.empty !== 'no-match' && <EmptyCard kind={m.empty} addMemberHref={`#/n/members/new${linkSuffix}`} />}
+        {m.empty !== null && m.empty !== 'no-match' && <EmptyCard kind={m.empty} addMemberHref={`#/n/members/new${linkSuffix}`} addMedHref={addMedHref(m.empty === 'no-house', linkSuffix)} />}
 
         {tab === 'mine' && m.groups.map((g) => <MemberCard key={g.personId} group={g} suffix={linkSuffix} />)}
         {tab === 'house' && m.houseRows.length > 0 && (
@@ -204,10 +204,10 @@ export function MedsListView({ root: initialRoot, today, demo, persist, linkSuff
 
       {m.showFab && (
         <div className={styles.fab}>
-          <ComingSoon className={styles.fabButton}>
+          <a className={`${styles.fabButton} ${styles.fabLink}`} href={addMedHref(tab === 'house', linkSuffix)}>
             <PlusIcon />
             เพิ่มยา
-          </ComingSoon>
+          </a>
         </div>
       )}
       <V3Nav current="meds" />
@@ -365,7 +365,10 @@ function FoldRow({ name, sub, action, href }: { name: string; sub: string; actio
   );
 }
 
-function EmptyCard({ kind, addMemberHref }: { kind: Exclude<EmptyKind, 'no-match'>; addMemberHref: string }) {
+/** The add-medicine page; the house list asks for the house type; a demo name is carried on. */
+const addMedHref = (house: boolean, suffix: string): string => `#/n/meds/new${[house ? 'type=house' : '', suffix.replace('?', '')].filter(Boolean).map((x, i) => `${i === 0 ? '?' : '&'}${x}`).join('')}`;
+
+function EmptyCard({ kind, addMemberHref, addMedHref }: { kind: Exclude<EmptyKind, 'no-match'>; addMemberHref: string; addMedHref: string }) {
   const e = EMPTY[kind];
   return (
     <section className={`${styles.card} ${styles.empty}`} aria-label={e.title}>
@@ -374,13 +377,9 @@ function EmptyCard({ kind, addMemberHref }: { kind: Exclude<EmptyKind, 'no-match
       </span>
       <h2 className={styles.emptyTitle}>{e.title}</h2>
       <p className={styles.emptyText}>{e.text}</p>
-      {kind === 'no-member' ? (
-        <a className={`${styles.emptyButton} ${styles.linkButton}`} href={addMemberHref}>
-          {e.button}
-        </a>
-      ) : (
-        <ComingSoon className={styles.emptyButton}>{e.button}</ComingSoon>
-      )}
+      <a className={`${styles.emptyButton} ${styles.linkButton}`} href={kind === 'no-member' ? addMemberHref : addMedHref}>
+        {e.button}
+      </a>
     </section>
   );
 }

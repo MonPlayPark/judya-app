@@ -504,6 +504,13 @@
 .fabButton > :first-child {
   gap: 6px;
 }
+.fabLink {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-sizing: border-box;
+  text-decoration: none;
+}
 
 /* ---------- a pressable row (M4 PR 5b): the whole row is one link / button, with an arrow ---------- */
 .rowLink {

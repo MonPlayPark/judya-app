@@ -10,7 +10,7 @@ const TWICE: Schedule = {
   slots: { morning: { pills: 1, meal: 'after' }, evening: { pills: 1, meal: 'after' } },
   days: { kind: 'daily' },
 };
-const EVERY_8H: Schedule = { kind: 'interval', everyHours: 8, firstTime: '08:00', pills: 1, course: { kind: 'ongoing' } };
+const EVERY_8H: Schedule = { kind: 'interval', everyHours: 8, firstTime: '08:00', pills: 5, course: { kind: 'ongoing' } }; // used by a liquid: 5 ml (a multiple of 2.5)
 
 /** A blank house (no people, no medicines). */
 export function blankRootV3(): Root {

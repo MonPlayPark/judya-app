@@ -641,3 +641,34 @@ What was built: route `#/n/members/new` (outside DataProvider; `MemberFormPage.t
 11. **Home start card step 1 and the "+" cell of the members card** are links (`#/n/members/new` + `?demo=` in a demo); the step button uses the tint style (it used to be faded). The list's "no member" button is a link. Not linked: bottom-menu "สมาชิก" and "จัดการ" (PR 9).
 12. **Cream / drops chip (list):** same rule as the detail page via `tubeLevel`: spare > 0 = ปกติ (detail: เพียงพอ), no spare but open = ใกล้หมด, none = หมด. Needs-order count, the "ใกล้หมด" filter and the order button include them; an expired one stays "หมดอายุแล้ว" and is not counted. `isLowStock` itself is unchanged, so Home's care card still does not treat tubes as low.
 13. `defaultNewId` of `medActions.ts` is exported and used for the member id.
+
+## M4 PR 6b — add medicine v3 + add-medicine buttons (31 ต.ค. 2569)
+
+What was built: route `#/n/meds/new` (outside DataProvider, checked before `V3_MED_PATH`; `AddMedPage.tsx` = data and way back, `AddMedV3.tsx` = screen, `AddMedV3.module.css`), `src/domain/v3/addMedicine.ts` (every rule: suggestions, finders, form → Schedule / Pack / Stock, `addPersonalMedication`, `addHouseItem`, texts), schema additions (bottle pack, house item strength, dose size by kind), real links for "เพิ่มยา" in four places. The table "form → data" is the owner's (brief, section C) and was not changed.
+
+### Differences from the brief and conflicts with the real code
+1. **Branch name.** The session was told to work on `claude/m4-pr6b-add-medicine-tfyn1d`, not `m4/pr6b-add-medicine`; I used the first.
+2. **Liquid dose rule vs "old data still passes".** Rule A3 (a liquid dose must be a multiple of 2.5, 2.5–100) makes the made-up data of PR 1 invalid: a liquid with a dose of 1 (`sampleRootV3` a3, and the Home demo `notoday`). I changed those two made-up doses to 5 ml. A saved `judya.v3` or a backup file that holds a liquid with a dose that is not a multiple of 2.5 will be refused by `rootSchema` from now on. Nothing real is in `judya.v3` yet (the main app still uses `judya.v2` until PR 7), so I kept the rule as written. The same rule also stops any non-liquid dose above 4 (as before).
+3. **`stockText.ts` has no "แผง" word,** so nothing changed there. The word now comes from `packWord()` in `schema.ts` ('แผง' / 'กล่อง' for a sachet box / 'ขวด' for a bottle) and is used by the detail page's "1 ขวด + 3 เม็ด" line, the refill sheet's boxes, and the refill error of `stock.ts`.
+
+### Decided on my own
+1. **Cream / drops: "ขวด" is also a tube stock.** Choices are ไม่นับสต็อก / หลอด / ขวด for both; all three use `tubes` (N total → opened = N ≥ 1, spare = N − 1). Default: cream หลอด, drops ขวด. The house unit is หลอด or ขวด by choice (drops always ขวด).
+2. **Existing medicine with pack `none`** (e.g. a tablet counted loose): the count boxes are one box "เม็ด", stock = `count{strips 0, loose}`. Cream / drops with pack none: tubes. Kind, strength and pack of a reused medicine are never changed; the form's kind switches to the old one when "เพิ่มให้ … ด้วย" is pressed.
+3. **Match with a suggestion list open.** The "มีในบ้านแล้ว" card shows only when the suggestion list is closed (brief). If the only suggestion is exactly the typed name, the list is treated as closed, so typing a full name shows the card at once. The match is by name only (spaces and case ignored); a different strength with the same name is "the same medicine" until the user presses "ไม่ใช่ตัวเดียวกัน? เพิ่มเป็นยาใหม่". That choice is kept for that exact name only (change the name and it asks again).
+4. **Count boxes** (all optional): whole numbers, except loose tablet / capsule pills (multiples of 0.5) and ml of a liquid (decimals). A text that is not a number, or a not-allowed fraction, shows a red message and stops saving. Sizes: whole numbers above 0, except ml per bottle (decimals) and the optional amount of a tube / bottle of cream or drops (decimals; if typed it must be above 0). Numbers above 99,999 are refused.
+5. **Switching "ซื้อมาเป็นอะไร"** keeps the typed counts and clears the pack sizes; switching the kind resets stock and schedule and keeps the name.
+6. **Total for a liquid in bottles** needs the ml per bottle; until it is typed, the red field and the yellow box say so and no total is shown. Liquid / pills "ไม่นับสต็อก" → pack none, stock null. House total in the smallest unit: pills (boxes × strips × pills + strips × pills + loose), ml, sachets, pieces, or tubes (N). House items never get `lowAt`.
+7. **Dose screen.** Per-period card holds the meal chips (not for bedtime, not for cream / drops) and the stepper; the stepper's − and + are 48px and stop at the rules (tablet / capsule / other 0.5–4, sachet 1–4, liquid 2.5–100). The spoon buttons set the dose (not add to it). Liquid text uses plain decimals ("7.5 มล."); the "½" form is for pills only. The yellow box shows over 30 ml; the confirm sheet comes once, when saving.
+8. **Interval first time** is a native time box (default 08:00); a course of days starts today. Frequency "วันเว้นวัน" anchors on today.
+9. **Step indicator.** Passed steps are solid blue with the number (no tick), the current one has a ring and bold blue text, later ones are white with a grey ring (contrast ≥ 4.5:1). The list has `aria-label="ขั้นที่ N จาก M"` and `aria-current="step"`.
+10. **Bottom bar:** reason sentence, main button, and a text button "ย้อนกลับ" on steps 2 and 3 (the header arrow does the same). On step 3 the grey reason is short ("กรอกช่องที่ขาดให้ครบ แล้วค่อยกดบันทึก"); the full sentence with the field name is in a yellow box under the cards. Selected period chips use the light-blue style (a solid blue chip hid the blue morning icon).
+11. **Back / save in a demo.** A Home demo name (empty0, empty1 …) is carried to the nearest list demo when going on to the list (empty0 → nomember, empty1 → nomeds, others → normal); the member link keeps the original name. A member added in a demo is not in the add-medicine demo (each page builds its own demo house).
+12. **"ดูยาเดิม"** opens `#/n/meds?tab=house&item=<id>` (the sheet of that house medicine), as in the brief.
+13. **Expiry date** accepts any date (also in the past, which then shows as expired in the list), same as the refill sheets.
+14. **Name rules** count characters, not bytes (2–60, trimmed). Strength: empty or a number above 0.
+
+### Seen, not changed
+- Home and the list write a liquid dose with `formatAmount`, so 7.5 ml reads "7½ มล." there (the form says "7.5 มล.").
+- A cream with the stand-in dose 1 reads "… · 1 ครั้ง" on Home and the list (`unitWord` for cream), as the existing demo cream already did.
+- The list's "ใกล้หมด" and Home's care card still do not treat tube medicines as low (unchanged since PR 6a).
+- Allergy check when adding a medicine → PR 10. Edit medicine, dose adjustment → PR 8.

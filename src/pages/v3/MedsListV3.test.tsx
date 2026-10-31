@@ -127,7 +127,7 @@ describe('search and filter', () => {
 });
 
 describe('empty states', () => {
-  it('no member (a real link to add a member) / no medicine / no house medicine (coming-soon buttons), no add button', () => {
+  it('no member (a real link to add a member) / no medicine / no house medicine (real links to add a medicine), no add button', () => {
     demo('nomember');
     expect(screen.getByRole('heading', { name: 'ยังไม่มีสมาชิก' })).toBeInTheDocument();
     expect(screen.getByText('ต้องเพิ่มสมาชิกก่อน จึงเพิ่มยาได้')).toBeInTheDocument();
@@ -139,12 +139,20 @@ describe('empty states', () => {
     demo('nomeds');
     expect(screen.getByRole('heading', { name: 'ยังไม่มียาประจำตัว' })).toBeInTheDocument();
     expect(screen.getByText('เพิ่มยาที่หมอสั่ง แล้วดูวันที่ยาพอใช้ได้ที่นี่')).toBeInTheDocument();
+    expect(screen.getByText('เพิ่มยา').closest('a')).toHaveAttribute('href', '#/n/meds/new?demo=nomeds'); // a real link
+  });
+  it('the add button is a real link; on the house tab it asks for the house type, and a demo name is carried on', () => {
+    demo('normal');
+    expect(screen.getByText('เพิ่มยา').closest('a')).toHaveAttribute('href', '#/n/meds/new?demo=normal');
+    document.body.innerHTML = '';
+    demo('normal', '&tab=house');
+    expect(screen.getByText('เพิ่มยา').closest('a')).toHaveAttribute('href', '#/n/meds/new?type=house&demo=normal');
   });
   it('no house medicine', () => {
     demo('nohouse', '&tab=house');
     expect(screen.getByRole('heading', { name: 'ยังไม่มียาสามัญประจำบ้าน' })).toBeInTheDocument();
     expect(screen.getByText('ยาที่ใช้ร่วมกันทั้งบ้าน เช่น พาราเซตามอล')).toBeInTheDocument();
-    expect(screen.queryByText('เพิ่มยา', { selector: 'span span' })).toBeNull();
+    expect(screen.getByText('เพิ่มยา').closest('a')).toHaveAttribute('href', '#/n/meds/new?type=house&demo=nohouse');
   });
 });
 
@@ -187,8 +195,9 @@ describe('no dead buttons, no storage in demo', () => {
     }
     // own-medicine rows (and rows of the stopped fold) are links to their detail page; the demo name is carried along
     const hrefs = Array.from(document.querySelectorAll('a')).map((a) => a.getAttribute('href'));
-    expect(hrefs.filter((h) => h?.startsWith('#/n/meds/')).length).toBe(name === 'nomember' || name === 'nomeds' ? 0 : name === 'normal' || name === 'nohouse' || name === 'stopped' ? 8 : 9);
-    for (const h of hrefs.filter((x) => x?.startsWith('#/n/meds/'))) expect(h).toMatch(new RegExp(`\\?demo=${name}$`));
+    const notNew = (h: string | null): boolean => !!h?.startsWith('#/n/meds/') && !h.startsWith('#/n/meds/new');
+    expect(hrefs.filter(notNew).length).toBe(name === 'nomember' || name === 'nomeds' ? 0 : name === 'normal' || name === 'nohouse' || name === 'stopped' ? 8 : 9);
+    for (const h of hrefs.filter(notNew)) expect(h).toMatch(new RegExp(`\\?demo=${name}$`));
     expect(hrefs.slice(-2)).toEqual(['#/n', '#/n/meds']);
   });
   it('demo mode: no localStorage call of any kind, no loadRoot / saveRoot', () => {

@@ -25,7 +25,35 @@ const V3_ROUTES = ['/n', '/n?demo=normal', '/n?demo=alert', '/n?demo=empty0', '/
   '/n/meds?demo=normal&tab=house&item=h3', '/n/meds?demo=normal&tab=house&item=h3&sheet=refill', '/n/meds?demo=normal&tab=house&item=h4',
   // v3 add member (M4 PR 6a): blank, with members already there, the picture sheet, the sheet after saving, and a list with a cream
   '/n/members/new', '/n/members/new?demo=nomember', '/n/members/new?demo=normal', '/n/members/new?demo=nomember&sheet=avatars',
-  '/n/members/new?demo=nomember&sheet=done', '/n/meds?demo=cream'];
+  '/n/members/new?demo=nomember&sheet=done', '/n/meds?demo=cream',
+  // v3 add medicine (M4 PR 6b): step 1 new / found in the house / same house name, the schedule step and the stock step first views
+  '/n/meds/new', '/n/meds/new?demo=normal', '/n/meds/new?demo=nomember', '/n/meds/new?demo=normal&name=Metformin', '/n/meds/new?demo=normal&type=house&name=ยาธาตุน้ำขาว',
+  '/n/meds/new?demo=normal&person=p2&name=ยาใหม่ทดสอบ&step=2', '/n/meds/new?demo=normal&person=p2&name=ยาใหม่ทดสอบ&step=3', '/n/meds/new?demo=normal&type=house&name=ยาสามัญใหม่&step=2'];
+
+// v3 add medicine (M4 PR 6b): states that need pressing. Each one opens `route`, runs the clicks, then is measured like the rest.
+const ADD = '/n/meds/new?demo=normal&person=p2&name=ยาใหม่ทดสอบ';
+const click = (page, name) => page.getByRole('button', { name, exact: true }).click();
+const ADD_SCENARIOS = [
+  ['step 2, four periods', `${ADD}&step=2`, async (page) => { for (const n of ['กลางวัน', 'เย็น', 'ก่อนนอน']) await click(page, n); }],
+  ['step 2, weekdays', `${ADD}&step=2`, async (page) => { await click(page, 'เลือกวัน'); await click(page, 'พฤ'); }],
+  ['step 2, every N hours', `${ADD}&step=2`, async (page) => { await click(page, 'ทุกกี่ชั่วโมง'); await click(page, 'กินกี่วัน'); await page.getByLabel('จำนวนวันที่กิน').fill('7'); }],
+  ['step 2, liquid over 30 ml', `${ADD}&step=2&kind=liquid`, async (page) => { for (let i = 0; i < 11; i += 1) await click(page, 'เพิ่ม เช้า'); }],
+  ['step 2, cream', `${ADD}&step=2&kind=cream`, async () => {}],
+  ['step 3, box (nothing typed)', `${ADD}&step=3`, async () => {}],
+  ['step 3, box filled', `${ADD}&step=3`, async (page) => { await page.getByLabel('จำนวนแผงต่อกล่อง').fill('3'); await page.getByLabel('จำนวนเม็ดต่อแผง').fill('10'); await page.getByLabel('จำนวน กล่อง', { exact: true }).fill('1'); await page.getByLabel('จำนวน แผง').fill('2'); await page.getByLabel('จำนวน เม็ดเศษ').fill('3'); }],
+  ['step 3, strip', `${ADD}&step=3`, async (page) => { await click(page, 'แผง'); }],
+  ['step 3, bottle', `${ADD}&step=3`, async (page) => { await click(page, 'ขวด/กระปุก'); await page.getByLabel('จำนวนเม็ดต่อขวด').fill('100'); }],
+  ['step 3, not counted', `${ADD}&step=3`, async (page) => { await click(page, 'ไม่นับสต็อก'); }],
+  ['step 3, liquid', `${ADD}&step=3&kind=liquid`, async (page) => { await page.getByLabel('ปริมาณต่อขวด').fill('60'); }],
+  ['step 3, cream', `${ADD}&step=3&kind=cream`, async () => {}],
+  ['step 3, drops', `${ADD}&step=3&kind=drops`, async () => {}],
+  ['step 3, sachet', `${ADD}&step=3&kind=sachet`, async () => {}],
+  ['step 3, sachet single', `${ADD}&step=3&kind=sachet`, async (page) => { await click(page, 'ซองเดี่ยว'); }],
+  ['step 3, other', `${ADD}&step=3&kind=other`, async () => {}],
+  ['step 3, house', '/n/meds/new?demo=normal&type=house&name=ยาสามัญใหม่&step=2', async (page) => { await click(page, 'แผง'); }],
+  ['step 3, existing medicine', '/n/meds/new?demo=normal&name=VitaminD', async (page) => { await page.getByRole('button', { name: /คุณแม่/ }).click(); await page.getByRole('button', { name: 'เพิ่มให้คุณแม่ด้วย' }).click(); await page.getByRole('button', { name: 'ถัดไป' }).click(); }],
+  ['dose confirm sheet', `${ADD}&step=2&kind=liquid`, async (page) => { for (let i = 0; i < 11; i += 1) await click(page, 'เพิ่ม เช้า'); await click(page, 'ถัดไป'); await click(page, 'ไม่นับสต็อก'); await click(page, 'บันทึกยา'); }],
+];
 
 const chromePath = process.env.CHROMIUM_PATH
   ?? ['/opt/pw-browsers/chromium', '/usr/bin/chromium', '/usr/bin/google-chrome'].find((p) => existsSync(p));
@@ -131,6 +159,17 @@ for (const width of WIDTHS) {
       if (bad) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 typed(${label}): ${bad}`); }
       const small = await page.evaluate(measureV3, fs === 'n' ? 13.9 : 14.9);
       if (small) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 typed(${label}): ${small}`); }
+    }
+
+    // 1d) v3 add-medicine page after pressing (M4 PR 6b)
+    for (const [label, route, act] of ADD_SCENARIOS) {
+      await visit(route, 'v3');
+      await act(page);
+      const bad = await page.evaluate(measure);
+      checked += 1;
+      if (bad) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 add-med(${label}): ${bad}`); }
+      const small = await page.evaluate(measureV3, fs === 'n' ? 13.9 : 14.9);
+      if (small) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 add-med(${label}): ${small}`); }
     }
 
     // 2) house with the sample data (pages that need ids too)

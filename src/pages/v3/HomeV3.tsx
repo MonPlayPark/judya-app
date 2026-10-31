@@ -73,7 +73,7 @@ export function HomeView({ model, demo, saveError, onPick, onToggle, linkSuffix 
             {saveError}
           </p>
         )}
-        {m.state !== 'ready' && <StartCard model={m} addMemberHref={addMemberHref} />}
+        {m.state !== 'ready' && <StartCard model={m} addMemberHref={addMemberHref} addMedHref={`#/n/meds/new${linkSuffix}`} />}
         {m.showMembers && <MembersCard model={m} onPick={onPick} addMemberHref={addMemberHref} />}
         {m.showToday && <TodayCard model={m} onToggle={onToggle} />}
         {m.care.length > 0 && <CareCard model={m} />}
@@ -85,7 +85,7 @@ export function HomeView({ model, demo, saveError, onPick, onToggle, linkSuffix 
   );
 }
 
-function StartCard({ model, addMemberHref }: { model: HomeModel; addMemberHref: string }) {
+function StartCard({ model, addMemberHref, addMedHref }: { model: HomeModel; addMemberHref: string; addMedHref: string }) {
   const memberDone = model.state === 'S1';
   return (
     <section className={`${styles.card} ${styles.cardStart}`} aria-labelledby="start-h">
@@ -125,10 +125,10 @@ function StartCard({ model, addMemberHref }: { model: HomeModel; addMemberHref: 
           <span className={styles.stepTitle}>เพิ่มยาตัวแรก</span>
           <span className={styles.stepSub}>ใส่ยาของสมาชิก แล้ว JudYa จะนับวันที่ยาพอใช้ให้</span>
           {memberDone ? (
-            <ComingSoon className={styles.stepButton} badgeClassName={styles.stepBadge}>
+            <a className={`${styles.stepButton} ${styles.stepLink}`} href={addMedHref}>
               <PlusIcon />
               เพิ่มยา
-            </ComingSoon>
+            </a>
           ) : (
             <span className={styles.locked}>ต้องเพิ่มสมาชิกก่อน</span>
           )}

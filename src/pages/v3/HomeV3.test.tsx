@@ -74,12 +74,14 @@ describe('the six states render', () => {
     expect(screen.queryByText(/ยาของวันนี้/)).toBeNull();
     expect(screen.queryByText('สั่งซื้อยา')).toBeNull();
   });
-  it('empty1 (S1): member done, add-medicine step open (coming soon), members card shown', () => {
+  it('empty1 (S1): member done, add-medicine step open (a real link), members card shown', () => {
     renderDemo('empty1');
     expect(screen.getByText('สมาชิก ก · เพิ่มแล้ว')).toBeInTheDocument();
     expect(screen.getByText('เสร็จแล้ว')).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'สมาชิกในครอบครัว' })).toBeInTheDocument();
-    expect(screen.getByText('เพิ่มยา').closest('button')).toHaveAttribute('aria-disabled', 'true');
+    const add = screen.getByText('เพิ่มยา').closest('a');
+    expect(add).toHaveAttribute('href', '#/n/meds/new?demo=empty1');
+    expect(screen.getByText('เพิ่มยา').closest('button')).toBeNull();
   });
   it('notoday: says there is no medicine today, with the member line', () => {
     renderDemo('notoday');
@@ -101,8 +103,8 @@ describe('no "ตารางยา" and no dead controls', () => {
     // the "รายการยา" shortcut and the two nav tabs
     const hrefs = Array.from(container.querySelectorAll('a')).map((a) => a.getAttribute('href'));
     expect(hrefs.slice(-2)).toEqual(['#/n', '#/n/meds']);
-    // the other links are the "รายการยา" shortcut and (since PR 6a) the add-member links, which carry ?demo=
-    expect(hrefs.slice(0, -2).every((h) => h === '#/n/meds' || h === `#/n/members/new?demo=${name}`)).toBe(true);
+    // the other links are the "รายการยา" shortcut and (since PR 6a) the add-member links and (since PR 6b) the add-medicine link, which carry ?demo=
+    expect(hrefs.slice(0, -2).every((h) => h === '#/n/meds' || h === `#/n/members/new?demo=${name}` || h === `#/n/meds/new?demo=${name}`)).toBe(true);
     for (const b of Array.from(container.querySelectorAll('button'))) {
       if (b.hasAttribute('aria-pressed')) {
         expect(b).toBeEnabled(); // member picker or tick: a real handler (tested below)

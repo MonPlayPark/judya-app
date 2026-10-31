@@ -68,7 +68,13 @@ function alertRoot(): Root {
 /** Medicines exist but none is taken today (Monday only; the demo day is a Wednesday). */
 function noTodayRoot(): Root {
   const n = normalRoot();
-  return { ...n, assignments: n.assignments.map((a) => ({ ...a, schedule: MONDAYS_ONLY })), prepLog: {} };
+  // a liquid keeps a dose that is a multiple of 2.5 ml
+  const liquid = new Set(n.medications.filter((m) => m.kind === 'liquid').map((m) => m.id));
+  const mondays = (a: Assignment): Schedule =>
+    liquid.has(a.medicationId) && MONDAYS_ONLY.kind === 'meal' && MONDAYS_ONLY.slots.morning
+      ? { ...MONDAYS_ONLY, slots: { morning: { ...MONDAYS_ONLY.slots.morning, pills: 5 } } }
+      : MONDAYS_ONLY;
+  return { ...n, assignments: n.assignments.map((a) => ({ ...a, schedule: mondays(a) })), prepLog: {} };
 }
 
 /** A member and no medicine yet. */

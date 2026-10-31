@@ -84,7 +84,7 @@ export function shortThaiDate(iso: string): string {
 }
 
 /** Name with the strength next to it; thousands get a comma ('VitaminD 1,000 IU'). */
-export function label(m: Medication): string {
+export function label(m: Pick<Medication, 'name' | 'strength'>): string {
   if (!m.strength) return m.name;
   const { value, unit } = m.strength;
   const v = value.toLocaleString('en-US');
@@ -109,7 +109,7 @@ function periodsOf(a: Assignment): Period[] {
   return PERIODS.filter((p) => s.slots[p] !== undefined);
 }
 
-function doseTextOf(a: Assignment, m: Medication): string {
+export function doseTextOf(a: Assignment, m: Medication): string {
   const unit = unitWord(m);
   const s = a.schedule;
   if (s.kind === 'interval') return `ทุก ${s.everyHours} ชั่วโมง · ${formatAmount(s.pills)} ${unit}`;
@@ -173,7 +173,7 @@ function houseRow(h: HouseItem, root: Root, today: IsoDate): HouseRow {
   else subText = `เหลือ ${h.stock.qty} ${h.stock.unit}`;
   return {
     id: h.id,
-    name: h.name,
+    name: label(h),
     kind,
     chip,
     expiryNote: note,

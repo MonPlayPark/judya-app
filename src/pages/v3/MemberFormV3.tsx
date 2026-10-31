@@ -3,7 +3,6 @@
 // (PR 9) can use it again. Today only the "add" mode is built.
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { BackIcon, CheckIcon, InfoIcon, PlusIcon, WarningIcon } from '../../components/icons';
-import { ComingSoon } from '../../components/v3/ComingSoon';
 import { Sheet } from '../../components/v3/Sheet';
 import { sheetStyles } from '../../components/v3/sheetParts';
 import { defaultNewId } from '../../domain/v3/medActions';
@@ -261,7 +260,7 @@ export interface MemberFormViewProps {
 
 const SAMPLE_SAVED: Person = { id: 'sample', name: 'คุณแม่', relation: 'แม่', avatar: 'avatar-02', color: 'green', selfManaged: false, allergies: { status: 'unknown' } };
 
-export function MemberFormView({ root: initialRoot, demo, persist, homeHref, onBack, initialSheet, newId = defaultNewId }: MemberFormViewProps) {
+export function MemberFormView({ root: initialRoot, demo, persist, linkSuffix = '', homeHref, onBack, initialSheet, newId = defaultNewId }: MemberFormViewProps) {
   const [root, setRoot] = useState(initialRoot);
   const [saved, setSaved] = useState<Person | null>(demo && initialSheet === 'done' ? SAMPLE_SAVED : null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -318,7 +317,9 @@ export function MemberFormView({ root: initialRoot, demo, persist, homeHref, onB
           </div>
           <div className={sheetStyles.body}>
             <div className={sheetStyles.actions}>
-              <ComingSoon className={sheetStyles.cancel}>เพิ่มยาให้ {saved.name}</ComingSoon>
+              <a className={`${sheetStyles.cancel} ${styles.linkButton}`} href={`#/n/meds/new?person=${encodeURIComponent(saved.id)}${linkSuffix === '' ? '' : `&${linkSuffix.replace('?', '')}`}`}>
+                เพิ่มยาให้ {saved.name}
+              </a>
               <button type="button" className={sheetStyles.cancel} onClick={another}>
                 เพิ่มสมาชิกอีกคน
               </button>

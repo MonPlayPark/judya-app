@@ -2,6 +2,28 @@
 
 Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every session.
 
+## M4 PR 6b — add medicine v3 (31 ต.ค. 2569)
+
+Branch `claude/m4-pr6b-add-medicine-tfyn1d` (asked for `m4/pr6b-add-medicine`; the session fixed the first name). New page `#/n/meds/new` (personal medicine 3 steps, house medicine 2 steps, "เพิ่มให้ … ด้วย" for a medicine already in the house); `addMedicine.ts` domain; schema: bottle pack, house item strength, dose size by kind; "เพิ่มยา" buttons linked (list FAB + empty cards, Home start card step 2, sheet after adding a member with `?person=`). Details and my own decisions: `docs/DECISIONS.md` "M4 PR 6b".
+
+### Status
+`npm test`, `npm run build` and `npm run check:overflow` pass (726 checks, 0 problems: add-medicine step 1 / 2 / 3 in every state, at 360 / 412px, 3 font sizes). Looked at 390 and 360px pictures from the real build (new, found in house, same house name, schedule, liquid, box not filled, cream); they are not committed.
+
+### Left for later PRs
+- Edit medicine data, dose adjustment (`adjust` events), "แก้ข้อมูลยา" → PR 8. Allergy of a member and the allergy warning when adding a medicine → PR 10. Switch to the new app → PR 7.
+- Seen, not changed: Home / list show 7.5 ml as "7½ มล."; cream shows "1 ครั้ง"; tubes are not "low" on Home.
+- Old liquid data with a dose that is not a multiple of 2.5 is refused by the schema now (nothing real is stored yet).
+
+### Owner's S24 test (after merge and deploy)
+Add `#` links to the Pages address. Nothing is saved in a demo.
+- Blank form: `#/n/meds/new?demo=normal`
+- Already in the house (Metformin is used by คุณพ่อ; คุณพ่อ is greyed): `#/n/meds/new?demo=normal&name=Metformin`
+- Liquid dose: `#/n/meds/new?demo=normal&person=p2&name=ยาน้ำทดสอบ&kind=liquid&step=2` (press + until over 30 มล. → yellow box, then ถัดไป, บันทึกยา → confirm sheet)
+- Cream: `#/n/meds/new?demo=normal&person=p2&name=ครีมทดสอบ&kind=cream&step=2`
+- House medicine: `#/n/meds/new?demo=normal&type=house&name=ยาสามัญใหม่`
+- Same house name (ยาธาตุน้ำขาว): `#/n/meds/new?demo=normal&type=house&name=ยาธาตุน้ำขาว`
+Buttons: list page "+ เพิ่มยา" (house tab asks for the house type), Home `#/n?demo=empty1` step 2, `#/n/meds?demo=nomeds`, and "เพิ่มยาให้ …" after adding a member.
+
 ## M4 PR 6a — add member v3 (31 ต.ค. 2569)
 
 Branch `m4/pr6a-add-member`. New page `#/n/members/new` (3 cards, sticky save bar, no bottom menu, picture sheet, sheet after saving); `members.ts` domain; "เพิ่มสมาชิก" buttons linked (Home start card + "+" cell, list "no member"), demo carried by `?demo=`; list chip for cream / drops now uses the owner's rule (`tubeLevel`, shared with the detail page). Details and my own decisions: `docs/DECISIONS.md` "M4 PR 6a".

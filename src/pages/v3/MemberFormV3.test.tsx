@@ -229,7 +229,7 @@ describe('after saving (demo)', () => {
     expect(within(dialog).getByText('คุณยาย')).toBeInTheDocument();
     expect(within(dialog).getByText('ญาติ')).toBeInTheDocument();
     expect(dialog.querySelector('img')).toHaveAttribute('src', expect.stringContaining('avatar-02'));
-    expect(within(dialog).getByText('เพิ่มยาให้ คุณยาย').closest('button')).toHaveAttribute('aria-disabled', 'true'); // until PR 6b
+    expect(within(dialog).getByRole('link', { name: 'เพิ่มยาให้ คุณยาย' })).toHaveAttribute('href', expect.stringMatching(/^#\/n\/meds\/new\?person=[^&]+&demo=nomember$/));
     expect(within(dialog).getByRole('button', { name: 'เพิ่มสมาชิกอีกคน' })).toBeInTheDocument();
     expect(within(dialog).getByRole('link', { name: 'กลับหน้าหลัก' })).toHaveAttribute('href', '#/n');
   });
