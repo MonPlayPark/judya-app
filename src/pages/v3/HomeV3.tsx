@@ -54,12 +54,19 @@ export function HomeView({ model, demo, saveError, onPick, onToggle, linkSuffix 
             {m.headline.done && <CheckIcon />}
             {m.headline.text}
           </p>
-          {m.warning && (
-            <p className={styles.warning}>
-              <WarningIcon />
-              <span>{m.warning.text}</span>
-            </p>
-          )}
+          {m.warning &&
+            (m.warning.kind === 'backup' ? (
+              // The backup reminder is a link to the data and backup page (PR 6c); underlined so it is not only the colour that says "press".
+              <a className={`${styles.warning} ${styles.warningLink}`} href={`#/n/settings/data${linkSuffix}`}>
+                <WarningIcon />
+                <span>{m.warning.text}</span>
+              </a>
+            ) : (
+              <p className={styles.warning}>
+                <WarningIcon />
+                <span>{m.warning.text}</span>
+              </p>
+            ))}
           {m.extraWarnings > 0 && <p className={styles.extra}>+{m.extraWarnings} เรื่อง</p>}
           <span className={styles.datePill}>{m.dateText}</span>
         </div>
