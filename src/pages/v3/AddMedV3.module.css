@@ -381,8 +381,13 @@
   font-size: calc(14px * var(--fs));
   font-weight: var(--weight-semibold);
 }
+.periodChip.on {
+  border-color: var(--color-primary);
+  background: var(--color-primary-tint);
+  color: var(--color-navy);
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
 .chip.on,
-.periodChip.on,
 .dayChip.on {
   border-color: var(--color-primary);
   background: var(--color-primary);
