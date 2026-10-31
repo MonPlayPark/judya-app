@@ -2,6 +2,26 @@
 
 Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every session.
 
+## M4 PR 6c — data and backup page v3 (31 ต.ค. 2569)
+
+Branch `ccr-c05dae34-qet8go` (asked for `m4/pr6c-backup-page`; the session fixed the first name). New page `#/n/settings/data` ("ข้อมูลและสำรองข้อมูล"): status card, back-up button (share sheet, else download), restore from a .json file with a confirm sheet, storage promise, footer. Ways in: the Settings tab of `V3Nav` (now a link, temporary until PR 14) and the backup reminder on Home (a link when it is the first warning). Logic: `src/domain/v3/dataPage.ts`; `backup.ts`, `storage.ts` and the schema are unchanged. Settings are not in the file and a restore does not overwrite them. Details and my own decisions: `docs/DECISIONS.md` "M4 PR 6c".
+
+### Status
+`npm test` 1,518 (1,464 before) pass; `npm run build` passes; `npm run check:overflow` 798 checks (726 before), 0 problems (11 new routes at 360 / 412px and 3 font sizes). Looked at 360px pictures from the real build (old backup + error, confirm sheet, Home reminder).
+
+### Waiting for the owner
+- Stored data that cannot be read: this page shows only the problem line, no restore (DECISIONS item 2). Do you want restore offered there, or left to PR 7?
+- Settings stay out of the file (DECISIONS item 1): confirm this is what you meant.
+
+### Left for later PRs
+- The Settings tab becomes the list of 5 groups, and this page becomes one of them → PR 14. Switch to the new app, and "start fresh" for unreadable data → PR 7. Nothing in the app reads `judya.v3.prev` yet.
+
+### Owner's S24 test (after merge and deploy)
+Add `#` links to the Pages address. Nothing is saved in a demo; the back-up and restore buttons are faded there and say so.
+- `#/n/settings/data?demo=normal` (recent backup, no warning), `?demo=backup` (never backed up), `?demo=normal&backup=old` (yellow 14-day warning), `?demo=nomeds`.
+- Restore errors: `?demo=normal&error=not_json`, `&error=wrong_version`, `&error=invalid`, `&error=too_big`, `&error=save_failed`; confirm sheet: `?demo=normal&sheet=confirm`.
+- Real run (no `?demo=`), after you add a test member and medicine: Settings tab → "สำรองข้อมูล" → send the file to yourself; "ไม่ส่ง" (close the share sheet) must not change the date. Then "นำกลับจากไฟล์สำรอง" → pick the file → read the sheet → "ยกเลิก" changes nothing; "นำกลับ" replaces the data. A v2 file (`judya-backup-…` without `-v3`) must say "เวอร์ชันเก่า". Home `#/n?demo=backup`: the reminder line is underlined and opens this page.
+
 ## M4 PR 6b — add medicine v3 (31 ต.ค. 2569)
 
 Branch `claude/m4-pr6b-add-medicine-tfyn1d` (asked for `m4/pr6b-add-medicine`; the session fixed the first name). New page `#/n/meds/new` (personal medicine 3 steps, house medicine 2 steps, "เพิ่มให้ … ด้วย" for a medicine already in the house); `addMedicine.ts` domain; schema: bottle pack, house item strength, dose size by kind; "เพิ่มยา" buttons linked (list FAB + empty cards, Home start card step 2, sheet after adding a member with `?person=`). Details and my own decisions: `docs/DECISIONS.md` "M4 PR 6b".

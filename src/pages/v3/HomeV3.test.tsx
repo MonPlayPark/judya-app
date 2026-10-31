@@ -100,11 +100,12 @@ describe('no "ตารางยา" and no dead controls', () => {
     const { container } = renderDemo(name);
     expect(container.textContent).not.toContain('ตารางยา');
     // only real links exist; nothing else is a link, so nothing can be a dead link
-    // the "รายการยา" shortcut and the two nav tabs
+    // the "รายการยา" shortcut and the three nav tabs (Settings since PR 6c)
     const hrefs = Array.from(container.querySelectorAll('a')).map((a) => a.getAttribute('href'));
-    expect(hrefs.slice(-2)).toEqual(['#/n', '#/n/meds']);
+    expect(hrefs.slice(-3)).toEqual(['#/n', '#/n/meds', '#/n/settings/data']);
     // the other links are the "รายการยา" shortcut and (since PR 6a) the add-member links and (since PR 6b) the add-medicine link, which carry ?demo=
-    expect(hrefs.slice(0, -2).every((h) => h === '#/n/meds' || h === `#/n/members/new?demo=${name}` || h === `#/n/meds/new?demo=${name}`)).toBe(true);
+    // and (since PR 6c) the backup reminder, which links to the data page and carries ?demo=
+    expect(hrefs.slice(0, -3).every((h) => h === '#/n/meds' || h === `#/n/settings/data?demo=${name}` || h === `#/n/members/new?demo=${name}` || h === `#/n/meds/new?demo=${name}`)).toBe(true);
     for (const b of Array.from(container.querySelectorAll('button'))) {
       if (b.hasAttribute('aria-pressed')) {
         expect(b).toBeEnabled(); // member picker or tick: a real handler (tested below)
@@ -139,7 +140,8 @@ describe('no "ตารางยา" and no dead controls', () => {
     expect(tile).not.toBeNull();
     expect(tile).toHaveTextContent('รายการยาดูและจัดการยา');
     expect(tile).not.toHaveTextContent('เร็ว ๆ นี้');
-    for (const t of ['สั่งซื้อยา', 'แชร์ให้แพทย์', 'สมาชิก', 'ตั้งค่า', 'จัดการ']) {
+    expect(screen.getByRole('link', { name: 'ตั้งค่า' })).toHaveAttribute('href', '#/n/settings/data'); // PR 6c: the Settings tab is a real link
+    for (const t of ['สั่งซื้อยา', 'แชร์ให้แพทย์', 'สมาชิก', 'จัดการ']) {
       const hit = screen.getAllByText(t).map((e) => e.closest('button')).filter((b) => b !== null);
       expect(hit.length, t).toBeGreaterThan(0);
       for (const b of hit) expect(b).toHaveAttribute('aria-disabled', 'true');

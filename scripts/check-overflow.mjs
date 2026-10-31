@@ -28,7 +28,13 @@ const V3_ROUTES = ['/n', '/n?demo=normal', '/n?demo=alert', '/n?demo=empty0', '/
   '/n/members/new?demo=nomember&sheet=done', '/n/meds?demo=cream',
   // v3 add medicine (M4 PR 6b): step 1 new / found in the house / same house name, the schedule step and the stock step first views
   '/n/meds/new', '/n/meds/new?demo=normal', '/n/meds/new?demo=nomember', '/n/meds/new?demo=normal&name=Metformin', '/n/meds/new?demo=normal&type=house&name=ยาธาตุน้ำขาว',
-  '/n/meds/new?demo=normal&person=p2&name=ยาใหม่ทดสอบ&step=2', '/n/meds/new?demo=normal&person=p2&name=ยาใหม่ทดสอบ&step=3', '/n/meds/new?demo=normal&type=house&name=ยาสามัญใหม่&step=2'];
+  '/n/meds/new?demo=normal&person=p2&name=ยาใหม่ทดสอบ&step=2', '/n/meds/new?demo=normal&person=p2&name=ยาใหม่ทดสอบ&step=3', '/n/meds/new?demo=normal&type=house&name=ยาสามัญใหม่&step=2',
+  // v3 data and backup page (M4 PR 6c): real data (empty), a recent backup, never backed up, the 14-day warning, nothing but house medicines,
+  // every restore error, and the confirm sheet
+  '/n/settings/data', '/n/settings/data?demo=normal', '/n/settings/data?demo=backup', '/n/settings/data?demo=normal&backup=old', '/n/settings/data?demo=nomeds',
+  '/n/settings/data?demo=normal&error=not_json', '/n/settings/data?demo=normal&error=wrong_version', '/n/settings/data?demo=normal&error=invalid',
+  '/n/settings/data?demo=normal&error=too_big', '/n/settings/data?demo=normal&error=save_failed', '/n/settings/data?demo=normal&sheet=confirm',
+  '/n/settings/data?demo=normal&backup=old&error=wrong_version'];
 
 // v3 add medicine (M4 PR 6b): states that need pressing. Each one opens `route`, runs the clicks, then is measured like the rest.
 const ADD = '/n/meds/new?demo=normal&person=p2&name=ยาใหม่ทดสอบ';

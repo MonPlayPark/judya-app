@@ -101,6 +101,16 @@
   height: 18px;
   margin-top: 2px;
 }
+.warningLink {
+  align-items: center;
+  min-height: 44px;
+  margin-top: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.warningLink svg {
+  margin-top: 0;
+}
 .extra {
   margin: 4px 0 0;
   padding-left: 24px;
