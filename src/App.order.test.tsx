@@ -55,7 +55,7 @@ describe('the page and its list', () => {
   it('has the title "สั่งยา", a back button to home, and lists X (73 pills, both members) and Y (1 bottle), both ticked with a reason word', () => {
     open(exampleRoot());
     expect(screen.getByRole('heading', { level: 1, name: 'สั่งยา' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'กลับหน้าแรก' })).toHaveAttribute('href', '#/');
+    expect(screen.getByRole('link', { name: 'กลับหน้าแรก' })).toHaveAttribute('href', '#/old');
     expect(checkbox(NAME_X)).toHaveAttribute('aria-checked', 'true');
     expect(checkbox(NAME_Y)).toHaveAttribute('aria-checked', 'true');
     expect(qtyOf(NAME_X)).toBe('73 เม็ด');
@@ -418,7 +418,7 @@ describe('the page writes nothing to storage', () => {
     click(checkbox(NAME_Y));
     expect(qtyOf(NAME_X)).toBe('180 เม็ด');
     act(() => {
-      window.location.hash = '#/';
+      window.location.hash = '#/old';
       window.dispatchEvent(new HashChangeEvent('hashchange'));
     });
     act(() => {

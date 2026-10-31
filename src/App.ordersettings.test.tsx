@@ -310,7 +310,7 @@ describe('deleted house medicines', () => {
   });
 
   it('a deleted medicine is not on the home screen', () => {
-    open('#/', withHouse([{ ...items[0]!, stock: { qty: 0, unit: 'ขวด' }, lowAt: 1, removedAt: NOW }]));
+    open('#/old', withHouse([{ ...items[0]!, stock: { qty: 0, unit: 'ขวด' }, lowAt: 1, removedAt: NOW }]));
     expect(screen.queryByText(/ยาสามัญทดสอบ ก/)).not.toBeInTheDocument();
   });
 
@@ -335,7 +335,7 @@ describe('the "สั่งยา" buttons and links (step 3.3b-3)', () => {
       houseItems: [{ id: 'h1', name: 'ยาสามัญทดสอบ ก', stock: { qty: 0, unit: 'ขวด' }, lowAt: 1 }],
     });
 
-  it.each(['#/', '#/meds', '#/meds?tab=house', '#/members/p1'])('%s has one link "สั่งยา" to #/order', (hash) => {
+  it.each(['#/old', '#/meds', '#/meds?tab=house', '#/members/p1'])('%s has one link "สั่งยา" to #/order', (hash) => {
     open(hash, root());
     const links = document.querySelectorAll('a[href="#/order"]');
     expect(links).toHaveLength(1);
@@ -343,12 +343,12 @@ describe('the "สั่งยา" buttons and links (step 3.3b-3)', () => {
   });
 
   it('the home button is always there: with nothing to order it just says "สั่งยา"', () => {
-    open('#/', rootWith({ persons: [person({ id: 'p1' })], medications: [{ id: 'm1', name: 'ยาตัวอย่าง เอ', unit: 'เม็ด' }], assignments: [assignment({ id: 'a1', schedule: dailyMeal({ morning: { pills: 1, meal: 'after' } }), stock: { qty: 500, countedOn: TODAY } })] }));
+    open('#/old', rootWith({ persons: [person({ id: 'p1' })], medications: [{ id: 'm1', name: 'ยาตัวอย่าง เอ', unit: 'เม็ด' }], assignments: [assignment({ id: 'a1', schedule: dailyMeal({ morning: { pills: 1, meal: 'after' } }), stock: { qty: 500, countedOn: TODAY } })] }));
     expect(screen.getByRole('link', { name: 'สั่งยา' })).toHaveAttribute('href', '#/order');
   });
 
   it('the home button says only "สั่งยา" (round 9; it used to add the count of lines)', () => {
-    open('#/', root());
+    open('#/old', root());
     expect(screen.getByRole('link', { name: 'สั่งยา' })).toHaveAttribute('href', '#/order');
   });
 

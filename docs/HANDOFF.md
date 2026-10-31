@@ -2,6 +2,26 @@
 
 Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every session.
 
+## M4 PR 7 — the entry switches to v3 (31 ต.ค. 2569)
+
+Branch `ccr-3b57d00d-32devm` (the session fixed the name). `#/` and the empty app open v3 Home; v2 Home is `#/old` (v2 bottom menu and back arrows point there); `#/n/...` stays. When `judya.v3` cannot be read, every v3 page shows "เริ่มใหม่" (2 confirm steps, old text kept in `judya.v3.prev`) and "กู้คืนจากไฟล์สำรอง" (the PR 6c restore, now shared through `restoreFlow.tsx`). The "new version" bar is now on v3 pages. Details: `docs/DECISIONS.md` "M4 PR 7".
+
+### Status
+`npm test` 1,552 pass; `npm run build` passes; `npm run check:overflow` 864 checks at 360 / 412px and 3 font sizes, 0 problems (includes the new screen and both sheets). Real-Chromium cache check: see DECISIONS "PWA / cache". New code never touches `judya.v2` (tested by spying on every storage call).
+
+### Waiting for the owner
+- After the deploy, the first open of the Chrome link may still show the OLD app (cached) with the blue bar "มีเวอร์ชันใหม่ · โหลดใหม่": tap it once. Same after every later deploy.
+- `navigator.storage.persist()` was asked only by the v2 provider on every open; v3 pages only read the answer. The origin is the same, so a promise already granted stays, but nothing asks again now. Add the request to v3 (PR 7b or earlier)?
+- Nothing reads `judya.v3.prev` yet except being a safety copy (no "undo" button).
+
+### Left for later PRs
+- PR 7b: delete v2 (`#/old`, `DataProvider`, `judya.v2` code), then move the `v3theme` values to `:root`.
+
+### Owner's S24 test (after merge and deploy)
+1. Open the Chrome link with no `#`: if you see the old app, tap "โหลดใหม่"; then v3 Home opens ("สวัสดีค่ะ", menu: หน้าหลัก / รายการยา / ตั้งค่า).
+2. `…/judya-app/#/old` opens the old app; its "หน้าแรก" tab stays on the old home.
+3. Unreadable data can only be seen with broken data, so it is covered by tests; do not break your data on purpose.
+
 ## M4 PR 6c — data and backup page v3 (31 ต.ค. 2569)
 
 Branch `ccr-c05dae34-qet8go` (asked for `m4/pr6c-backup-page`; the session fixed the first name). New page `#/n/settings/data` ("ข้อมูลและสำรองข้อมูล"): status card, back-up button (share sheet, else download), restore from a .json file with a confirm sheet, storage promise, footer. Ways in: the Settings tab of `V3Nav` (now a link, temporary until PR 14) and the backup reminder on Home (a link when it is the first warning). Logic: `src/domain/v3/dataPage.ts`; `backup.ts`, `storage.ts` and the schema are unchanged. Settings are not in the file and a restore does not overwrite them. Details and my own decisions: `docs/DECISIONS.md` "M4 PR 6c".

@@ -234,7 +234,7 @@ describe('medicine detail (#/meds/:id)', () => {
     expect(within(card).getByText('ยา 0 รายการ')).toBeInTheDocument();
     nav('#/today');
     expect(screen.queryByText('ยาตัวอย่าง ก')).not.toBeInTheDocument();
-    nav('#/');
+    nav('#/old');
     expect(screen.queryByText('ยาตัวอย่าง ก')).not.toBeInTheDocument();
 
     clock.today = '2026-10-21'; // three days later: nothing is deducted while stopped

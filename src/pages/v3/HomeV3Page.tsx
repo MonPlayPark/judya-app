@@ -8,8 +8,8 @@ import { DEMO_TODAY, demoRoot, isDemoName, type DemoName } from '../../domain/v3
 import { emptyRoot, type Root } from '../../domain/v3/schema';
 import { loadRoot, saveRoot, type KeyValueStore, type LoadResult, type SaveResult } from '../../domain/v3/storage';
 import { HomeView } from './HomeV3';
+import { ProblemV3 } from './ProblemV3';
 import '../../styles/v3theme.css';
-import styles from './HomeV3.module.css';
 
 export interface HomePageProps {
   /** Tests only: the Thai date of "now". */
@@ -73,7 +73,8 @@ function DemoHome({ name }: { name: DemoName }) {
   );
 }
 
-export type Loaded = { kind: 'ok'; root: Root } | { kind: 'problem'; text: string };
+/** `recoverable`: the data exists but cannot be read (the screen then offers start over / restore). False = the browser blocks storage. */
+export type Loaded = { kind: 'ok'; root: Root } | { kind: 'problem'; text: string; recoverable: boolean };
 
 export function openRoot(result: LoadResult): Loaded {
   switch (result.status) {
@@ -82,10 +83,10 @@ export function openRoot(result: LoadResult): Loaded {
     case 'empty':
       return { kind: 'ok', root: emptyRoot(new Date().toISOString()) }; // a new user: nothing is written until they do something
     case 'unavailable':
-      return { kind: 'problem', text: 'เบราว์เซอร์ไม่ให้เก็บข้อมูลในเครื่อง จึงเปิดหน้านี้ไม่ได้' };
+      return { kind: 'problem', text: 'เบราว์เซอร์ไม่ให้เก็บข้อมูลในเครื่อง จึงเปิดหน้านี้ไม่ได้', recoverable: false };
     case 'corrupt':
     case 'wrong-version':
-      return { kind: 'problem', text: 'อ่านข้อมูลที่เก็บไว้ไม่ได้ ข้อมูลเดิมยังอยู่ ไม่ได้ถูกลบหรือเขียนทับ' };
+      return { kind: 'problem', text: 'อ่านข้อมูลที่เก็บไว้ไม่ได้ ข้อมูลเดิมยังอยู่ ไม่ได้ถูกลบหรือเขียนทับ', recoverable: true };
   }
 }
 
@@ -110,15 +111,7 @@ function LiveHome({ getToday, store }: HomePageProps) {
   };
 
   if (loaded.kind === 'problem' || !model) {
-    return (
-      <div className={`v3theme ${styles.page}`}>
-        <main className={styles.body}>
-          <p className={styles.saveError} role="alert">
-            {loaded.kind === 'problem' ? loaded.text : ''}
-          </p>
-        </main>
-      </div>
-    );
+    return loaded.kind === 'problem' ? <ProblemV3 loaded={loaded} {...(store === undefined ? {} : { store })} /> : null;
   }
   return <HomeView model={model} demo={false} saveError={saveError} onPick={setPicked} onToggle={onToggle} />;
 }

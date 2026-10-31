@@ -60,7 +60,7 @@ export function TodayPage() {
   return (
     <>
       <header className={styles.header}>
-        <a className={styles.back} href={href('/')} aria-label="กลับหน้าแรก">
+        <a className={styles.back} href={href('/old')} aria-label="กลับหน้าแรก">
           <BackIcon />
         </a>
         <div>

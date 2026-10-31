@@ -7,8 +7,8 @@ import { DEMO_TODAY } from '../../domain/v3/homeDemo';
 import { isMedsDemoName, medsDemoRoot, type MedsDemoName } from '../../domain/v3/medsListDemo';
 import { loadRoot, saveRoot } from '../../domain/v3/storage';
 import { openRoot, saveErrorText, useBangkokToday, type HomePageProps, type Loaded } from './HomeV3Page';
+import { ProblemV3 } from './ProblemV3';
 import { MedsListView, type MedsListViewProps } from './MedsListV3';
-import homeStyles from './HomeV3.module.css';
 
 /** `&tab=house` opens the house medicines, `&open=stopped|deleted` opens a folded section, `&item=<id>` opens the sheet of a
  * house medicine and `&item=<id>&sheet=refill` its refill sheet (test links). */
@@ -39,15 +39,7 @@ function LiveMeds({ getToday, store, initial }: HomePageProps & { initial: MedsL
   const today = useBangkokToday(getToday);
   const [loaded] = useState<Loaded>(() => openRoot(store === undefined ? loadRoot() : loadRoot(store)));
   if (loaded.kind === 'problem') {
-    return (
-      <div className={`v3theme ${homeStyles.page}`}>
-        <main className={homeStyles.body}>
-          <p className={homeStyles.saveError} role="alert">
-            {loaded.text}
-          </p>
-        </main>
-      </div>
-    );
+    return <ProblemV3 loaded={loaded} {...(store === undefined ? {} : { store })} />;
   }
   const persist: NonNullable<MedsListViewProps['persist']> = (root) => {
     const result = store === undefined ? saveRoot(root) : saveRoot(root, store);
