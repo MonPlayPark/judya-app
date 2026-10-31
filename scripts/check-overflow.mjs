@@ -22,7 +22,10 @@ const V3_ROUTES = ['/n', '/n?demo=normal', '/n?demo=alert', '/n?demo=empty0', '/
   '/n/meds/a4?demo=normal', '/n/meds/a4?demo=normal&sheet=refill', '/n/meds/a4?demo=normal&sheet=stop', '/n/meds/a4?demo=normal&sheet=history',
   '/n/meds/a9?demo=cream', '/n/meds/a9?demo=cream&sheet=refill', '/n/meds/a7?demo=stopped', '/n/meds/a7?demo=stopped&sheet=resume',
   '/n/meds/a10?demo=notdaily', '/n/meds/nope?demo=normal', '/n/meds/zzz',
-  '/n/meds?demo=normal&tab=house&item=h3', '/n/meds?demo=normal&tab=house&item=h3&sheet=refill', '/n/meds?demo=normal&tab=house&item=h4'];
+  '/n/meds?demo=normal&tab=house&item=h3', '/n/meds?demo=normal&tab=house&item=h3&sheet=refill', '/n/meds?demo=normal&tab=house&item=h4',
+  // v3 add member (M4 PR 6a): blank, with members already there, the picture sheet, the sheet after saving, and a list with a cream
+  '/n/members/new', '/n/members/new?demo=nomember', '/n/members/new?demo=normal', '/n/members/new?demo=nomember&sheet=avatars',
+  '/n/members/new?demo=nomember&sheet=done', '/n/meds?demo=cream'];
 
 const chromePath = process.env.CHROMIUM_PATH
   ?? ['/opt/pw-browsers/chromium', '/usr/bin/chromium', '/usr/bin/google-chrome'].find((p) => existsSync(p));
@@ -111,6 +114,23 @@ for (const width of WIDTHS) {
       await visit(r, 'v3');
       const small = await page.evaluate(measureV3, fs === 'n' ? 13.9 : 14.9);
       if (small) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 ${r}: ${small}`); }
+    }
+
+    // 1c) v3 add-member page after typing (M4 PR 6a): a filled form, a wrong birth year, a 40-letter name with the same-name warning
+    const typed = [
+      ['filled', async () => { await page.fill('#mf-name', 'คุณยาย'); await page.getByRole('button', { name: 'ญาติ', exact: true }).click(); await page.fill('#mf-year', '2503'); }],
+      ['wrong year', async () => { await page.fill('#mf-name', 'คุณยาย'); await page.getByRole('button', { name: 'ลูก', exact: true }).click(); await page.fill('#mf-year', '2399'); }],
+      ['long name + wrong year', async () => { await page.fill('#mf-name', 'ก'.repeat(40)); await page.getByRole('button', { name: 'อื่นๆ', exact: true }).click(); await page.fill('#mf-year', '25'); }],
+      ['self (switch on)', async () => { await page.fill('#mf-name', 'ตัวเอง'); await page.getByRole('button', { name: 'ตัวฉัน', exact: true }).click(); }],
+    ];
+    for (const [label, act] of typed) {
+      await visit('/n/members/new?demo=nomember', 'v3');
+      await act();
+      const bad = await page.evaluate(measure);
+      checked += 1;
+      if (bad) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 typed(${label}): ${bad}`); }
+      const small = await page.evaluate(measureV3, fs === 'n' ? 13.9 : 14.9);
+      if (small) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 typed(${label}): ${small}`); }
     }
 
     // 2) house with the sample data (pages that need ids too)
