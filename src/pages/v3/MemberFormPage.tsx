@@ -40,7 +40,7 @@ const homeLink = (demo: string | null): string => (isDemoName(demo) ? `#/n?demo=
 
 function DemoMember({ name, root, initialSheet }: { name: string; root: Root; initialSheet: MemberFormViewProps['initialSheet'] }) {
   const home = homeLink(name);
-  return <MemberFormView root={root} demo homeHref={home} onBack={() => goBack(home)} initialSheet={initialSheet} />; // no persist: a demo saves nothing
+  return <MemberFormView root={root} demo linkSuffix={`?demo=${name}`} homeHref={home} onBack={() => goBack(home)} initialSheet={initialSheet} />; // no persist: a demo saves nothing
 }
 
 function LiveMember({ initialSheet, store }: HomePageProps & { initialSheet: MemberFormViewProps['initialSheet'] }) {
