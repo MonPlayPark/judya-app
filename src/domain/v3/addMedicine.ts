@@ -458,7 +458,8 @@ export function stepAmount(kind: MedKind, current: number, dir: 1 | -1): number 
 /** The amount as text ('½ เม็ด', '7.5 มล.'). */
 export function amountText(kind: MedKind, amount: number): string {
   const r = doseRules(kind);
-  return `${formatAmount(amount)} ${r?.unit ?? ''}`.trim();
+  const n = kind === 'liquid' ? String(amount) : formatAmount(amount); // ml are plain decimals (7.5), pills use ½
+  return `${n} ${r?.unit ?? ''}`.trim();
 }
 
 export const QUICK_ML = [
@@ -680,8 +681,8 @@ export function addPersonalMedication(
   return finishPersonal(root, medications, medication, person, draft, stock, today, nowIso, newId);
 }
 
-/** The stock of a medicine whose pack is already known: the count boxes are read with that pack. */
-export function stockWithPack(kind: MedKind, pack: Pack, d: StockDraft, today: IsoDate): { ok: true; stock: Stock | null } | { ok: false; error: string } {
+/** The plan for a medicine whose pack is already known: the count boxes are read with that pack and the pack is not asked again. */
+export function planStockWithPack(kind: MedKind, pack: Pack, d: StockDraft, today: IsoDate): StockPlan {
   const size: StockDraft['size'] = { perStrip: '', stripsPerBox: '', perBottle: '', sachetsPerBox: '', amount: '' };
   switch (pack.type) {
     case 'strip':
@@ -703,7 +704,12 @@ export function stockWithPack(kind: MedKind, pack: Pack, d: StockDraft, today: I
     case 'none':
       break;
   }
-  const plan = planStock(kind, { buy: buyOfPack(kind, pack), size, counts: d.counts }, today);
+  return planStock(kind, { buy: buyOfPack(kind, pack), size, counts: d.counts }, today);
+}
+
+/** The stock of a reused medicine (same as `planStockWithPack`, as a result). */
+export function stockWithPack(kind: MedKind, pack: Pack, d: StockDraft, today: IsoDate): { ok: true; stock: Stock | null } | { ok: false; error: string } {
+  const plan = planStockWithPack(kind, pack, d, today);
   return plan.blocker ? { ok: false, error: plan.blocker } : { ok: true, stock: plan.stock };
 }
 
