@@ -4,6 +4,7 @@ import { UpdateBar } from './components/UpdateBar';
 import { AddMedicineStep1, AddMedicineStep2, AddMedicineStep3 } from './pages/AddMedicine';
 import { HomePage } from './pages/HomePage';
 import { AddMedV3Route } from './pages/v3/AddMedPage';
+import { DataV3Route } from './pages/v3/DataPage';
 import { HomeV3Route } from './pages/v3/HomeV3Page';
 import { MedDetailV3Route } from './pages/v3/MedDetailPage';
 import { MedsListV3Route } from './pages/v3/MedsListPage';
@@ -33,6 +34,7 @@ export function App({ getToday }: { getToday?: () => IsoDate }) {
   if (path === '/n') return <HomeV3Route getToday={getToday} />;
   if (path === '/n/meds') return <MedsListV3Route getToday={getToday} />; // M4 PR 5a: same rule, read only
   if (path === '/n/members/new') return <MemberFormV3Route getToday={getToday} />; // M4 PR 6a: add member, same rule
+  if (path === '/n/settings/data') return <DataV3Route getToday={getToday} />; // M4 PR 6c: data and backup, same rule (outside DataProvider)
   if (path === '/n/meds/new') return <AddMedV3Route getToday={getToday} />; // M4 PR 6b: add medicine, same rule; checked before V3_MED_PATH so "new" is not an id
   const v3Med = V3_MED_PATH.exec(path); // M4 PR 5b: medicine detail, same rule (outside DataProvider)
   if (v3Med?.[1]) return <MedDetailV3Route id={safeDecode(v3Med[1])} getToday={getToday} />;
