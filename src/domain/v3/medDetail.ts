@@ -17,7 +17,7 @@ import {
   type Root,
   type Schedule,
 } from './schema';
-import { daysLeft, isLowStock, mergeExpiry, refillStock, stockNow, stockUnits, type RefillAmount } from './stock';
+import { daysLeft, isLowStock, mergeExpiry, refillStock, stockNow, stockUnits, tubeLevel, type RefillAmount } from './stock';
 import { formatDaysLeft, formatDaysLeftChange, unitFor } from './stockText';
 
 export type Tone = 'ok' | 'low' | 'out' | 'off';
@@ -214,7 +214,8 @@ function stockCard(a: Assignment, m: Medication, root: Root, today: IsoDate): St
   }
   if (u.status === 'tubes') {
     const word = tubeWordOf(m);
-    const chip: Chip = u.spare > 0 ? { tone: 'ok', label: 'เพียงพอ' } : u.opened ? { tone: 'low', label: 'ใกล้หมด' } : { tone: 'out', label: 'หมด' };
+    const level = tubeLevel(u);
+    const chip: Chip = level === 'enough' ? { tone: 'ok', label: 'เพียงพอ' } : level === 'low' ? { tone: 'low', label: 'ใกล้หมด' } : { tone: 'out', label: 'หมด' };
     return {
       mode: 'tubes',
       big: `สำรอง ${u.spare} ${word}`,

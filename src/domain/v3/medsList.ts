@@ -3,7 +3,7 @@
 import { expiryStatus, type IsoDate } from '../calc';
 import { MONTHS, PERIODS, PERIOD_LABEL, formatAmount, intervalTimes, periodOfTime, unitWord, type Period } from './home';
 import type { Assignment, HouseItem, MedKind, Medication, MedEvent, Person, Root } from './schema';
-import { daysLeft, houseStatus, isLowStock } from './stock';
+import { daysLeft, houseStatus, isLowStock, tubeLevel } from './stock';
 import { formatDaysLeft, unitFor } from './stockText';
 
 export type MedsTab = 'mine' | 'house';
@@ -126,8 +126,10 @@ function doseTextOf(a: Assignment, m: Medication): string {
 function medRow(a: Assignment, m: Medication, root: Root, today: IsoDate): MedRow {
   const d = daysLeft(a, m, today, root.events);
   const { note, expired } = expiryNoteOf(a.expiry, today, root.settings.expiryWarnDays);
-  const out = d.status === 'ok' && d.days === 0;
-  const low = isLowStock(a, m, today, root.settings.lowStockDays, root.events);
+  // creams / drops: the owner's rule from `tubeLevel` (same as the detail page); everything else: days left
+  const level = d.status === 'tubes' ? tubeLevel(d) : null;
+  const out = level === 'out' || (d.status === 'ok' && d.days === 0);
+  const low = level === 'low' || isLowStock(a, m, today, root.settings.lowStockDays, root.events);
   const chip: StatusChip = expired
     ? { tone: 'out', label: 'หมดอายุแล้ว' }
     : out
