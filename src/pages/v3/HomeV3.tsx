@@ -17,6 +17,8 @@ export interface HomeViewProps {
   saveError: string | null;
   onPick: (personId: string) => void;
   onToggle: (key: string) => void;
+  /** '' or '?demo=...' added to links, so a demo stays a demo on the next page. */
+  linkSuffix?: string;
 }
 
 const PERIOD_ICON: Record<Period, (p: { size?: number }) => JSX.Element> = {
@@ -29,7 +31,8 @@ const PERIOD_ICON: Record<Period, (p: { size?: number }) => JSX.Element> = {
 /** The brand mark only (no word): public/icons/judya-mark.svg. */
 const LOGO_URL = `${import.meta.env.BASE_URL}icons/judya-mark.svg`;
 
-export function HomeView({ model, demo, saveError, onPick, onToggle }: HomeViewProps) {
+export function HomeView({ model, demo, saveError, onPick, onToggle, linkSuffix = '' }: HomeViewProps) {
+  const addMemberHref = `#/n/members/new${linkSuffix}`;
   const m = model;
   const hero = m.headline.done ? `${styles.hero} ${styles.heroDone}` : styles.hero;
   return (
@@ -70,8 +73,8 @@ export function HomeView({ model, demo, saveError, onPick, onToggle }: HomeViewP
             {saveError}
           </p>
         )}
-        {m.state !== 'ready' && <StartCard model={m} />}
-        {m.showMembers && <MembersCard model={m} onPick={onPick} />}
+        {m.state !== 'ready' && <StartCard model={m} addMemberHref={addMemberHref} />}
+        {m.showMembers && <MembersCard model={m} onPick={onPick} addMemberHref={addMemberHref} />}
         {m.showToday && <TodayCard model={m} onToggle={onToggle} />}
         {m.care.length > 0 && <CareCard model={m} />}
         {m.showTiles && <Shortcuts />}
@@ -82,7 +85,7 @@ export function HomeView({ model, demo, saveError, onPick, onToggle }: HomeViewP
   );
 }
 
-function StartCard({ model }: { model: HomeModel }) {
+function StartCard({ model, addMemberHref }: { model: HomeModel; addMemberHref: string }) {
   const memberDone = model.state === 'S1';
   return (
     <section className={`${styles.card} ${styles.cardStart}`} aria-labelledby="start-h">
@@ -107,10 +110,10 @@ function StartCard({ model }: { model: HomeModel }) {
             {memberDone ? `${model.firstMemberName ?? ''} · เพิ่มแล้ว` : 'ใครเป็นคนกินยา เช่น พ่อ แม่ หรือตัวคุณเอง'}
           </span>
           {!memberDone && (
-            <ComingSoon className={styles.stepButton} badgeClassName={styles.stepBadge}>
+            <a className={`${styles.stepButton} ${styles.stepLink}`} href={addMemberHref}>
               <PlusIcon />
               เพิ่มสมาชิก
-            </ComingSoon>
+            </a>
           )}
         </span>
       </div>
@@ -135,7 +138,7 @@ function StartCard({ model }: { model: HomeModel }) {
   );
 }
 
-function MembersCard({ model, onPick }: { model: HomeModel; onPick: (id: string) => void }) {
+function MembersCard({ model, onPick, addMemberHref }: { model: HomeModel; onPick: (id: string) => void; addMemberHref: string }) {
   return (
     <section className={`${styles.card} ${styles.cardMembers}`} aria-labelledby="members-h">
       <div className={styles.cardHead}>
@@ -163,14 +166,14 @@ function MembersCard({ model, onPick }: { model: HomeModel; onPick: (id: string)
             </button>
           );
         })}
-        <ComingSoon className={styles.member} badgeClassName={styles.memberBadge}>
+        <a className={styles.member} href={addMemberHref}>
           <span className={styles.addCell}>
             <span className={styles.addCircle}>
               <PlusIcon />
             </span>
             <span className={styles.memberName}>เพิ่มสมาชิก</span>
           </span>
-        </ComingSoon>
+        </a>
       </div>
     </section>
   );

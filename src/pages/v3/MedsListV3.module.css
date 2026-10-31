@@ -465,6 +465,13 @@
   font-size: calc(15px * var(--fs));
   font-weight: var(--weight-semibold);
 }
+.linkButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  text-decoration: none;
+}
 .emptyButton {
   background: var(--color-primary);
   color: #fff;

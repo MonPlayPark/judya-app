@@ -65,6 +65,7 @@ function DemoHome({ name }: { name: DemoName }) {
     <HomeView
       model={model}
       demo
+      linkSuffix={`?demo=${name}`}
       saveError={null}
       onPick={setPicked}
       onToggle={(key) => setRoot((r) => toggleDose(r, DEMO_TODAY, key))} // in memory only

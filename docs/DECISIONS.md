@@ -622,3 +622,22 @@ What was built: route `#/n/meds/:id` (outside DataProvider), `medActions.ts` (st
 17. Test helper in `stock.test.ts` got a note on its `อื่น ๆ` stop event (the new schema rule).
 18. Toast sits 84px above the bottom (over the menu on list pages); it is drawn in `<body>` with literal colours.
 
+
+## M4 PR 6a — add member v3 + add-member buttons + cream chip fix (31 ต.ค. 2569)
+
+What was built: route `#/n/members/new` (outside DataProvider; `MemberFormPage.tsx`, `MemberFormV3.tsx` = `MemberForm` (takes starting values, PR 9 will reuse it) + `MemberFormView`), `src/domain/v3/members.ts` (create member, birth year, colour, duplicate name, draft state), `tubeLevel` in `stock.ts` (one rule for cream / drops, used by the list and the detail page), real links for "เพิ่มสมาชิก".
+
+### Decided on my own
+1. **Colour:** first colour of `PERSON_COLORS` that no active member uses; when all four are used, `PERSON_COLORS[activeCount % 4]`. The Home / list demos hard-code their colours (no rule to copy), so this is new. Members taken out do not count.
+2. **"ตัวฉัน":** limited to one active member (the schema already says so). Chip is disabled (faded) with the line "มี 'ตัวฉัน' แล้ว"; a taken-out "ตัวฉัน" does not block.
+3. **Switch default:** on for "ตัวฉัน", off otherwise; follows the relation until the user touches the switch once.
+4. **Birth year:** same rule and same clock as `personSchema` (`maxBirthYearBE` is now exported from `schema.ts`). The box keeps digits only (max 4). The error shows as soon as the text is not a valid year (also while typing the first digits).
+5. **Same name:** compared without spaces and case, active members only; warning only.
+6. **No insurance card, no "take out" button** (PR 10 / PR 9). New members have no `coverage`, `allergies = unknown`.
+7. **Reason sentence** above the save button (also shown on a new page): "พิมพ์ชื่อและเลือกความสัมพันธ์ก่อน" / "พิมพ์ชื่อก่อน" / "เลือกความสัมพันธ์ก่อน" / "แก้ปีเกิดให้ถูกต้องก่อน" / "ชื่อยาวเกิน 40 ตัวอักษร". The save bar is `position: sticky` at the bottom of the page.
+8. **After saving:** the sheet cannot be closed with the curtain or Esc. "เพิ่มยาให้ {ชื่อ}" is a ComingSoon until PR 6b (drawn with the tint style, because a faded label on solid blue was unreadable). "กลับหน้าหลัก" is a link to `#/n` (keeps `?demo=` only for Home's own demo names).
+9. **Back arrow:** `history.back()` when `history.length > 1`, otherwise `#/n`.
+10. **Demo names:** the page accepts the list demos (normal, nomember, nomeds, nohouse, cream ...) and Home's (empty0, empty1 ...). `&sheet=done` in a demo shows a made-up member ("คุณแม่"); on real data it is ignored.
+11. **Home start card step 1 and the "+" cell of the members card** are links (`#/n/members/new` + `?demo=` in a demo); the step button uses the tint style (it used to be faded). The list's "no member" button is a link. Not linked: bottom-menu "สมาชิก" and "จัดการ" (PR 9).
+12. **Cream / drops chip (list):** same rule as the detail page via `tubeLevel`: spare > 0 = ปกติ (detail: เพียงพอ), no spare but open = ใกล้หมด, none = หมด. Needs-order count, the "ใกล้หมด" filter and the order button include them; an expired one stays "หมดอายุแล้ว" and is not counted. `isLowStock` itself is unchanged, so Home's care card still does not treat tubes as low.
+13. `defaultNewId` of `medActions.ts` is exported and used for the member id.
