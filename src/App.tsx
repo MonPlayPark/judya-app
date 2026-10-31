@@ -4,6 +4,7 @@ import { UpdateBar } from './components/UpdateBar';
 import { AddMedicineStep1, AddMedicineStep2, AddMedicineStep3 } from './pages/AddMedicine';
 import { HomePage } from './pages/HomePage';
 import { HomeV3Route } from './pages/v3/HomeV3Page';
+import { MedDetailV3Route } from './pages/v3/MedDetailPage';
 import { MedsListV3Route } from './pages/v3/MedsListPage';
 import { AddHousePage, EditHousePage } from './pages/HousePages';
 import { MedDetailPage } from './pages/MedDetail';
@@ -29,6 +30,8 @@ export function App({ getToday }: { getToday?: () => IsoDate }) {
   // v3 Home (M4 PR 4): outside DataProvider on purpose, so this route never opens the v2 data (`judya.v2`).
   if (path === '/n') return <HomeV3Route getToday={getToday} />;
   if (path === '/n/meds') return <MedsListV3Route getToday={getToday} />; // M4 PR 5a: same rule, read only
+  const v3Med = V3_MED_PATH.exec(path); // M4 PR 5b: medicine detail, same rule (outside DataProvider)
+  if (v3Med?.[1]) return <MedDetailV3Route id={safeDecode(v3Med[1])} getToday={getToday} />;
   return (
     <DataProvider getToday={getToday}>
       <DraftProvider>
@@ -60,6 +63,7 @@ function Shell() {
   );
 }
 
+const V3_MED_PATH = /^\/n\/meds\/([^/]+)$/;
 const MED_PATH = /^\/meds\/([^/]+)$/;
 const MEMBER_PATH = /^\/members\/([^/]+)$/;
 const HOUSE_PATH = /^\/house\/([^/]+)$/;

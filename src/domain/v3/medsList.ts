@@ -84,7 +84,7 @@ export function shortThaiDate(iso: string): string {
 }
 
 /** Name with the strength next to it; thousands get a comma ('VitaminD 1,000 IU'). */
-function label(m: Medication): string {
+export function label(m: Medication): string {
   if (!m.strength) return m.name;
   const { value, unit } = m.strength;
   const v = value.toLocaleString('en-US');

@@ -1,0 +1,87 @@
+/* House medicine sheets (M4 PR 5b). Colours from the .v3theme tokens of the list page. */
+.top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.circle {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--color-primary-tint);
+}
+.name {
+  margin: 0;
+  font-size: calc(20px * var(--fs));
+  line-height: calc(28px * var(--fs));
+  font-weight: var(--weight-bold);
+  color: var(--color-navy);
+  overflow-wrap: anywhere;
+}
+.sub {
+  margin: 0;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  color: var(--color-ink-muted);
+}
+.stockRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  min-height: 32px;
+}
+.stockRow > :first-child {
+  margin-right: auto;
+}
+.big {
+  margin: -6px 0 0;
+  font-size: calc(30px * var(--fs));
+  line-height: calc(38px * var(--fs));
+  font-weight: var(--weight-bold);
+  color: var(--color-navy);
+}
+.expiryValue {
+  font-size: calc(15px * var(--fs));
+  font-weight: var(--weight-bold);
+  color: var(--color-ink);
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: var(--radius-pill);
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+.dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.tone_ok {
+  background: var(--color-success-tint);
+  color: var(--color-success-ink);
+}
+.tone_low {
+  background: var(--color-warning-tint);
+  color: var(--color-warning-ink);
+}
+.tone_out {
+  background: var(--color-error-tint);
+  color: var(--color-error-ink);
+}
+.tone_off {
+  background: var(--color-border);
+  color: var(--color-ink-muted);
+}

@@ -2,6 +2,32 @@
 
 Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every session.
 
+## M4 PR 5b — medicine detail v3 (30 ต.ค. 2569)
+
+Branch `m4/pr5b-med-detail`. New page `#/n/meds/:id` (4 cards, no tabs, no bottom menu); sheets: refill, stop, resume, full history; "open a new tube" is immediate; own-medicine rows and stopped-fold rows on the list are links; house rows open a sheet (details, refill). `ComingSoon` is now a pressable faded button that shows a floating "เร็ว ๆ นี้" (badge removed everywhere, bottom menu is shorter). Schema: 5 stop reasons, `RESUME_REASONS`, `อื่น ๆ` needs a note. Details and my own decisions: `docs/DECISIONS.md` "M4 PR 5b".
+
+### Status
+`npm test` 1,306 (1,234 before) pass; `npm run build` passes; `npm run check:overflow` 366 checks, 0 problems (14 new routes at 360 / 412px and 3 font sizes). Looked at 390 and 360px pictures from the real build: normal, cream, stopped, notdaily, refill, stop, resume, history, house sheet, house refill.
+
+### Waiting for the owner
+See "ต่างจากบอร์ด / ตัดสินเอง" in the PR. Main points: ComingSoon badge removed from Home and list buttons too; adjust-reason wording; "ประมาณ N วัน"; cream chip rule differs from the list (list says "ปกติ" for tubes).
+
+### Left for later PRs
+- Reason "แพ้ยา" is NOT written into the member's `allergies` yet → PR 10.
+- "ราคาตามร้าน" card of the board: not built → PR 13.
+- Edit-data page, edit (⋯) button, "แก้ข้อมูลยา" of the house sheet, dose adjustment (`adjust` events have no screen) → PR 8. All are ComingSoon now.
+- Seen, not changed: the list shows chip "ปกติ" for creams / drops even with no spare tube (the detail page follows the owner's rule); unused badge classes in `HomeV3.module.css`; `--color-header-spark` still unused.
+
+### Owner's S24 test (after merge and deploy)
+Open the GitHub Pages link plus:
+1. `#/n/meds/a4?demo=normal` — VitaminD of dad: 53 เม็ด (1 กล่อง + 2 แผง + 3 เม็ด), ประมาณ 26 วัน, หมดอายุ 15 มี.ค. 2570, history shows 3 + "ดูทั้งหมด (4)". Press เติมสต็อก, type 30 in เม็ด: 53 → 83 and 26 → 41 วัน; บันทึก (nothing is saved in a demo; reload = back to start). Press หยุดยานี้: save stays grey until a reason is chosen; try อื่นๆ.
+2. `#/n/meds/a9?demo=cream` — สำรอง 2 หลอด, no days; เปิดหลอดใหม่ twice (second time the button turns grey).
+3. `#/n/meds/a7?demo=stopped` — หยุดแล้ว, "แพ้ยา · อาการ: ผื่นคัน", no stock buttons; กลับมากินใหม่ → pick a reason.
+4. `#/n/meds/a10?demo=notdaily` — time left in สัปดาห์.
+5. Sheets by link: add `&sheet=refill|stop|history` (a4) or `&sheet=resume` (a7).
+6. List `#/n/meds?demo=normal`: rows have ">" and open the detail; back arrow returns to the demo list. `&tab=house&item=h3` opens the house sheet, `&item=h3&sheet=refill` its refill.
+7. Bottom menu: no word under สมาชิก / ตั้งค่า; press one → black floating "เร็ว ๆ นี้".
+
 ## M4 PR 5a — Home fixes + medicine list v3 (30 ต.ค. 2569)
 
 Branch `m4/pr5a-meds-list`. Item 0 (sparkles removed, v3 tap target 44px, CLAUDE.md line, docs), V3Nav `current` with real links, new route `#/n/meds` (read only), `medsList.ts` model, demo houses, `KindIcon`, `check:overflow` limit 43.5px for v3 only. Schema: house item has an optional `kind` (owner chose A). Details and my own decisions: `docs/DECISIONS.md`, "PR 5a".

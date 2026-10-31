@@ -1,0 +1,28 @@
+/* Floating message (M4 PR 5b): black #202124, white text, radius 12, at the bottom. Values written out because the
+   message is drawn in <body>, outside the .v3theme class. */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  z-index: 60;
+  box-sizing: border-box;
+  max-width: calc(100vw - 24px);
+  margin: 0;
+  padding: 12px 18px;
+  transform: translateX(-50%);
+  border-radius: 12px;
+  background: #202124;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: calc(15px * var(--fs, 1));
+  line-height: calc(22px * var(--fs, 1));
+  font-weight: 600;
+  text-align: center;
+  box-shadow: 0 2px 6px 2px rgba(60, 64, 67, 0.15);
+}
+html[data-fs='m'] .toast {
+  --fs: 1.075;
+}
+html[data-fs='l'] .toast {
+  --fs: 1.24;
+}

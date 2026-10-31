@@ -17,7 +17,12 @@ const STATIC_ROUTES = ['/', '/today', '/meds', '/meds?tab=house', '/meds/new', '
 const V3_ROUTES = ['/n', '/n?demo=normal', '/n?demo=alert', '/n?demo=empty0', '/n?demo=empty1', '/n?demo=notoday', '/n?demo=backup',
   // v3 medicine list (M4 PR 5a): real data (empty), every demo, the house tab and both folded sections open
   '/n/meds', '/n/meds?demo=normal', '/n/meds?demo=normal&open=stopped', '/n/meds?demo=normal&tab=house', '/n/meds?demo=normal&open=deleted',
-  '/n/meds?demo=nomember', '/n/meds?demo=nomeds', '/n/meds?demo=nohouse&tab=house'];
+  '/n/meds?demo=nomember', '/n/meds?demo=nomeds', '/n/meds?demo=nohouse&tab=house',
+  // v3 medicine detail (M4 PR 5b): every view and every bottom sheet, a missing medicine, and the house medicine sheets
+  '/n/meds/a4?demo=normal', '/n/meds/a4?demo=normal&sheet=refill', '/n/meds/a4?demo=normal&sheet=stop', '/n/meds/a4?demo=normal&sheet=history',
+  '/n/meds/a9?demo=cream', '/n/meds/a9?demo=cream&sheet=refill', '/n/meds/a7?demo=stopped', '/n/meds/a7?demo=stopped&sheet=resume',
+  '/n/meds/a10?demo=notdaily', '/n/meds/nope?demo=normal', '/n/meds/zzz',
+  '/n/meds?demo=normal&tab=house&item=h3', '/n/meds?demo=normal&tab=house&item=h3&sheet=refill', '/n/meds?demo=normal&tab=house&item=h4'];
 
 const chromePath = process.env.CHROMIUM_PATH
   ?? ['/opt/pw-browsers/chromium', '/usr/bin/chromium', '/usr/bin/google-chrome'].find((p) => existsSync(p));

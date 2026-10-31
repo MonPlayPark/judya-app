@@ -1,0 +1,46 @@
+/* Bottom sheet (M4 PR 5b, board "C"): curtain rgba(32,33,36,.48); white sheet, top corners 24, at most 88% high and
+   scrolls inside; handle 40x4 #80868B. Colours come from the .v3theme tokens of the page that holds it. */
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+}
+.curtain {
+  position: absolute;
+  inset: 0;
+  background: rgba(32, 33, 36, 0.48);
+}
+.sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  box-sizing: border-box;
+  max-height: 88%;
+  overflow-y: auto;
+  padding: 10px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+  border-radius: 24px 24px 0 0;
+  background: var(--color-surface);
+  font-family: var(--font-sans);
+  outline: 0;
+}
+.handle {
+  width: 40px;
+  height: 4px;
+  margin: 0 auto 14px;
+  border-radius: 2px;
+  background: var(--color-border-strong);
+}
+.title {
+  margin: 0;
+  font-size: calc(20px * var(--fs));
+  line-height: calc(28px * var(--fs));
+  font-weight: var(--weight-bold);
+  color: var(--color-navy);
+}
+.subtitle {
+  margin: 2px 0 0;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  color: var(--color-ink-muted);
+}

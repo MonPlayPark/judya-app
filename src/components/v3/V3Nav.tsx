@@ -12,7 +12,7 @@ interface Tab {
   href?: string;
 }
 
-// Same four tabs and icons as the canvas. Home and the medicine list exist in v3 so far; the others are "coming soon".
+// Same four tabs and icons as the canvas. Home and the medicine list exist in v3 so far; the others are "coming soon" (faded; pressing shows a floating message).
 const TABS: Tab[] = [
   { label: 'หน้าหลัก', icon: 'nav-home', key: 'home', href: '#/n' },
   { label: 'รายการยา', icon: 'nav-medicines', key: 'meds', href: '#/n/meds' },

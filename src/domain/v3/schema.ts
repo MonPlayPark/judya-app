@@ -217,7 +217,22 @@ export function stockProblem(medication: Pick<Medication, 'kind' | 'pack'>, stoc
 
 // ---------- MedEvent (append-only history: start, adjust, stop, resume; there is no edit) ----------
 
-export const STOP_REASONS = ['หมอสั่ง', 'แพ้ยา', 'ใช้ยาไม่ได้ / ผลข้างเคียง', 'อื่น ๆ'] as const; // list not final (DECISIONS.md)
+export const STOP_REASONS = ['หมอสั่ง', 'แพ้ยา', 'ใช้ยาไม่ได้ / ผลข้างเคียง', 'ยาหมดไม่ซื้อต่อ', 'อื่น ๆ'] as const;
+export const RESUME_REASONS = ['หมอสั่งให้กลับมากิน', 'อาการกลับมาหรือกำเริบ', 'ซื้อยาได้แล้ว', 'อื่น ๆ'] as const;
+/** Text shown on screen for a stored reason (the stored value keeps the older spelling). */
+export const STOP_REASON_LABEL: Record<(typeof STOP_REASONS)[number], string> = {
+  หมอสั่ง: 'หมอสั่งหยุด',
+  แพ้ยา: 'แพ้ยา',
+  'ใช้ยาไม่ได้ / ผลข้างเคียง': 'ใช้ยาไม่ได้ / ผลข้างเคียง',
+  ยาหมดไม่ซื้อต่อ: 'ยาหมดไม่ซื้อต่อ',
+  'อื่น ๆ': 'อื่นๆ',
+};
+export const RESUME_REASON_LABEL: Record<(typeof RESUME_REASONS)[number], string> = {
+  หมอสั่งให้กลับมากิน: 'หมอสั่งให้กลับมากิน',
+  อาการกลับมาหรือกำเริบ: 'อาการกลับมาหรือกำเริบ',
+  ซื้อยาได้แล้ว: 'ซื้อยาได้แล้ว',
+  'อื่น ๆ': 'อื่นๆ',
+};
 export const ADJUST_REASONS = ['doctor', 'self_or_other'] as const;
 
 // Snapshot = before / after values inside an event. Only the schedule is kept.
@@ -257,8 +272,15 @@ export const medEventSchema = z.discriminatedUnion('type', [
     })
     .strict()
     .refine((e) => !sameJson(e.from.schedule, e.to.schedule), { path: ['to'], message: 'adjust: from and to must differ' }),
-  z.object({ ...eventBase, type: z.literal('stop'), reason: z.enum(STOP_REASONS) }).strict(),
-  z.object({ ...eventBase, type: z.literal('resume') }).strict(),
+  z
+    .object({ ...eventBase, type: z.literal('stop'), reason: z.enum(STOP_REASONS) })
+    .strict()
+    // note = the symptom for 'แพ้ยา' / 'ใช้ยาไม่ได้ / ผลข้างเคียง' (optional); 'อื่น ๆ' must say what the reason is
+    .refine((e) => e.reason !== 'อื่น ๆ' || (e.note ?? '').trim() !== '', { path: ['note'], message: 'stop: อื่น ๆ needs a note' }),
+  z
+    .object({ ...eventBase, type: z.literal('resume'), reason: z.enum(RESUME_REASONS).optional() }) // optional: older data has none
+    .strict()
+    .refine((e) => e.reason !== 'อื่น ๆ' || (e.note ?? '').trim() !== '', { path: ['note'], message: 'resume: อื่น ๆ needs a note' }),
 ]);
 
 // ---------- House items, shops (same shape as v2) ----------

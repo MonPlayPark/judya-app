@@ -63,7 +63,7 @@ describe('the six states render', () => {
     const care = screen.getByRole('region', { name: 'ยาที่ต้องดูแล' });
     expect(within(care).getByText('เลิกใช้')).toBeInTheDocument();
     expect(within(care).getByText('7 วัน')).toBeInTheDocument();
-    expect(within(care).getByText('สั่งยา').closest('button')).toBeDisabled();
+    expect(within(care).getByText('สั่งยา').closest('button')).toHaveAttribute('aria-disabled', 'true');
   });
   it('empty0 (S0): start card, step 2 locked, no members card, no today card, no shortcuts', () => {
     renderDemo('empty0');
@@ -79,7 +79,7 @@ describe('the six states render', () => {
     expect(screen.getByText('สมาชิก ก · เพิ่มแล้ว')).toBeInTheDocument();
     expect(screen.getByText('เสร็จแล้ว')).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'สมาชิกในครอบครัว' })).toBeInTheDocument();
-    expect(screen.getByText('เพิ่มยา').closest('button')).toBeDisabled();
+    expect(screen.getByText('เพิ่มยา').closest('button')).toHaveAttribute('aria-disabled', 'true');
   });
   it('notoday: says there is no medicine today, with the member line', () => {
     renderDemo('notoday');
@@ -106,19 +106,29 @@ describe('no "ตารางยา" and no dead controls', () => {
       if (b.hasAttribute('aria-pressed')) {
         expect(b).toBeEnabled(); // member picker or tick: a real handler (tested below)
       } else {
-        expect(b).toBeDisabled();
-        expect(b).toHaveAttribute('aria-disabled', 'true');
-        expect(b.textContent).toContain('เร็ว ๆ นี้');
+        expect(b).toHaveAttribute('aria-disabled', 'true'); // coming soon: faded, says "เร็ว ๆ นี้" when pressed
+        expect(b.textContent).not.toContain('เร็ว ๆ นี้');
       }
     }
   });
-  it('ComingSoon does nothing when pressed and is not a tab stop', () => {
-    render(<ComingSoon>ตัวอย่าง</ComingSoon>);
-    const b = screen.getByRole('button');
-    expect(b).toBeDisabled(); // a disabled button gets no click and no keyboard focus
-    expect(b).toHaveAttribute('aria-disabled', 'true');
-    expect(b).not.toHaveAttribute('href');
-    expect(b).toHaveTextContent('เร็ว ๆ นี้');
+  it('ComingSoon shows a floating "เร็ว ๆ นี้" for 3 seconds when pressed, and goes nowhere', () => {
+    vi.useFakeTimers();
+    try {
+      render(<ComingSoon>ตัวอย่าง</ComingSoon>);
+      const b = screen.getByRole('button');
+      expect(b).toHaveAttribute('aria-disabled', 'true');
+      expect(b).not.toHaveAttribute('href');
+      expect(b).not.toHaveTextContent('เร็ว ๆ นี้'); // the word is not written inside the button any more
+      expect(screen.queryByRole('status')).toBeNull();
+      fireEvent.click(b);
+      expect(screen.getByRole('status')).toHaveTextContent('เร็ว ๆ นี้');
+      act(() => void vi.advanceTimersByTime(2900));
+      expect(screen.getByRole('status')).toBeInTheDocument();
+      act(() => void vi.advanceTimersByTime(200));
+      expect(screen.queryByRole('status')).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
   });
   it('the "รายการยา" shortcut is a real link without a badge; the other shortcuts and tabs are coming soon', () => {
     const { container } = renderDemo('normal');
@@ -129,7 +139,7 @@ describe('no "ตารางยา" and no dead controls', () => {
     for (const t of ['สั่งซื้อยา', 'แชร์ให้แพทย์', 'สมาชิก', 'ตั้งค่า', 'จัดการ', 'เพิ่มสมาชิก']) {
       const hit = screen.getAllByText(t).map((e) => e.closest('button')).filter((b) => b !== null);
       expect(hit.length, t).toBeGreaterThan(0);
-      for (const b of hit) expect(b).toBeDisabled();
+      for (const b of hit) expect(b).toHaveAttribute('aria-disabled', 'true');
     }
     expect(screen.getByText('หน้าหลัก').closest('[aria-current="page"]')).not.toBeNull();
   });
