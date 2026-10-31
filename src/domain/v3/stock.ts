@@ -2,7 +2,7 @@
 // Same behaviour as the v2 stock.ts (day by day, never an average), but the quantity comes from `stockUnits`.
 import { CAP_DAYS, addDays, type IsoDate } from '../calc';
 import { dosesOn } from './schedule';
-import { stockProblem, unitsPerStrip, type Assignment, type HouseItem, type Medication, type MedEvent, type Stock } from './schema';
+import { packWord, stockProblem, unitsPerStrip, type Assignment, type HouseItem, type Medication, type MedEvent, type Stock } from './schema';
 
 /** Was the medicine paused (stop with no resume yet) on `date`? A stop is effective from its own date. */
 function pausedOn(assignmentId: string, date: IsoDate, events: readonly MedEvent[]): boolean {
@@ -185,7 +185,7 @@ export function refillStock(
 
   if (!Number.isInteger(add.strips) || add.strips < 0 || !isHalfStep(add.loose)) return fail('จำนวนที่เติมไม่ถูกต้อง');
   const per = unitsPerStrip(medication.pack);
-  if (add.strips > 0 && per === null) return fail('ยานี้ไม่มีขนาดต่อแผง จึงเติมเป็นแผงไม่ได้');
+  if (add.strips > 0 && per === null) return fail(`ยานี้ไม่มีขนาดต่อ${packWord(medication.pack)} จึงเติมเป็น${packWord(medication.pack)}ไม่ได้`);
   const added = add.strips * (per ?? 0) + add.loose;
   if (added <= 0) return fail('จำนวนที่เติมต้องมากกว่า 0');
   if (left === null) return withStock({ kind: 'count', strips: add.strips, loose: add.loose, countedOn: today });

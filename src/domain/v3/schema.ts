@@ -91,6 +91,7 @@ export const packSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('box'), strips: posInt, perStrip: posInt }).strict(),
   z.object({ type: z.literal('container'), amount: z.number().positive(), unit: z.enum(['ml', 'g']) }).strict(),
   z.object({ type: z.literal('sachetBox'), sachets: posInt }).strict(),
+  z.object({ type: z.literal('bottle'), perBottle: posInt }).strict(), // tablet / capsule in a bottle or jar (M4 PR 6b)
 ]);
 
 export type MedKind = (typeof MED_KINDS)[number];
@@ -103,7 +104,7 @@ export function packProblem(kind: MedKind, pack: Pack): string | null {
   switch (kind) {
     case 'tablet':
     case 'capsule':
-      return pack.type === 'strip' || pack.type === 'box' ? null : `${kind} uses none, strip or box`;
+      return pack.type === 'strip' || pack.type === 'box' || pack.type === 'bottle' ? null : `${kind} uses none, strip, box or bottle`;
     case 'liquid':
       return pack.type === 'container' && pack.unit === 'ml' ? null : 'liquid uses a container in ml';
     case 'cream':
@@ -133,8 +134,10 @@ export const medicationSchema = z
 
 // ---------- Schedule (same shape as v2) ----------
 
+// Dose per time: up to 100 here; the stricter per-kind rule (liquid = multiples of 2.5, the others at most 4) is checked
+// in rootSchema, where the medicine is known (M4 PR 6b).
 const mealSlot = z.object({
-  pills: halfStep(0.5, 4),
+  pills: halfStep(0.5, 100),
   meal: z.enum(['before', 'with', 'after']),
 });
 export const mealScheduleSchema = z.object({
@@ -143,7 +146,7 @@ export const mealScheduleSchema = z.object({
     morning: mealSlot.optional(),
     noon: mealSlot.optional(),
     evening: mealSlot.optional(),
-    bedtime: z.object({ pills: halfStep(0.5, 4) }).optional(),
+    bedtime: z.object({ pills: halfStep(0.5, 100) }).optional(),
   }),
   days: z.discriminatedUnion('kind', [
     z.object({ kind: z.literal('daily') }),
@@ -155,7 +158,7 @@ export const intervalScheduleSchema = z.object({
   kind: z.literal('interval'),
   everyHours: z.union([z.literal(4), z.literal(6), z.literal(8), z.literal(12), z.literal(24)]),
   firstTime: hhmm,
-  pills: halfStep(0.5, 4),
+  pills: halfStep(0.5, 100),
   course: z.discriminatedUnion('kind', [
     z.object({ kind: z.literal('days'), days: z.number().int().min(1).max(90), startDate: isoDate }),
     z.object({ kind: z.literal('ongoing') }),
@@ -186,8 +189,8 @@ export const assignmentSchema = z.object({
   createdAt: isoDateTime,
 });
 
-/** Units in one strip for a `count` stock: strip / box = perStrip, sachetBox = sachets (a "strip" is then one box).
- * null = the pack has no strip size (none, container). */
+/** Units in one strip for a `count` stock: strip / box = perStrip, sachetBox = sachets (a "strip" is then one box),
+ * bottle = perBottle (a "strip" is then one full bottle). null = the pack has no strip size (none, container). */
 export function unitsPerStrip(pack: Pack): number | null {
   switch (pack.type) {
     case 'strip':
@@ -195,10 +198,18 @@ export function unitsPerStrip(pack: Pack): number | null {
       return pack.perStrip;
     case 'sachetBox':
       return pack.sachets;
+    case 'bottle':
+      return pack.perBottle;
     case 'none':
     case 'container':
       return null;
   }
+}
+
+/** The word for what `stock.strips` counts: แผง for strip / box, กล่อง for sachetBox, ขวด for bottle. The one place
+ * every screen takes this word from. */
+export function packWord(pack: Pack): 'แผง' | 'กล่อง' | 'ขวด' {
+  return pack.type === 'bottle' ? 'ขวด' : pack.type === 'sachetBox' ? 'กล่อง' : 'แผง';
 }
 
 /** Does the stock fit the medicine? tablet / capsule / sachet = count; liquid = volume; cream / drops = tubes;
@@ -211,6 +222,23 @@ export function stockProblem(medication: Pick<Medication, 'kind' | 'pack'>, stoc
   if (wanted !== null && stock.kind !== wanted) return `${kind} uses stock kind ${wanted}, not ${stock.kind}`;
   if (stock.kind === 'count' && stock.strips > 0 && unitsPerStrip(medication.pack) === null) {
     return 'stock has strips but the pack has no strip size';
+  }
+  return null;
+}
+
+/** Every dose size (pills per time) of a schedule. */
+function dosesOf(schedule: Schedule): number[] {
+  if (schedule.kind === 'interval') return [schedule.pills];
+  const { morning, noon, evening, bedtime } = schedule.slots;
+  return [morning, noon, evening, bedtime].flatMap((slot) => (slot ? [slot.pills] : []));
+}
+
+/** Dose size by kind (M4 PR 6b): a liquid is in multiples of 2.5 ml, 2.5 to 100; every other kind at most 4 per time. */
+export function doseProblem(kind: MedKind, schedule: Schedule): string | null {
+  for (const d of dosesOf(schedule)) {
+    if (kind === 'liquid') {
+      if (d < 2.5 || d > 100 || !Number.isInteger(d / 2.5)) return 'liquid dose must be a multiple of 2.5 ml, from 2.5 to 100';
+    } else if (d > 4) return `${kind} dose is at most 4 per time`;
   }
   return null;
 }
@@ -290,6 +318,7 @@ export const houseItemSchema = z
     id,
     name: z.string().min(2).max(60),
     kind: z.enum(MED_KINDS).optional(), // picture of the form on the list; none = shown as 'other' (M4 PR 5a)
+    strength: strengthSchema.optional(), // shown after the name (M4 PR 6b)
     stock: z.object({ qty: z.number().min(0), unit: z.string().min(1) }).optional(), // none = not counted, no low-stock reminder
     lowAt: z.number().min(0).optional(),
     expiry: isoDate.optional(),
@@ -485,6 +514,13 @@ export const rootSchema = z
       const medication = r.medications.find((m) => m.id === a.medicationId);
       const problem = medication ? stockProblem(medication, a.stock) : null;
       if (problem) ctx.addIssue({ code: 'custom', path: ['assignments', i, 'stock'], message: problem });
+    });
+  })
+  .superRefine((r, ctx) => {
+    r.assignments.forEach((a, i) => {
+      const medication = r.medications.find((m) => m.id === a.medicationId);
+      const problem = medication ? doseProblem(medication.kind, a.schedule) : null;
+      if (problem) ctx.addIssue({ code: 'custom', path: ['assignments', i, 'schedule'], message: problem });
     });
   })
   .superRefine((r, ctx) => {

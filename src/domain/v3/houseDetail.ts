@@ -4,6 +4,7 @@ import type { IsoDate } from '../calc';
 import { expiryStatus } from '../calc';
 import { formatAmount } from './home';
 import { fullThaiDate, type Chip } from './medDetail';
+import { label } from './medsList';
 import { rootSchema, type MedKind, type Root } from './schema';
 import { houseStatus, mergeExpiry } from './stock';
 
@@ -43,7 +44,7 @@ export function buildHouseDetail(root: Root, id: string, today: IsoDate): HouseD
     : { text: fullThaiDate(h.expiry), chip: e.status === 'expired' ? { tone: 'out', label: 'หมดอายุแล้ว' } : e.status === 'soon' ? { tone: 'low', label: 'ใกล้หมดอายุ' } : null };
   return {
     id: h.id,
-    name: h.name,
+    name: label(h),
     kind,
     subtitle: `ยาสามัญประจำบ้าน · ${KIND_NAME[kind]}`,
     chip,

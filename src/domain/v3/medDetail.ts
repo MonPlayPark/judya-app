@@ -7,6 +7,7 @@ import { label as medLabel } from './medsList';
 import {
   RESUME_REASON_LABEL,
   STOP_REASON_LABEL,
+  packWord,
   rootSchema,
   unitsPerStrip,
   type Assignment,
@@ -167,6 +168,7 @@ function breakdown(qty: number, m: Medication): string | null {
   const { pack } = m;
   if (pack.type === 'none' || pack.type === 'container') return null;
   const per = unitsPerStrip(pack) ?? 1;
+  const word = packWord(pack);
   const parts: string[] = [];
   let rest = qty;
   if (pack.type === 'box') {
@@ -176,11 +178,11 @@ function breakdown(qty: number, m: Medication): string | null {
     if (boxes > 0) parts.push(`${boxes} กล่อง`);
     const strips = Math.floor(rest / per);
     rest -= strips * per;
-    if (strips > 0) parts.push(`${strips} แผง`);
-  } else if (pack.type === 'strip') {
+    if (strips > 0) parts.push(`${strips} ${word}`);
+  } else if (pack.type === 'strip' || pack.type === 'bottle') {
     const strips = Math.floor(rest / per);
     rest -= strips * per;
-    if (strips > 0) parts.push(`${strips} แผง`);
+    if (strips > 0) parts.push(`${strips} ${word}`);
   } else {
     const boxes = Math.floor(rest / per); // sachetBox: one "strip" is one box
     rest -= boxes * per;
@@ -308,7 +310,8 @@ export function refillFields(a: Assignment, m: Medication): RefillField[] {
     case 'box':
       return [{ key: 'boxes', unit: 'กล่อง' }, { key: 'strips', unit: 'แผง' }, { key: 'loose', unit }];
     case 'strip':
-      return [{ key: 'strips', unit: 'แผง' }, { key: 'loose', unit }];
+    case 'bottle':
+      return [{ key: 'strips', unit: packWord(m.pack) }, { key: 'loose', unit }];
     case 'sachetBox':
       return [{ key: 'strips', unit: 'กล่อง' }, { key: 'loose', unit }];
     case 'none':
