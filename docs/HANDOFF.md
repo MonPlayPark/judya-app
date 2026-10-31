@@ -7,11 +7,11 @@ Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every
 Branch `ccr-3b57d00d-32devm` (the session fixed the name). `#/` and the empty app open v3 Home; v2 Home is `#/old` (v2 bottom menu and back arrows point there); `#/n/...` stays. When `judya.v3` cannot be read, every v3 page shows "เริ่มใหม่" (2 confirm steps, old text kept in `judya.v3.prev`) and "กู้คืนจากไฟล์สำรอง" (the PR 6c restore, now shared through `restoreFlow.tsx`). The "new version" bar is now on v3 pages. Details: `docs/DECISIONS.md` "M4 PR 7".
 
 ### Status
-`npm test` 1,546 pass; `npm run build` passes; `npm run check:overflow` 864 checks at 360 / 412px and 3 font sizes, 0 problems (includes the new screen and both sheets). Real-Chromium cache check: see DECISIONS "PWA / cache". New code never touches `judya.v2` (tested by spying on every storage call).
+`npm test` 1,558 pass; `npm run build` passes; `npm run check:overflow` 864 checks at 360 / 412px and 3 font sizes, 0 problems (includes the new screen and both sheets). Real-Chromium cache check: see DECISIONS "PWA / cache". New code never touches `judya.v2` (tested by spying on every storage call).
 
 ### Waiting for the owner
 - After the deploy, the first open of the Chrome link may still show the OLD app (cached) with the blue bar "มีเวอร์ชันใหม่ · โหลดใหม่": tap it once. Same after every later deploy.
-- `navigator.storage.persist()` was asked only by the v2 provider on every open; v3 pages only read the answer. The origin is the same, so a promise already granted stays, but nothing asks again now. Add the request to v3 (PR 7b or earlier)?
+- (Solved in the PR 7 fix) v3 pages now ask the browser to keep the data: once when a v3 page opens and once more after the first medicine is saved (`V3Frame`, `AddMedPage`).
 - Nothing reads `judya.v3.prev` yet except being a safety copy (no "undo" button).
 
 ### Left for later PRs

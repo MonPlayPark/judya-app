@@ -718,3 +718,10 @@ What was built: `#/` (and the empty app) opens v3 Home; v2 Home moved to `#/old`
 2. Wording: title "เปิดข้อมูลไม่ได้"; the red line is the one the v3 pages already had ("อ่านข้อมูลที่เก็บไว้ไม่ได้ ข้อมูลเดิมยังอยู่ ไม่ได้ถูกลบหรือเขียนทับ"). "ลองอีกครั้ง" was not added (not asked).
 3. `check:overflow`: `/old` replaces `/` in the v2 list, `/` is in the v3 list, the sample-data step starts at `#/old`, and the new screen (Home, list, data page, both start-over sheets) is measured with a corrupt `judya.v3`.
 4. Not touched: theme (`v3theme`), "7½ มล.", v2 code, `judya.v2` (the new tests spy on every `localStorage` call and fail on any `judya.v2*` key).
+
+### PR 7 fix — ask the browser to keep the data from v3 pages
+- Problem: the only caller of `requestPersistence()` was the v2 `DataProvider`, which v3 pages no longer mount, so `judya.v3` was never asked to be persistent.
+- `V3Frame` (`App.tsx`) calls `requestPersistence()` once in a `useEffect` when a v3 page opens (the function itself asks once per page load and not at all when `persisted()` is already true). The old function is reused, nothing rewritten. Demo pages also trigger it (harmless: it is about the app, not the data).
+- Ask again, same rule as `DataContext.addMedicine` (BRIEF 3.2): in `LiveAdd` (`AddMedPage.tsx`), after `saveRoot` succeeds and the house had no medicine before, `requestPersistence(undefined, { again: true })`. "No medicine" here = no assignment **and** no house medicine (v2 counted only assignments; v3 has house medicines on the same page, so a first house medicine counts too).
+- Failure is silent: `requestPersistence` catches everything and only sets its status; no message was added. The v2 keys are not read or written (tested).
+- Tests: `PersistV3.test.tsx` (asks once on `#/`, `#/n`, `#/n/meds`, demo; not again when moving between pages; not when already promised; refused / failing / missing `navigator.storage` = page opens, no alert; first medicine asks again, second does not; a house that already has medicines does not; no `judya.v2*` call).

@@ -1,4 +1,4 @@
-import { Fragment, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import { BottomNav } from './components/BottomNav';
 import { SaveErrorBar } from './components/SaveErrorBar';
 import { UpdateBar } from './components/UpdateBar';
@@ -26,6 +26,7 @@ import { TodayPage } from './pages/TodayPage';
 import type { IsoDate } from './domain/calc';
 import { useRoute } from './router';
 import { DataProvider, useData } from './state/DataContext';
+import { requestPersistence } from './state/persist';
 import { DraftProvider } from './state/DraftContext';
 import styles from './App.module.css';
 
@@ -60,6 +61,9 @@ function v3Screen(path: string, getToday: (() => IsoDate) | undefined): ReactNod
  * after "start over" / "restore" the screen is built again (new key) and reads the data again. */
 function V3Frame({ children }: { children: ReactNode }) {
   const [epoch, setEpoch] = useState(0);
+  useEffect(() => {
+    void requestPersistence(); // M4 PR 7 fix: v3 pages have no DataProvider, which used to ask. Once per page load; failure is silent.
+  }, []);
   return (
     <RecoveryContext.Provider value={() => setEpoch((n) => n + 1)}>
       <UpdateBar />
