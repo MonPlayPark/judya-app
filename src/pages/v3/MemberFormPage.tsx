@@ -8,8 +8,8 @@ import { isMedsDemoName, medsDemoRoot } from '../../domain/v3/medsListDemo';
 import type { Root } from '../../domain/v3/schema';
 import { loadRoot, saveRoot } from '../../domain/v3/storage';
 import { openRoot, saveErrorText, type HomePageProps, type Loaded } from './HomeV3Page';
+import { ProblemV3 } from './ProblemV3';
 import { MemberFormView, type MemberFormViewProps } from './MemberFormV3';
-import homeStyles from './HomeV3.module.css';
 
 const SHEETS: readonly string[] = ['avatars', 'done'];
 
@@ -46,15 +46,7 @@ function DemoMember({ name, root, initialSheet }: { name: string; root: Root; in
 function LiveMember({ initialSheet, store }: HomePageProps & { initialSheet: MemberFormViewProps['initialSheet'] }) {
   const [loaded] = useState<Loaded>(() => openRoot(store === undefined ? loadRoot() : loadRoot(store)));
   if (loaded.kind === 'problem') {
-    return (
-      <div className={`v3theme ${homeStyles.page}`}>
-        <main className={homeStyles.body}>
-          <p className={homeStyles.saveError} role="alert">
-            {loaded.text}
-          </p>
-        </main>
-      </div>
-    );
+    return <ProblemV3 loaded={loaded} {...(store === undefined ? {} : { store })} />;
   }
   const persist: NonNullable<MemberFormViewProps['persist']> = (root) => {
     const result = store === undefined ? saveRoot(root) : saveRoot(root, store);

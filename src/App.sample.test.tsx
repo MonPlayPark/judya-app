@@ -20,7 +20,7 @@ const go = (hash: string) =>
     window.dispatchEvent(new HashChangeEvent('hashchange'));
   });
 const openSample = (hash = '#/today') => {
-  window.location.hash = '#/';
+  window.location.hash = '#/old';
   render(<App getToday={() => SUNDAY} />);
   fireEvent.click(screen.getByRole('button', { name: 'ลองดูด้วยข้อมูลตัวอย่าง' }));
   go(hash);
@@ -65,7 +65,7 @@ describe('sample house on a Sunday', () => {
   it('home: when everything is prepared the card says "ยาวันนี้ครบแล้ว" (round 9) and keeps its link', () => {
     openSample('#/today');
     for (const box of screen.getAllByRole('checkbox')) fireEvent.click(box);
-    go('#/');
+    go('#/old');
     const card = screen.getByRole('link', { name: /ยาวันนี้/ });
     expect(within(card).getByText('ยาวันนี้ครบแล้ว')).toBeInTheDocument();
     expect(within(card).getByText('จัดครบ 4 จาก 4')).toBeInTheDocument();
@@ -73,7 +73,7 @@ describe('sample house on a Sunday', () => {
   });
 
   it('home: "ถึงรอบซื้อเติมสต๊อก" is a plain heading, not a link or button', () => {
-    openSample('#/');
+    openSample('#/old');
     const title = screen.queryByRole('heading', { name: /ถึงรอบซื้อเติมสต๊อก/ });
     if (title) expect(title.closest('a, button')).toBeNull();
   });

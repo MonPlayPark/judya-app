@@ -1,14 +1,12 @@
 // The v3 page "ข้อมูลและสำรองข้อมูล" (M4 PR 6c): view only. Texts and rules come from src/domain/v3/dataPage.ts; the page that
 // owns the data and the clock is DataPage. In a demo `onBackup` / `onRestore` are missing: the buttons are there but only
 // say that a demo cannot back up or restore.
-import { useRef, useState, type ChangeEvent } from 'react';
+import { useState } from 'react';
 import { BackIcon, CheckCircleIcon, InfoIcon, OpenFileIcon, SaveFileIcon, ShieldIcon, StorageIcon, WarningIcon } from '../../components/icons';
-import { Sheet } from '../../components/v3/Sheet';
-import { sheetStyles } from '../../components/v3/sheetParts';
 import { Toast, useToast } from '../../components/v3/Toast';
 import { V3Nav } from '../../components/v3/V3Nav';
 import type { IsoDate } from '../../domain/calc';
-import { backupDate, isTooBig, summarizeBackup, type BackupSummary } from '../../domain/v3/backup';
+
 import {
   BACKUP_CANCELLED_TEXT,
   BACKUP_DATE_NOT_SAVED,
@@ -16,7 +14,6 @@ import {
   HANDOFF_TEXT,
   NO_UPLOAD_TEXT,
   PRIVACY_TEXT,
-  REPLACE_ALL_TEXT,
   RESTORED_TEXT,
   RESTORE_ERRORS,
   backupStatus,
@@ -26,9 +23,9 @@ import {
   type RestoreFailure,
   type RestoreOutcome,
 } from '../../domain/v3/dataPage';
-import { fullThaiDate } from '../../domain/v3/medDetail';
 import type { Root } from '../../domain/v3/schema';
 import '../../styles/v3theme.css';
+import { RestoreSheet, useRestoreFlow, type PendingRestore } from './restoreFlow';
 import styles from './DataV3.module.css';
 
 /** What happened when the person pressed "สำรองข้อมูล". Only 'shared' and 'downloaded' count as a backup. */
@@ -45,28 +42,19 @@ export interface DataViewProps {
   onRestore?: (fileRoot: Root) => RestoreOutcome;
   onBack: () => void;
   /** Test links (?error=... / ?sheet=confirm in a demo): open on an error or on the confirm sheet. */
-  initial?: { error?: RestoreFailure; pending?: { root: Root; summary: BackupSummary } };
+  initial?: { error?: RestoreFailure; pending?: PendingRestore };
 }
-
-type Pending = { root: Root; summary: BackupSummary };
-
-/** Reads a chosen file as text (FileReader works in every browser we support and in the tests). */
-const readText = (file: File): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
-    reader.onerror = () => reject(reader.error);
-    reader.readAsText(file);
-  });
 
 export function DataView({ root, today, demo, persist, onBackup, onRestore, onBack, initial }: DataViewProps) {
   const [toast, showToast] = useToast();
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<RestoreFailure | null>(initial?.error ?? null);
   const [backupError, setBackupError] = useState<string | null>(null);
-  const [pending, setPending] = useState<Pending | null>(initial?.pending ?? null);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const fileInput = useRef<HTMLInputElement>(null);
+  const { fileInput, error, saveError, pending, pressChoose, onFile, confirm, cancel } = useRestoreFlow({
+    ...(onRestore ? { onRestore } : {}),
+    onBlocked: () => showToast(DEMO_BLOCKED_TEXT),
+    onRestored: () => showToast(RESTORED_TEXT),
+    ...(initial ? { initial } : {}),
+  });
 
   const status = backupStatus(root, today);
   const summary = currentSummary(root);
@@ -86,49 +74,6 @@ export function DataView({ root, today, demo, persist, onBackup, onRestore, onBa
       setBusy(false);
     }
   };
-
-  const pressChoose = (): void => {
-    if (!onRestore) return showToast(DEMO_BLOCKED_TEXT);
-    fileInput.current?.click();
-  };
-
-  const onFile = async (e: ChangeEvent<HTMLInputElement>): Promise<void> => {
-    const input = e.target;
-    const file = input.files?.[0];
-    input.value = ''; // so the same file can be chosen again
-    if (!file) return;
-    setError(null);
-    setSaveError(null);
-    if (isTooBig(file.size)) return setError('too_big'); // refused before it is read
-    let text: string;
-    try {
-      text = await readText(file);
-    } catch {
-      return setError('not_json');
-    }
-    const check = summarizeBackup(text);
-    if (!check.ok) return setError(check.error);
-    setPending({ root: check.root, summary: check.summary });
-  };
-
-  const confirm = (): void => {
-    if (!pending) return;
-    if (!onRestore) {
-      setPending(null);
-      return showToast(DEMO_BLOCKED_TEXT);
-    }
-    const outcome = onRestore(pending.root);
-    if (outcome.ok) {
-      setPending(null);
-      setError(null);
-      showToast(RESTORED_TEXT);
-    } else {
-      setPending(null);
-      setSaveError(outcome.text);
-    }
-  };
-
-  const fileDate = pending ? backupDate(pending.root) : null;
 
   return (
     <div className={`v3theme ${styles.page}`}>
@@ -231,29 +176,7 @@ export function DataView({ root, today, demo, persist, onBackup, onRestore, onBa
 
       <V3Nav current="settings" />
 
-      {pending && (
-        <Sheet title="นำข้อมูลกลับจากไฟล์นี้?" subtitle={REPLACE_ALL_TEXT} onClose={() => setPending(null)}>
-          <div className={sheetStyles.body}>
-            <div className={sheetStyles.summary}>
-              <p className={styles.sheetHead}>ในไฟล์สำรอง{fileDate ? ` (สำรองเมื่อ ${fullThaiDate(fileDate)})` : ''}</p>
-              <p className={styles.sheetText}>{pending.summary.text}</p>
-            </div>
-            <div className={sheetStyles.summary}>
-              <p className={styles.sheetHead}>ข้อมูลปัจจุบัน (จะถูกแทนที่)</p>
-              <p className={styles.sheetText}>{summary.text}</p>
-            </div>
-            <p className={sheetStyles.hint}>แอปจะเก็บสำเนาข้อมูลเดิมไว้ในเครื่อง 1 ชุด ส่วนค่าตั้งค่า เช่น ขนาดตัวอักษร ไม่เปลี่ยน</p>
-            <div className={sheetStyles.actions}>
-              <button type="button" className={sheetStyles.danger} onClick={confirm}>
-                นำกลับ แทนที่ข้อมูลทั้งหมด
-              </button>
-              <button type="button" className={sheetStyles.cancel} onClick={() => setPending(null)}>
-                ยกเลิก ไม่เปลี่ยนอะไร
-              </button>
-            </div>
-          </div>
-        </Sheet>
-      )}
+      {pending && <RestoreSheet pending={pending} currentText={summary.text} onConfirm={confirm} onCancel={cancel} />}
       <Toast text={toast} />
     </div>
   );

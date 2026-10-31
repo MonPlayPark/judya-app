@@ -691,3 +691,37 @@ Page `#/n/settings/data` (`DataPage.tsx` owns data and clock, `DataV3.tsx` is th
 ### Seen, not changed
 - The backup reminder is the only Home warning that is a link; care warnings are plain text (not asked).
 - A restored file keeps its own `lastBackupAt` (the date the file was made), so after restoring, the status card shows that date.
+
+## M4 PR 7 — the entry switches to v3 (31 ต.ค. 2569)
+
+What was built: `#/` (and the empty app) opens v3 Home; v2 Home moved to `#/old`; every v3 page shows two buttons when `judya.v3` cannot be read; the "new version" bar is on v3 pages. `#/n/...` is kept as the main v3 address (no link rewritten).
+
+### Routes
+- `App.tsx`: `v3Screen(path)` returns the v3 page for `/`, `/n`, `/n/meds` ... or null. v3 pages stay **outside `DataProvider`**, so opening the app no longer reads or asks anything of `judya.v2` (before, `#/` mounted the v2 provider). `Screen` has `/old` instead of `/`. Unknown routes still reach v2 `NotFound`.
+- v2 links to its Home now point to `#/old`: the bottom menu "หน้าแรก", the back arrows of Today and Members, and the back button of the order page. Nothing else in v2 changed.
+
+### Unreadable data (corrupt / other version)
+- `ProblemV3` (shared by Home, list, detail, add medicine, add member, data page; each used to print only a text). `Loaded` got `recoverable`: true for corrupt / wrong version, false when the browser blocks storage (then only the text, as in v2: nothing to start over from).
+- **เริ่มใหม่**: sheet 1 "เริ่มใหม่?" -> button "ต่อไป" -> sheet 2 "ยืนยันอีกครั้ง" -> "เริ่มใหม่ ล้างข้อมูลเดิม" calls `startOver` = `startFresh` of `storage.ts` (copies the old text to `judya.v3.prev`, reads it back, only then writes a blank house; if the copy fails the old text stays and the reason is shown). Nothing is written before the second confirm.
+- **กู้คืนจากไฟล์สำรอง**: the restore of PR 6c, not rewritten: the file picking / checking / confirm sheet moved out of `DataV3.tsx` into `restoreFlow.tsx` (`useRestoreFlow`, `RestoreSheet`) and both pages use it. The write is `restoreRoot` (old text -> `.prev`, save, read back, undo on failure) via `restoreUnreadable` in `dataPage.ts`. There is no current house, so the file's own settings stay (the file carries default settings, PR 6c item 1). The sheet shows no "current data" box.
+- After either action the v3 frame (`V3Frame` in `App.tsx`, `RecoveryContext`) builds the page again (new key), so Home reads the new data. The data page's "ข้อมูลปัจจุบัน" sheet is unchanged (still shown there).
+- Answers the open question of PR 6c item 2: restore and start over are offered on all v3 pages, including `#/n/settings/data`.
+
+### PWA / cache (checked with a real Chromium: old build installed, new build "deployed", reopened)
+- `start_url` and `scope` = `/judya-app/` (no hash), so a direct Chrome link or the home-screen icon opens `#/` = v3 Home. Not changed.
+- Service worker is `registerType: 'prompt'`: after a deploy the **first open still shows the old build** (old v2 home, cached files) with the bar "มีเวอร์ชันใหม่ · โหลดใหม่"; it stays old on reopen until the bar is tapped (or every tab is closed). Tapping loads the new build, which opens v3 Home. This is the by-design behaviour (BRIEF 3.4) and was **kept**.
+- **Fixed (necessary):** `UpdateBar` lived only in the v2 shell, so a person on v3 pages would never be told about a new version (and `#/` is v3 now). `V3Frame` renders it above every v3 page (v2 keeps its own, so there is one bar at a time).
+- Not changed: `navigateFallback`, precache list, `cleanupOutdatedCaches`.
+
+### Decided on my own
+1. Old tests that opened the v2 Home at `#/` (or no hash) now open `#/old`; their expectations are the same. Two tests were turned around: "leaves the old home alone at #/" (now: `#/`, empty and `#/n` open v3 Home and never read `judya.v2`; `#/old` is v2) and the app-shell test (v2 shell at `#/old`).
+2. Wording: title "เปิดข้อมูลไม่ได้"; the red line is the one the v3 pages already had ("อ่านข้อมูลที่เก็บไว้ไม่ได้ ข้อมูลเดิมยังอยู่ ไม่ได้ถูกลบหรือเขียนทับ"). "ลองอีกครั้ง" was not added (not asked).
+3. `check:overflow`: `/old` replaces `/` in the v2 list, `/` is in the v3 list, the sample-data step starts at `#/old`, and the new screen (Home, list, data page, both start-over sheets) is measured with a corrupt `judya.v3`.
+4. Not touched: theme (`v3theme`), "7½ มล.", v2 code, `judya.v2` (the new tests spy on every `localStorage` call and fail on any `judya.v2*` key).
+
+### PR 7 fix — ask the browser to keep the data from v3 pages
+- Problem: the only caller of `requestPersistence()` was the v2 `DataProvider`, which v3 pages no longer mount, so `judya.v3` was never asked to be persistent.
+- `V3Frame` (`App.tsx`) calls `requestPersistence()` once in a `useEffect` when a v3 page opens (the function itself asks once per page load and not at all when `persisted()` is already true). The old function is reused, nothing rewritten. Demo pages also trigger it (harmless: it is about the app, not the data).
+- Ask again, same rule as `DataContext.addMedicine` (BRIEF 3.2): in `LiveAdd` (`AddMedPage.tsx`), after `saveRoot` succeeds and the house had no medicine before, `requestPersistence(undefined, { again: true })`. "No medicine" here = no assignment **and** no house medicine (v2 counted only assignments; v3 has house medicines on the same page, so a first house medicine counts too).
+- Failure is silent: `requestPersistence` catches everything and only sets its status; no message was added. The v2 keys are not read or written (tested).
+- Tests: `PersistV3.test.tsx` (asks once on `#/`, `#/n`, `#/n/meds`, demo; not again when moving between pages; not when already promised; refused / failing / missing `navigator.storage` = page opens, no alert; first medicine asks again, second does not; a house that already has medicines does not; no `judya.v2*` call).

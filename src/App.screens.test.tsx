@@ -250,20 +250,20 @@ describe('today screen', () => {
 
   it('the back link goes to the home screen', () => {
     open('#/today');
-    expect(screen.getByRole('link', { name: 'กลับหน้าแรก' })).toHaveAttribute('href', '#/');
+    expect(screen.getByRole('link', { name: 'กลับหน้าแรก' })).toHaveAttribute('href', '#/old');
   });
 });
 
 describe('home screen', () => {
   it('greeting with the date, and no bell', () => {
-    open('#/');
+    open('#/old');
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('สวัสดีค่ะ');
     expect(screen.getByText('ศุกร์ 16 ต.ค. 2569')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /แจ้งเตือน/ })).not.toBeInTheDocument();
   });
 
   it('today card: progress, the first 3 not yet prepared, "ดูทั้งหมด (อีก N รายการ)", the whole card goes to #/today', () => {
-    open('#/');
+    open('#/old');
     const card = screen.getByRole('link', { name: /ยาวันนี้/ });
     expect(card).toHaveAttribute('href', '#/today');
     expect(within(card).getByText('จัดแล้ว 0 จาก 7')).toBeInTheDocument();
@@ -276,7 +276,7 @@ describe('home screen', () => {
 
   it('prepared doses are skipped in the preview and counted in the progress', () => {
     const root = house({ prepLog: { [TODAY]: { 'a9:morning': true, 'a1:morning': true } } });
-    open('#/', root);
+    open('#/old', root);
     const card = screen.getByRole('link', { name: /ยาวันนี้/ });
     expect(within(card).getByText('จัดแล้ว 2 จาก 7')).toBeInTheDocument();
     expect(within(card).queryByText('Med Person D')).not.toBeInTheDocument();
@@ -290,7 +290,7 @@ describe('home screen', () => {
     const root = house({
       assignments: [house().assignments[2] as Assignment],
     });
-    open('#/', root);
+    open('#/old', root);
     expect(screen.getAllByText('Med Twelve Hours ทุก 12 ชม.')).toHaveLength(2);
     expect(screen.getByText('08:00')).toBeInTheDocument();
     expect(screen.getByText('20:00')).toBeInTheDocument();
@@ -298,14 +298,14 @@ describe('home screen', () => {
 
   it('everything prepared: ยาวันนี้ครบแล้ว', () => {
     const keys = ['a9:morning', 'a1:morning', 'a8:noon', 'a1:evening', 'a2:bedtime', 'a3:08:00', 'a3:20:00'];
-    open('#/', house({ prepLog: { [TODAY]: Object.fromEntries(keys.map((k) => [k, true as const])) } }));
+    open('#/old', house({ prepLog: { [TODAY]: Object.fromEntries(keys.map((k) => [k, true as const])) } }));
     expect(screen.getByText('ยาวันนี้ครบแล้ว')).toBeInTheDocument();
     expect(screen.getByText('จัดครบ 7 จาก 7')).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('เก่งมากค่ะ');
   });
 
   it('no medicine to prepare today: says so', () => {
-    open('#/', house({ assignments: [house().assignments[3] as Assignment] }));
+    open('#/old', house({ assignments: [house().assignments[3] as Assignment] }));
     expect(screen.getByText('วันนี้ไม่มียาที่ต้องจัด')).toBeInTheDocument();
   });
 
@@ -313,7 +313,7 @@ describe('home screen', () => {
     open('#/today');
     fireEvent.click(boxes()[MORNING_A] as HTMLElement);
     act(() => {
-      window.location.hash = '#/';
+      window.location.hash = '#/old';
       window.dispatchEvent(new HashChangeEvent('hashchange'));
     });
     expect(screen.getByText('จัดแล้ว 1 จาก 7')).toBeInTheDocument();
@@ -328,7 +328,7 @@ describe('home screen', () => {
     ];
 
     it('lists the three groups, with the owner name for members and the right-hand texts', () => {
-      open('#/', house({ houseItems }));
+      open('#/old', house({ houseItems }));
       expect(screen.getByRole('heading', { name: 'ยาที่ต้องดูแล' })).toBeInTheDocument();
       // round 9: one list sorted by urgency (expired first, then fewest days); no group banners
       expect(screen.getByRole('link', { name: 'ดูทั้งหมด 4' })).toHaveAttribute('href', '#/meds');
@@ -354,14 +354,14 @@ describe('home screen', () => {
     });
 
     it('the old note "เตือนก่อนหมดอายุ N วัน" is gone from home (not in round 9; the setting is on the settings page)', () => {
-      open('#/', house({ houseItems }));
+      open('#/old', house({ houseItems }));
       expect(screen.queryByText(/เตือนก่อนหมดอายุ/)).not.toBeInTheDocument();
     });
 
     it('nothing to care for: a message with a tick icon', () => {
       const root = house();
       root.assignments = root.assignments.map((a) => ({ ...a, expiry: undefined }));
-      open('#/', root);
+      open('#/old', root);
       expect(screen.getByText('ตอนนี้ไม่มียาที่ต้องดูแล')).toBeInTheDocument();
       expect(screen.queryByText('หมดอายุแล้ว')).not.toBeInTheDocument();
     });
@@ -373,7 +373,7 @@ describe('home screen', () => {
       root.assignments = root.assignments.map((a) =>
         a.id === 'a1' ? { ...a, stock: { qty: 2, countedOn: TODAY } } : a,
       );
-      open('#/', root);
+      open('#/old', root);
       const list = screen.getByRole('heading', { name: 'สมาชิกในบ้าน' }).closest('section') as HTMLElement;
       const rows = within(list).getAllByRole('listitem').map((li) => li.textContent);
       expect(rows).toEqual([
@@ -389,7 +389,7 @@ describe('home screen', () => {
         persons: [person({ id: 'pA', name: 'Test Person A' }), person({ id: 'pD', name: 'Test Person D' })],
         assignments: [house().assignments[0] as Assignment],
       });
-      open('#/', root);
+      open('#/old', root);
       const list = screen.getByRole('heading', { name: 'สมาชิกในบ้าน' }).closest('section') as HTMLElement;
       expect(within(list).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
         'Test Person Aยา 1 รายการ',
@@ -399,7 +399,7 @@ describe('home screen', () => {
   });
 
   it('buttons for pages that are not built yet stay hidden ("เพิ่มยา" is now a real button, round 9)', () => {
-    open('#/');
+    open('#/old');
     expect(screen.getByRole('link', { name: 'เพิ่มยา' })).toHaveAttribute('href', '#/meds/new');
     for (const name of [/เปลี่ยนเกณฑ์/, /เพิ่มสมาชิก/]) {
       expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
@@ -410,7 +410,7 @@ describe('home screen', () => {
 
   it('sample data: banner and the delete button; real data: no banner', () => {
     seed({ ...house(), meta: { createdAt: NOW, isSample: true } });
-    window.location.hash = '#/';
+    window.location.hash = '#/old';
     const first = render(<App getToday={getToday} />);
     expect(screen.getByText('นี่คือข้อมูลตัวอย่าง')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'ลบข้อมูลตัวอย่าง' })).toBeInTheDocument();
@@ -422,7 +422,7 @@ describe('home screen', () => {
   });
 
   it('a blank house shows the first-run card (round 9 screen 3)', () => {
-    window.location.hash = '#/';
+    window.location.hash = '#/old';
     render(<App getToday={getToday} />);
     expect(screen.getByText('เริ่มที่ยาตัวแรก')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'เพิ่มยาตัวแรก' })).toHaveAttribute('href', '#/meds/new');

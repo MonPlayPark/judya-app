@@ -8,7 +8,7 @@ import type { IsoDate } from '../calc';
 import { MAX_BACKUP_BYTES, backupAge, BACKUP_WARN_DAYS, makeBackup, markBackedUp, summarizeRoot, type BackupError, type BackupSummary } from './backup';
 import { fullThaiDate } from './medDetail';
 import { DEFAULT_SETTINGS_V3, type Root } from './schema';
-import { restoreRoot, saveRoot, type KeyValueStore, type SaveResult } from './storage';
+import { restoreRoot, saveRoot, startFresh, type KeyValueStore, type SaveResult } from './storage';
 
 export const PRIVACY_TEXT = 'ไฟล์นี้มีข้อมูลสุขภาพของครอบครัว ส่งเฉพาะที่ที่ไว้ใจ';
 export const NO_UPLOAD_TEXT = 'แอปนี้ไม่ส่งข้อมูลออกนอกเครื่องยกเว้นคุณกดแชร์เอง';
@@ -114,4 +114,25 @@ export function restoreFromBackup(fileRoot: Root, current: Root, store?: KeyValu
   const next: Root = { ...fileRoot, settings: current.settings };
   const result = store === undefined ? restoreRoot(next) : restoreRoot(next, store);
   return result.ok ? { ok: true, root: next } : { ok: false, text: restoreSaveErrorText(result) };
+}
+
+// ---------- when the stored data cannot be read (M4 PR 7) ----------
+// The "can't read the data" screen offers "start over" and "restore from a backup file". Both keep one copy of the old text in
+// `judya.v3.prev` before anything is replaced (startFresh / restoreRoot in ./storage). There is no current root to read settings from,
+// so a restore keeps the file's own (default) settings.
+
+export const START_OVER_FAILED_TEXT = 'เริ่มใหม่ไม่ได้ ข้อมูลเดิมยังอยู่ ไม่ได้ถูกลบหรือเขียนทับ';
+
+export type StartOverOutcome = { ok: true } | { ok: false; text: string };
+
+/** "Start over": copy the unreadable text to `judya.v3.prev`, then save a blank house. Call only after the second confirm. */
+export function startOver(nowIso: string, store?: KeyValueStore | null): StartOverOutcome {
+  const result = store === undefined ? startFresh(nowIso) : startFresh(nowIso, store);
+  return result.ok ? { ok: true } : { ok: false, text: START_OVER_FAILED_TEXT };
+}
+
+/** Restore a checked backup root over data that cannot be read. Same storage function and same error texts as `restoreFromBackup`. */
+export function restoreUnreadable(fileRoot: Root, store?: KeyValueStore | null): RestoreOutcome {
+  const result = store === undefined ? restoreRoot(fileRoot) : restoreRoot(fileRoot, store);
+  return result.ok ? { ok: true, root: fileRoot } : { ok: false, text: restoreSaveErrorText(result) };
 }

@@ -7,9 +7,10 @@ import { DEMO_TODAY, demoRoot, isDemoName } from '../../domain/v3/homeDemo';
 import { isMedsDemoName, medsDemoRoot, type MedsDemoName } from '../../domain/v3/medsListDemo';
 import { MED_KINDS, type MedKind, type Root } from '../../domain/v3/schema';
 import { loadRoot, saveRoot } from '../../domain/v3/storage';
+import { requestPersistence } from '../../state/persist';
 import { openRoot, saveErrorText, useBangkokToday, type HomePageProps, type Loaded } from './HomeV3Page';
+import { ProblemV3 } from './ProblemV3';
 import { AddMedView, type AddMedViewProps } from './AddMedV3';
-import homeStyles from './HomeV3.module.css';
 
 type Initial = NonNullable<AddMedViewProps['initial']>;
 
@@ -63,18 +64,12 @@ function LiveAdd({ getToday, store, initial }: HomePageProps & { initial: Initia
   const today = useBangkokToday(getToday);
   const [loaded] = useState<Loaded>(() => openRoot(store === undefined ? loadRoot() : loadRoot(store)));
   if (loaded.kind === 'problem') {
-    return (
-      <div className={`v3theme ${homeStyles.page}`}>
-        <main className={homeStyles.body}>
-          <p className={homeStyles.saveError} role="alert">
-            {loaded.text}
-          </p>
-        </main>
-      </div>
-    );
+    return <ProblemV3 loaded={loaded} {...(store === undefined ? {} : { store })} />;
   }
   const persist: NonNullable<AddMedViewProps['persist']> = (root) => {
     const result = store === undefined ? saveRoot(root) : saveRoot(root, store);
+    // BRIEF 3.2 (same rule as the v2 DataContext): ask again after the first medicine is saved, i.e. the house had none before.
+    if (result.ok && loaded.root.assignments.length === 0 && loaded.root.houseItems.length === 0) void requestPersistence(undefined, { again: true });
     return result.ok ? { ok: true } : { ok: false, text: saveErrorText(result) };
   };
   return <AddMedView root={loaded.root} today={today} demo={false} persist={persist} initial={initial} onBack={() => goBack('#/n/meds')} onSaved={(type) => afterSave(type, '')} />;
