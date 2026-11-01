@@ -40,6 +40,14 @@ Start from `git show e36c6d3:<path>`. The same goes for the v2 `SharePage` / `su
 
 **Unknown routes** go to v3 Home (no new screen, no new text). Old v2 links such as `#/meds` therefore land on Home.
 
+**Result of the theme move (step 2).** The `.v3theme` values are now in `:root` of `tokens.css`; `v3theme.css`, its test and every `v3theme` class are gone.
+Names that v2 also had took the **v3 value**: `--color-primary`, `-primary-pressed`, `-primary-ink`, `-primary-tint`, `--color-background`, `--color-border`,
+`--color-band`, `--color-member-blue`, `--elevation-1`, `--touch-min` (48px → 44px). New names added: header cloud / spark, logo blue, period sun / dusk,
+`--shadow-selected-ring`, `--fs` (+ `html[data-fs]` rules). Side effects outside the v3 page wrapper (they used to show the v2 value): the page behind the
+wrapper (`body`), the toast (drawn in `<body>`) and the "new version" bar now use the v3 colours. The look of the 13 v3 pages is pixel-identical (see HANDOFF).
+**Also removed as dead after v2 went:** 16 unused icons in `components/icons.tsx` and `avatarForIndex` in `visual.ts` (only v2 used them).
+**v3 tests that seeded the literal key `judya.v2`** now seed a neutral foreign key (`old.app`, `old.app.prev`): they still prove v3 touches no other key, and no code names `judya.v2` any more.
+
 ## Step 3.1
 
 ### Open questions (BRIEF is silent — need an answer before the step that uses them)

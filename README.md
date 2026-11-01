@@ -1,6 +1,6 @@
 # judya-app
 
-JudYa — a Thai, phone-first PWA for managing medicine at home. No backend; data stays in the browser (`localStorage` key `judya.v2`).
+JudYa — a Thai, phone-first PWA for managing medicine at home. No backend; data stays in the browser (`localStorage` key `judya.v3`).
 
 Live: https://monplaypark.github.io/judya-app/
 
