@@ -340,7 +340,7 @@ describe('real data', () => {
 });
 
 describe('route in the app', () => {
-  it('#/n/members/new opens the page outside DataProvider: judya.v2 is never read or written', () => {
+  it('#/n/members/new opens the page outside DataProvider: old.app is never read or written', () => {
     const calls = (['getItem', 'setItem', 'removeItem'] as const).map((m) => vi.spyOn(Storage.prototype, m));
     window.location.hash = '#/n/members/new?demo=nomember';
     render(<App />);
@@ -356,7 +356,7 @@ describe('route in the app', () => {
     window.location.hash = '#/n/members/new';
     render(<App />);
     expect(keys).toContain(STORAGE_KEY);
-    expect(keys.filter((k) => k.startsWith('judya.v2') || k === 'judya.v1' || k === 'medmate.v1')).toEqual([]);
+    expect(keys.filter((k) => k.startsWith('old.app') || k === 'judya.v1' || k === 'medmate.v1')).toEqual([]);
     get.mockRestore();
   });
 });

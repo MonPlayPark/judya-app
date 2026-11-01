@@ -431,7 +431,7 @@ describe('real data', () => {
 });
 
 describe('route in the app', () => {
-  it('#/n/meds/new is the add page (not a medicine called "new") and judya.v2 is never touched', () => {
+  it('#/n/meds/new is the add page (not a medicine called "new") and old.app is never touched', () => {
     const keys: string[] = [];
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation((k) => {
       keys.push(k);
@@ -441,7 +441,7 @@ describe('route in the app', () => {
     render(<App />);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('เพิ่มยา');
     expect(keys).toContain(STORAGE_KEY);
-    expect(keys.filter((k) => k.startsWith('judya.v2') || k === 'judya.v1' || k === 'medmate.v1')).toEqual([]);
+    expect(keys.filter((k) => k.startsWith('old.app') || k === 'judya.v1' || k === 'medmate.v1')).toEqual([]);
   });
   it('back goes to the page before when there is one, else to the list', () => {
     open('?demo=normal');

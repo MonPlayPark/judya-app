@@ -1,6 +1,6 @@
 // Font-size preference (spec 1, D10). One attribute on <html>: data-fs="n|m|l". The CSS turns it into the html font-size,
 // and every size in tokens.css is in rem, so the whole app scales. Stored on this device only, under its own key
-// (never judya.v2, never in the backup file).
+// (never the data key, never in the backup file).
 import { useCallback, useState } from 'react';
 
 export const FONT_SIZE_KEY = 'judya.fontsize';

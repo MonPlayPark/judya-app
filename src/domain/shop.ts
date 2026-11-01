@@ -1,6 +1,6 @@
 // Shops (step 3.3a): the checks on one shop. Pure. Prices per shop are step 3.3b; deleting a shop (which also
 // deletes its prices) is `deleteShop` in actions.ts.
-import type { Shop } from './schema';
+import type { Shop } from './v3/schema';
 
 export const SHOP_NAME = { min: 2, max: 40 } as const;
 export const PHONE_PATTERN = /^[0-9 +-]{6,20}$/; // digits, spaces, - and +; 6..20 characters

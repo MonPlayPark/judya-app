@@ -297,8 +297,8 @@ describe('which banner to show (one at a time)', () => {
 describe('storage keys', () => {
   it('with the real localStorage, every v3 function in this PR touches only judya.v3 and judya.v3.prev', () => {
     localStorage.clear();
-    localStorage.setItem('judya.v2', 'v2 data');
-    localStorage.setItem('judya.v2.prev', 'v2 prev');
+    localStorage.setItem('old.app', 'v2 data');
+    localStorage.setItem('old.app.prev', 'v2 prev');
     const keys: string[] = [];
     const proto = Object.getPrototypeOf(localStorage) as Storage;
     const originals = { g: proto.getItem, s: proto.setItem, r: proto.removeItem, k: proto.key, c: proto.clear };
@@ -330,8 +330,8 @@ describe('storage keys', () => {
     }
     expect(keys.length).toBeGreaterThan(0);
     expect(new Set(keys)).toEqual(new Set(['judya.v3', 'judya.v3.prev']));
-    expect(localStorage.getItem('judya.v2')).toBe('v2 data');
-    expect(localStorage.getItem('judya.v2.prev')).toBe('v2 prev');
+    expect(localStorage.getItem('old.app')).toBe('v2 data');
+    expect(localStorage.getItem('old.app.prev')).toBe('v2 prev');
     localStorage.clear();
   });
 });

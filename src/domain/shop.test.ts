@@ -1,6 +1,6 @@
 // Step 3.3a logic for shops. Made-up data only; the numbers are the owner's hand examples.
 import { describe, expect, it } from 'vitest';
-import type { Shop } from './schema';
+import type { Shop } from './v3/schema';
 import { blankShopForm, deliveryText, shopFormFromShop, shopFormToInput, shopSub, validateShop } from './shop';
 
 const pickup = { kind: 'pickup' } as const;

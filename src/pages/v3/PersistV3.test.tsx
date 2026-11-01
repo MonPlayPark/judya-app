@@ -40,7 +40,7 @@ const btn = (name: string | RegExp) => screen.getByRole('button', { name });
 
 beforeEach(() => {
   localStorage.clear();
-  localStorage.setItem('judya.v2', '{"v2":"mark"}');
+  localStorage.setItem('old.app', '{"v2":"mark"}');
   resetPersistenceAsked();
   persist.mockReset().mockResolvedValue(true);
   persisted.mockReset().mockResolvedValue(false);
@@ -66,7 +66,7 @@ describe('asking the browser to keep the data', () => {
     render(<App />);
     await flush();
     expect(persist).toHaveBeenCalledTimes(1);
-    expect(touched.filter((k) => k.startsWith('judya.v2'))).toEqual([]);
+    expect(touched.filter((k) => k.startsWith('old.app'))).toEqual([]);
   });
 
   it('moving between v3 pages does not ask again', async () => {
@@ -126,7 +126,7 @@ describe('asking again after the first medicine is saved', () => {
     await addMedicine('ยาทดสอบสอง');
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}').assignments).toHaveLength(2);
     expect(persist).toHaveBeenCalledTimes(2);
-    expect(touched.filter((k) => k.startsWith('judya.v2'))).toEqual([]);
+    expect(touched.filter((k) => k.startsWith('old.app'))).toEqual([]);
   });
 
   it('a house that already has medicines does not ask again', async () => {

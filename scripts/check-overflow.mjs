@@ -9,13 +9,10 @@ const ORIGIN = `http://localhost:${PORT}`;
 const BASE = `${ORIGIN}/judya-app/`;
 const WIDTHS = [360, 412];
 const SIZES = ['n', 'm', 'l'];
-// M4 PR 7: '/' is v3 Home now (in V3_ROUTES); the old v2 home is '/old'.
-const STATIC_ROUTES = ['/old', '/today', '/meds', '/meds?tab=house', '/meds/new', '/meds/new/schedule', '/meds/new/stock',
-  '/house/new', '/members', '/members/new', '/order', '/settings', '/no-such-page'];
-
 // v3 Home (M4 PR 4): the real data route (a new user = S0) and the six demo states. Checked for sideways overflow
 // like every page, and also for text under the minimum size and tap targets under 44px on v3 pages (route starts with #/n).
-const V3_ROUTES = ['/', '/n', '/n?demo=normal', '/n?demo=alert', '/n?demo=empty0', '/n?demo=empty1', '/n?demo=notoday', '/n?demo=backup',
+const V3_ROUTES = ['/', '/n', '/no-such-page', '/old', // M4 PR 7b: an unknown or retired route opens Home
+   '/n?demo=normal', '/n?demo=alert', '/n?demo=empty0', '/n?demo=empty1', '/n?demo=notoday', '/n?demo=backup',
   // v3 medicine list (M4 PR 5a): real data (empty), every demo, the house tab and both folded sections open
   '/n/meds', '/n/meds?demo=normal', '/n/meds?demo=normal&open=stopped', '/n/meds?demo=normal&tab=house', '/n/meds?demo=normal&open=deleted',
   '/n/meds?demo=nomember', '/n/meds?demo=nomeds', '/n/meds?demo=nohouse&tab=house',
@@ -99,7 +96,7 @@ const measure = () => {
   return out.slice(0, 5).join('; ');
 };
 
-/** v3 pages only: text smaller than `minPx`, and enabled buttons / links shorter than 44px (v3 board value; v2 pages keep 48px in `measure`). */
+/** v3 pages only: text smaller than `minPx`, and enabled buttons / links shorter than 44px (v3 board value). */
 const measureV3 = (minPx) => {
   const out = [];
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
@@ -141,9 +138,6 @@ for (const width of WIDTHS) {
       if (bad) { problems += 1; console.log(`FAIL ${width}px fs=${fs} ${label} ${route}: ${bad}`); }
     };
 
-    // 1) empty house
-    for (const r of STATIC_ROUTES) await visit(r, 'empty');
-
     // 1b) v3 Home: all states, plus the text size and tap target checks (14px at "normal", 15px at the larger sizes)
     for (const r of V3_ROUTES) {
       await visit(r, 'v3');
@@ -180,7 +174,7 @@ for (const width of WIDTHS) {
     }
 
     // 1e) v3 "can't read the data" screen (M4 PR 7): corrupt judya.v3 on Home and on two other pages, then the start-over sheets
-    await page.goto(`${BASE}#/old`);
+    await page.goto(`${BASE}#/`);
     await page.evaluate(() => window.localStorage.setItem('judya.v3', '{not json'));
     const problemScenarios = [
       ['home', '/', async () => {}],
@@ -200,24 +194,6 @@ for (const width of WIDTHS) {
     }
     await page.evaluate(() => window.localStorage.removeItem('judya.v3'));
 
-    // 2) house with the sample data (pages that need ids too). The sample button is on the old v2 home, '#/old'.
-    await page.goto(`${BASE}#/old`);
-    await page.getByRole('button', { name: 'ลองดูด้วยข้อมูลตัวอย่าง' }).click();
-    await page.waitForTimeout(300);
-    const ids = await page.evaluate(() => {
-      const root = JSON.parse(window.localStorage.getItem('judya.v2') ?? '{}');
-      return {
-        assignment: root.assignments?.[0]?.id,
-        house: root.houseItems?.[0]?.id,
-        person: root.persons?.[0]?.id,
-      };
-    });
-    const routes = [...STATIC_ROUTES];
-    if (ids.assignment) routes.push(`/meds/${ids.assignment}`);
-    if (ids.house) routes.push(`/house/${ids.house}`);
-    if (ids.person) routes.push(`/members/${ids.person}`, `/members/${ids.person}/edit`, `/members/${ids.person}/share`, `/today?who=${ids.person}`);
-    if (!ids.assignment || !ids.house || !ids.person) { problems += 1; console.log('FAIL could not read sample ids'); }
-    for (const r of routes) await visit(r, 'sample');
     await ctx.close();
   }
 }

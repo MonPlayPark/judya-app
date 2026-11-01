@@ -376,7 +376,7 @@ describe('restore', () => {
 describe('only judya.v3 and judya.v3.prev are touched', () => {
   it('backup and restore read and write no other key, and leave the other keys as they were', async () => {
     stubShare('ok');
-    const others = { 'judya.v2': 'v2 text', 'judya.v2.prev': 'v2 prev', 'judya.fontsize': 'l', 'medmate.v1': 'x' };
+    const others = { 'old.app': 'v2 text', 'old.app.prev': 'v2 prev', 'judya.fontsize': 'l', 'medmate.v1': 'x' };
     const store = memoryStore({ ...others, [STORAGE_KEY]: JSON.stringify(house()) });
     open(store);
     press('สำรองข้อมูล');
@@ -474,12 +474,12 @@ describe('ways in', () => {
     expect(screen.getByText('ยาหมดอายุแล้ว 1 รายการ').closest('a')).toBeNull();
   });
 
-  it('the real app routes #/n/settings/data to the page (outside the v2 data: judya.v2 is not read)', () => {
+  it('the real app routes #/n/settings/data to the page (outside the v2 data: old.app is not read)', () => {
     const get = vi.spyOn(Storage.prototype, 'getItem');
     window.location.hash = '#/n/settings/data?demo=normal';
     render(<App />);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('ข้อมูลและสำรองข้อมูล');
-    expect(get.mock.calls.map((c) => c[0]).filter((k) => String(k).startsWith('judya.v2'))).toEqual([]);
+    expect(get.mock.calls.map((c) => c[0]).filter((k) => String(k).startsWith('old.app'))).toEqual([]);
   });
 
   it('back button goes to Home when there is no page before', () => {

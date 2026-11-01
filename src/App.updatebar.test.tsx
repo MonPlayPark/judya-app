@@ -20,7 +20,7 @@ describe('the "new version" bar', () => {
     reload.mockClear();
   });
 
-  it.each(['', '#/', '#/n', '#/n/meds', '#/n/settings/data', '#/n?demo=normal', '#/old'])('shows on "%s"', (hash) => {
+  it.each(['', '#/', '#/n', '#/n/meds', '#/n/settings/data', '#/n?demo=normal', '#/nowhere'])('shows on "%s"', (hash) => {
     window.location.hash = hash;
     render(<App />);
     expect(screen.getByText('มีเวอร์ชันใหม่')).toBeInTheDocument();

@@ -52,11 +52,11 @@ describe('font size preference', () => {
   });
 
   it('uses its own key and touches no other key', () => {
-    expect(FONT_SIZE_KEY).not.toBe('judya.v2');
-    window.localStorage.setItem('judya.v2', 'keep');
+    expect(FONT_SIZE_KEY).not.toBe('judya.v3');
+    window.localStorage.setItem('old.app', 'keep');
     window.localStorage.setItem('other', 'keep');
     writeFontSize('n');
-    expect(window.localStorage.getItem('judya.v2')).toBe('keep');
+    expect(window.localStorage.getItem('old.app')).toBe('keep');
     expect(window.localStorage.getItem('other')).toBe('keep');
     expect(window.localStorage.length).toBe(3);
   });
