@@ -2,6 +2,28 @@
 
 Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every session.
 
+## M4 PR 11.2 — order draft page and "add an item" sheet (1 พ.ย. 2569)
+
+Branch `m4-pr11-order` (PR #39). First screen of the order work: `#/n/order` (test links only: `?demo=normal|nolow|nomeds`, `&sheet=add&tab=meds|new[&name=…]`, `&sheet=unit[&item=med:m1]`). Not tied to Home (that is 11.6). **Nothing is written to storage** (tests prove it). Details and the points to check: `docs/DECISIONS.md` "M4 PR 11.2".
+
+### Status
+`npm test` 828 pass (762 before); `npx tsc`, `npm run build` pass; `npm run check:overflow` 0 problems at 360 / 412px and 3 font sizes (the order page, both sheets and 15 pressed states are in `scripts/check-overflow.mjs`).
+
+### What is there now
+- `orderDraft.ts`: pick list (`orderCandidates`), sell-as choices (`sellUnitChoices`), `changeSellUnit`, `qtyText`, `stepLine`, `defaultPerSellUnit`. `orderLines.ts`: `makeManualLine`, `makeFreeLine` with `medKind` / `strength` / `addToList`. `schema.ts`: free source has optional `medKind`, `strength`.
+- `OrderPage.tsx` (route, demo / live), `OrderV3.tsx` (list, bottom bar), `OrderSheets.tsx` (add sheet, unit sheet). The draft is `DraftLine[]` in component state.
+
+### Left for later (do not start before the owner says)
+- 11.3: compare 3 shops, shipping switch, LINE text, "สั่งแล้วใช่ไหม" sheet = the only place that writes (build the order from the ticked `DraftLine`s; rebuild `shares` when a quantity was changed; store `shopName`, `shippingFee`; save the remembered price). The "ดูข้อความสั่งยา" button and the total "–" are waiting for it.
+- 11.4 history (the clock button is `ComingSoon`), 11.5 receiving, 11.6 Home buttons.
+
+### Waiting for the owner
+Three questions at the end of DECISIONS "M4 PR 11.2" (house medicine that is not counted, kind labels, the ticked ask-later box), and a look at what I designed myself (unit sheet, empty states).
+
+### Owner's test
+A PR that is not merged is not on GitHub Pages. To look at it now: on a computer run `npm run build` then `npm run preview -- --host`, open the shown network address on the phone (same Wi-Fi) and add `#/n/order?demo=normal` after `/judya-app/`.
+
+
 ## M4 PR 11.1 — order data and rules, domain only (1 พ.ย. 2569)
 
 Branch `m4-pr11-order` (draft PR). Domain only; the app looks exactly the same. Details and the points to check: `docs/DECISIONS.md` "M4 PR 11.1".

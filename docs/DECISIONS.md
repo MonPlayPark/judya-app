@@ -816,3 +816,42 @@ Branch `m4-pr11-order`. No screen is touched (`pages/`, `components/`, `App.tsx`
 ### Still open for the owner
 - Is the shop order in item 3 right, or should shops with missing prices be left out of the ranking?
 - The compare screen needs an order for `free` lines when no shop is chosen yet — not decided here (11.2).
+
+## M4 PR 11.2 — order draft page and the "add an item" sheet (1 พ.ย. 2569)
+
+Branch `m4-pr11-order` (PR #39). First step with a screen: route `#/n/order` (test links only, not tied to any Home button — that is 11.6). New: `src/domain/v3/orderDraft.ts`, `orderDemo.ts`, `src/pages/v3/OrderPage.tsx`, `OrderV3.tsx`, `OrderSheets.tsx` (+ css, tests). Changed: `orderLines.ts` (manual line, typed kind / strength, tube start unit), `schema.ts` (free source), `Sheet.tsx` (two optional props), `App.tsx`, `scripts/check-overflow.mjs`. Data version stays 3; storage keys unchanged. **The page never writes storage** (it does not import `saveRoot`; tests spy on it, on `Storage.prototype.setItem/removeItem`, and scan the three source files). Normal mode only reads `judya.v3`; demo mode does not even read.
+
+### Rules locked by the owner (built as given)
+1. A medicine of the app: "สั่งเป็น" and "เม็ดต่อหน่วย" can be changed on the line, this order only (starts from the unit the app remembers, else the medicine's own unit). House medicine is locked to its stock unit.
+2. Typed name that equals a medicine of the app: warning under the name + "ใช้ยาในระบบ" / "เพิ่มเป็นยาใหม่".
+3. Reached only by the test link `#/n/order` (`?demo=normal|nolow|nomeds`); no Home button.
+4. A typed (free) line keeps its kind and strength: optional fields of the free order source, so older data still passes. The kind field is called **`medKind`** (`kind` is already the tag of the source union).
+5. "สั่งเป็น" by kind: tablet / capsule = กล่อง แผง ขวด + the pill; liquid = ขวด; cream = หลอด; sachet = กล่อง ซอง; drops = ขวด; other = typed.
+6. Nothing is written; the draft lives in the page. 7. 11.3 parts are not drawn; the history (clock) button and "ดูข้อความสั่งยา" are `ComingSoon`.
+
+### Domain added (all with tests)
+- `makeManualLine` (reason `manual`, 1 sell unit, same unit / tube / house rules as 11.1); `orderCandidates` (the pick list: "เหลือ N วัน · name", "ไม่ทราบสต็อก · name", tubes "สำรอง N หลอด/ขวด", nearest to empty first, search with `normalizeName`); `sellUnitChoices`; `makeFreeLine` takes `medKind` / `strength` / `addToList`; `changeSellUnit` (new line, root untouched, house refused); `qtyText`, `stepLine`, `defaultPerSellUnit`, `asksPerSellUnit`.
+- Tests: 828 now (762 before).
+
+### Different from the board / decided on my own — please check
+1. **Unit sheet "แก้หน่วยสั่ง" is my own small design** (the board has none): the pills of the kind, the count box when the unit is not the smallest one, the line "แก้เฉพาะใบนี้ ไม่เปลี่ยนข้อมูลยาในรายการยา", ตกลง / ยกเลิก. It opens by pressing the name of a medicine of the app (a small ">" shows it can be pressed). House and typed lines have no way into it.
+2. **Empty states are mine** (not on the board): nothing running low = "ยังไม่มียาที่ใกล้หมด" + the add button; no medicine in the house at all, the pick tab says "ยังไม่มียาในรายการยา ถ้าจะสั่งยาที่ยังไม่มี ให้เลือกแท็บ "ยาใหม่"" (the board only has "all already in the list").
+3. **Missing tokens** (no new colour was made): the low chip uses `--color-warning-tint` / `-ink` (board: #FDEFC8 / #6B4400); the grey chips use `--color-border` + `--color-hero-ink-muted` (board: #EEF1F5 / #3C4043 — the text colour exists, the background does not). The sheet curtain stays at the existing `.48` (board `.5`); no token for either.
+4. **Sheet**: two optional props were added to the shared `Sheet` — `closeButton` (round 44px X) and `tall` (92% high instead of 88%). The sheets of PR 5b are unchanged.
+5. **House medicines in the pick list**: only those whose stock is counted (the unit is the stock unit); a house medicine that is not counted is left out, because its unit is not known (open question below). Row text: "ยาสามัญ · เหลือ 2 แผง".
+6. **Several people, one medicine**: one row; the days shown are the person who runs out first, and every member's name is listed ("เหลือ 2 วัน · A, B"). Tubes: the lowest spare.
+7. **Search box** shows when the list has more than 6 medicines (the short list is 6, then "ดูเพิ่ม (N)").
+8. **Unit words**: capsule's smallest unit is "แคปซูล" (the owner's list says "เม็ด" for tablet and capsule together); the count box reads "{small unit}ต่อ{unit}" (tablet เม็ด, capsule แคปซูล, liquid มล., sachet ซอง, other ชิ้น) and is hidden when the unit is the smallest one and for cream / drops. The kind grid uses the labels of the add-medicine page ("ผงชงดื่ม", not "ซอง"; "ยาเม็ด").
+9. **Quantity text**: tablet / capsule / sachet / other show the count in the small unit as the big number when `perSellUnit` is known (and the unit is not the small one), with "= 2 กล่อง (60 เม็ด)"; liquid, cream, drops and house medicine show their own unit, no note.
+10. **Unit change keeps the amount of medicine** (27 pills → box of 30 = 1 box); in the sheet the count box starts from the pack (strip, box, bottle, sachet box, liquid bottle) or is empty; a typed new medicine's count is never filled in.
+11. **Fix in 11.1's start unit** (`startingUnitOf`): cream / drops started in the dose word "ครั้ง"; now หลอด / ขวด. A liquid with a ml pack starts as 1 bottle of that many ml (was: ml, 1 each). A remembered price still wins.
+12. **Manual line shares** are what the people really need (empty when stock is enough); the save step (11.3) rebuilds them as for every line.
+13. **Ask-later box** ("หลังได้ยามา ถามว่าจะเพิ่มเข้ารายการยาไหม") starts **ticked**, and is stored on the typed draft line (`addToList`). The quantity of a typed line must be a whole number ≥ 1; the add button stays off while the name is empty, the quantity is below 1, the name is a clash not yet answered, or the same typed name is already in the draft.
+14. **Clash buttons**: "ใช้ยาในระบบ" adds the medicine of the app; "เพิ่มเป็นยาใหม่" keeps the typed name and unlocks the add button. When the medicine of the app is already in the draft, only "เพิ่มเป็นยาใหม่" is shown; for a house medicine that is not counted the text says it cannot be picked.
+15. **Details**: − is disabled at 1; the bottom menu highlights Home (the order page is not a tab); strength unit text is the schema's `mg/5 ml`; the first view of a typed medicine has kind "ยาเม็ด" chosen (the kind is required, so one is always set).
+16. The work was done on `m4-pr11-order` as the owner asked (the session's default branch was not used).
+
+### Still open for the owner
+- House medicines that are **not counted** cannot be ordered from the list (no unit). Should the page ask for a unit, or leave them out as now?
+- Is "ผงชงดื่ม" / "ยาเม็ด" fine on the kind grid, or should it read "ซอง" / "เม็ด" as in your message?
+- Is the ask-later box ticked at the start right?

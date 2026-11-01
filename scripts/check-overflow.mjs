@@ -32,7 +32,13 @@ const V3_ROUTES = ['/', '/n', '/no-such-page', '/old', // M4 PR 7b: an unknown o
   '/n/settings/data', '/n/settings/data?demo=normal', '/n/settings/data?demo=backup', '/n/settings/data?demo=normal&backup=old', '/n/settings/data?demo=nomeds',
   '/n/settings/data?demo=normal&error=not_json', '/n/settings/data?demo=normal&error=wrong_version', '/n/settings/data?demo=normal&error=invalid',
   '/n/settings/data?demo=normal&error=too_big', '/n/settings/data?demo=normal&error=save_failed', '/n/settings/data?demo=normal&sheet=confirm',
-  '/n/settings/data?demo=normal&backup=old&error=wrong_version'];
+  '/n/settings/data?demo=normal&backup=old&error=wrong_version',
+  // v3 order draft (M4 PR 11.2): real data (empty), the three demo houses, the add sheet (both tabs, a repeated name, a name that is in the list),
+  // the unit sheet, and the add sheet on a house with nothing to suggest / no medicine at all
+  '/n/order', '/n/order?demo=normal', '/n/order?demo=nolow', '/n/order?demo=nomeds',
+  '/n/order?demo=normal&sheet=add&tab=meds', '/n/order?demo=normal&sheet=add&tab=new', '/n/order?demo=normal&sheet=add&tab=new&name=Simvastatin',
+  '/n/order?demo=normal&sheet=add&tab=new&name=Meto', '/n/order?demo=normal&sheet=unit', '/n/order?demo=normal&sheet=unit&item=med:m8',
+  '/n/order?demo=nolow&sheet=add&tab=meds', '/n/order?demo=nomeds&sheet=add&tab=meds', '/n/order?demo=nomeds&sheet=add&tab=new'];
 
 // v3 add medicine (M4 PR 6b): states that need pressing. Each one opens `route`, runs the clicks, then is measured like the rest.
 const ADD = '/n/meds/new?demo=normal&person=p2&name=ยาใหม่ทดสอบ';
@@ -57,6 +63,27 @@ const ADD_SCENARIOS = [
   ['step 3, house', '/n/meds/new?demo=normal&type=house&name=ยาสามัญใหม่&step=2', async (page) => { await click(page, 'แผง'); }],
   ['step 3, existing medicine', '/n/meds/new?demo=normal&name=VitaminD', async (page) => { await page.getByRole('button', { name: /คุณแม่/ }).click(); await page.getByRole('button', { name: 'เพิ่มให้คุณแม่ด้วย' }).click(); await page.getByRole('button', { name: 'ถัดไป' }).click(); }],
   ['dose confirm sheet', `${ADD}&step=2&kind=liquid`, async (page) => { for (let i = 0; i < 11; i += 1) await click(page, 'เพิ่ม เช้า'); await click(page, 'ถัดไป'); await click(page, 'ไม่นับสต็อก'); await click(page, 'บันทึกยา'); }],
+];
+
+// v3 order draft (M4 PR 11.2): states that need pressing. Same shape as ADD_SCENARIOS.
+const ORD = '/n/order?demo=normal';
+const NOLOW = '/n/order?demo=nolow'; // many medicines to pick from: the search box and "see more" show
+const ORDER_SCENARIOS = [
+  ['nothing ticked', ORD, async (page) => { for (const box of await page.getByRole('checkbox').all()) await box.uncheck(); }],
+  ['long quantity (+ pressed 40 times)', ORD, async (page) => { const plus = page.getByRole('button', { name: /^เพิ่มจำนวน/ }).first(); for (let i = 0; i < 40; i += 1) await plus.click(); }],
+  ['add sheet, see all', `${NOLOW}&sheet=add&tab=meds`, async (page) => { await page.getByRole('button', { name: /^ดูเพิ่ม/ }).click(); }],
+  ['add sheet, search finds nothing', `${NOLOW}&sheet=add&tab=meds`, async (page) => { await page.getByLabel('ค้นหาชื่อยา').fill('zzzz'); }],
+  ['add sheet, one added (toast)', `${ORD}&sheet=add&tab=meds`, async (page) => { await page.getByRole('button', { name: /^เพิ่ม Losartan/ }).click(); }],
+  ['new medicine, box with count', `${ORD}&sheet=add&tab=new&name=ยาใหม่ทดสอบ`, async (page) => { await click(page, 'กล่อง'); await page.getByLabel(/ต่อกล่อง/).fill('30'); }],
+  ['new medicine, other kind (typed unit)', `${ORD}&sheet=add&tab=new&name=ยาใหม่ทดสอบ`, async (page) => { await click(page, 'อื่นๆ'); }],
+  ['new medicine, liquid', `${ORD}&sheet=add&tab=new&name=ยาใหม่ทดสอบ`, async (page) => { await click(page, 'ยาน้ำ'); }],
+  ['new medicine, cream', `${ORD}&sheet=add&tab=new&name=ยาใหม่ทดสอบ`, async (page) => { await click(page, 'ครีม'); }],
+  ['new medicine, wrong strength', `${ORD}&sheet=add&tab=new&name=ยาใหม่ทดสอบ`, async (page) => { await page.getByPlaceholder('เช่น 500').fill('abc'); }],
+  ['new medicine, long name', `${ORD}&sheet=add&tab=new&name=${'ยาที่มีชื่อยาวมากๆ'.repeat(5)}`, async () => {}],
+  ['new medicine, same name, kept as new', `${ORD}&sheet=add&tab=new&name=Simvastatin`, async (page) => { await click(page, 'เพิ่มเป็นยาใหม่'); }],
+  ['unit sheet, box chosen', `${ORD}&sheet=unit`, async (page) => { await click(page, 'กล่อง'); }],
+  ['unit sheet, house medicine', `${ORD}&sheet=unit&item=house:h1`, async () => {}],
+  ['unit sheet, other kind', `${ORD}&sheet=unit&item=med:m3`, async () => {}],
 ];
 
 const chromePath = process.env.CHROMIUM_PATH
@@ -171,6 +198,17 @@ for (const width of WIDTHS) {
       if (bad) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 add-med(${label}): ${bad}`); }
       const small = await page.evaluate(measureV3, fs === 'n' ? 13.9 : 14.9);
       if (small) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 add-med(${label}): ${small}`); }
+    }
+
+    // 1f) v3 order draft after pressing (M4 PR 11.2)
+    for (const [label, route, act] of ORDER_SCENARIOS) {
+      await visit(route, 'v3');
+      await act(page);
+      const bad = await page.evaluate(measure);
+      checked += 1;
+      if (bad) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 order(${label}): ${bad}`); }
+      const small = await page.evaluate(measureV3, fs === 'n' ? 13.9 : 14.9);
+      if (small) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 order(${label}): ${small}`); }
     }
 
     // 1e) v3 "can't read the data" screen (M4 PR 7): corrupt judya.v3 on Home and on two other pages, then the start-over sheets
