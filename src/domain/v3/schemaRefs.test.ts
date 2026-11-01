@@ -55,16 +55,35 @@ describe('cross-table references: a missing target is refused, naming the table 
     expect(problems(r)).toEqual(['prices "pr3": item.houseItemId "nope" is not in houseItems']);
   });
 
-  it('order -> shop', () => {
+  it('order -> shop: a deleted shop is fine, the order keeps shopName', () => {
     const r = copy();
-    r.orders[0]!.shopId = 'nope';
-    expect(problems(r)).toEqual(['orders "o1": shopId "nope" is not in shops']);
+    r.orders[0]!.shopId = 'deleted-shop';
+    expect(problems(r)).toEqual([]);
+    expect(r.orders[0]!.shopName).toBe('ร้านตัวอย่าง 1');
   });
 
-  it('order line (assignment) -> assignment', () => {
+  it('order line (med) -> medication', () => {
     const r = copy();
-    r.orders[0]!.lines[0]!.source = { kind: 'assignment', assignmentId: 'nope' };
+    r.orders[0]!.lines[0]!.source = { kind: 'med', medicationId: 'nope', shares: [{ assignmentId: 'a1', qty: 20 }] };
+    expect(problems(r)).toContain('orders "o1" line 0: medicationId "nope" is not in medications');
+  });
+
+  it('order line (med) -> every share points to an assignment', () => {
+    const r = copy();
+    r.orders[0]!.lines[0]!.source = { kind: 'med', medicationId: 'm1', shares: [{ assignmentId: 'a1', qty: 10 }, { assignmentId: 'nope', qty: 10 }] };
     expect(problems(r)).toEqual(['orders "o1" line 0: assignmentId "nope" is not in assignments']);
+  });
+
+  it('order line (med) -> a share must be an assignment of that medication', () => {
+    const r = copy();
+    r.orders[0]!.lines[0]!.source = { kind: 'med', medicationId: 'm1', shares: [{ assignmentId: 'a2', qty: 10 }] }; // a2 is medication m2
+    expect(problems(r)).toEqual(['orders "o1" line 0: assignmentId "a2" is not an assignment of medication "m1"']);
+  });
+
+  it('order line (med) -> an unknown medication and a wrong share are both reported', () => {
+    const r = copy();
+    r.orders[0]!.lines[0]!.source = { kind: 'med', medicationId: 'nope', shares: [{ assignmentId: 'a1', qty: 10 }] };
+    expect(problems(r)).toHaveLength(2);
   });
 
   it('order line (house) -> house item', () => {

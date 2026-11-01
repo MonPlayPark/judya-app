@@ -2,6 +2,28 @@
 
 Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every session.
 
+## M4 PR 11.1 — order data and rules, domain only (1 พ.ย. 2569)
+
+Branch `m4-pr11-order` (draft PR). Domain only; the app looks exactly the same. Details and the points to check: `docs/DECISIONS.md` "M4 PR 11.1".
+
+### Status
+`npm test` 759 pass (684 before); `npm run build` passes. No file in `pages/`, `components/`, `App.tsx`, `HomeV3.tsx` changed; only `judya.v3` / `judya.v3.prev` are used.
+
+### What is there now
+- `schema.ts`: order line source `med { medicationId, shares[] }`; order has `shopName`, `shippingFee?`, `closedAt?`; new reference check (medication, share -> assignment of that medication). Order `shopId` is no longer checked (a shop can be deleted; the order keeps its name).
+- `prices.ts`: `upsertPrice`, `latestPrice`, `latestPriceAnyShop`, `checkEnteredPrice`.
+- `orderLines.ts`: `buildOrderLines` (auto list, tubes, shares), `makeFreeLine`, `findNameClash`.
+- `orderCompare.ts`: `compareShops` (counts only priced lines, delivery, free-over, unit conversion).
+
+### Left for later (do not start before the owner says)
+- 11.2: the order page and "สั่งแล้ว" (build the stored order from `DraftLine`s, rebuild `shares` if the owner changes a quantity, store `shopName` and `shippingFee`).
+- Receiving: split received stock by shares, tubes fewer than people, kind `other` not updated, never-counted warning. Rules are written in DECISIONS.
+- Wire the Home buttons (two "coming soon" spots in `HomeV3.tsx`).
+
+### Waiting for the owner
+Two questions at the end of DECISIONS "M4 PR 11.1" (order of shops with missing prices; stricter unit rule for house medicines).
+
+
 ## M4 PR 7b — v2 is gone (1 พ.ย. 2569)
 
 Branch `ccr-1ee8bdd6-ct7h60`. All v2 code is deleted (137 files); the app is v3 only. Every unknown route opens v3 Home. The `v3theme` values now live in `:root` of `src/styles/tokens.css` and the `.v3theme` class is gone. Nothing deletes the owner's old v2 key (it just stays in the phone). The full list of what was kept, what was deleted and why: `docs/DECISIONS.md` "M4 PR 7b".

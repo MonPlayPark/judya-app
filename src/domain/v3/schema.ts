@@ -365,18 +365,35 @@ export const priceSchema = z
 
 export const ORDER_STATUSES = ['waiting', 'partial', 'received', 'cancelled'] as const;
 
+/** One person's part of a `med` order line, in medicine units (pills, ml, tubes). */
+export const orderShareSchema = z.object({ assignmentId: id, qty: z.number().positive() }).strict();
+
+export const orderSourceSchema = z.discriminatedUnion(
+  'kind',
+  [
+    // M4 PR 11.1: one line per medicine; the people who need it are the shares. (The older `assignment` source, one
+    // person per line, is no longer accepted.)
+    z
+      .object({ kind: z.literal('med'), medicationId: id, shares: z.array(orderShareSchema).min(1) })
+      .strict()
+      .refine((s) => new Set(s.shares.map((x) => x.assignmentId)).size === s.shares.length, {
+        path: ['shares'],
+        message: 'shares: an assignment is listed twice',
+      }),
+    z.object({ kind: z.literal('house'), houseItemId: id }).strict(),
+    z.object({ kind: z.literal('free'), name: z.string().min(1).max(60) }).strict(),
+  ],
+  { error: "order line source: kind must be 'med' (with medicationId and shares), 'house' or 'free' - the older 'assignment' order format is not supported" },
+);
+
 export const orderLineSchema = z
   .object({
-    source: z.discriminatedUnion('kind', [
-      z.object({ kind: z.literal('assignment'), assignmentId: id }).strict(),
-      z.object({ kind: z.literal('house'), houseItemId: id }).strict(),
-      z.object({ kind: z.literal('free'), name: z.string().min(1).max(60) }).strict(),
-    ]),
-    qtyOrdered: z.number().positive(),
+    source: orderSourceSchema,
+    qtyOrdered: z.number().positive(), // sell units (e.g. 2 boxes); medicine units = qtyOrdered x perSellUnit
     sellUnit: z.string().min(1),
     perSellUnit: z.number().positive().optional(),
     unitPrice: z.number().min(0).optional(),
-    qtyReceived: z.number().min(0),
+    qtyReceived: z.number().min(0), // sell units
     leftover: z.enum(['waiting', 'dropped']).nullable(),
     addToList: z.boolean().optional(),
   })
@@ -385,10 +402,13 @@ export const orderLineSchema = z
 export const orderSchema = z
   .object({
     id,
-    shopId: id,
+    shopId: id, // may point to a shop that was deleted later: `shopName` is the name kept in the order
+    shopName: z.string().min(1).max(40), // the shop's name when the order was made
     createdAt: isoDateTime,
+    closedAt: isoDateTime.optional(), // when the order was received in full or cancelled
     status: z.enum(ORDER_STATUSES),
     includeShipping: z.boolean(),
+    shippingFee: z.number().min(0).optional(), // the fee at order time, so editing the shop later does not change history
     lines: z.array(orderLineSchema), // no limit on lines (or on shops / orders)
     note: z.string().max(500).optional(),
   })
@@ -433,7 +453,7 @@ type Tables = {
 
 /** Every id that is used twice in one table, and every reference to a row that does not exist. A removed person
  * stays in `persons`, so history can still point to them. Each message names the table, the row's id and the
- * missing target. A `free` order line points to nothing and is not checked. Returns [] when all is well. */
+ * missing target. A `free` order line points to nothing and is not checked; an order's shopId is not checked (see below). Returns [] when all is well. */
 function referenceProblems(r: Tables): { path: (string | number)[]; message: string }[] {
   const out: { path: (string | number)[]; message: string }[] = [];
   const ids = (rows: { id: string }[]): Set<string> => new Set(rows.map((row) => row.id));
@@ -471,15 +491,27 @@ function referenceProblems(r: Tables): { path: (string | number)[]; message: str
       missing('prices', p.id, i, 'item.houseItemId', 'houseItems', p.item.houseItemId);
     }
   });
+  // An order may point to a shop that was deleted later (it keeps `shopName`), so shopId is not checked here.
+  const assignmentRows = new Map(r.assignments.map((a) => [a.id, a]));
   r.orders.forEach((o, i) => {
-    if (!shops.has(o.shopId)) missing('orders', o.id, i, 'shopId', 'shops', o.shopId);
     o.lines.forEach((line, j) => {
       const { source } = line;
-      if (source.kind === 'assignment' && !assignments.has(source.assignmentId)) {
-        out.push({ path: ['orders', i, 'lines', j, 'source'], message: `orders "${o.id}" line ${j}: assignmentId "${source.assignmentId}" is not in assignments` });
+      const at = ['orders', i, 'lines', j, 'source'];
+      const where = `orders "${o.id}" line ${j}`;
+      if (source.kind === 'med') {
+        if (!medications.has(source.medicationId)) {
+          out.push({ path: at, message: `${where}: medicationId "${source.medicationId}" is not in medications` });
+        }
+        for (const share of source.shares) {
+          const a = assignmentRows.get(share.assignmentId);
+          if (!a) out.push({ path: at, message: `${where}: assignmentId "${share.assignmentId}" is not in assignments` });
+          else if (a.medicationId !== source.medicationId && medications.has(a.medicationId)) { // an assignment with an unknown medicine is reported once, above
+            out.push({ path: at, message: `${where}: assignmentId "${share.assignmentId}" is not an assignment of medication "${source.medicationId}"` });
+          }
+        }
       }
       if (source.kind === 'house' && !houseItems.has(source.houseItemId)) {
-        out.push({ path: ['orders', i, 'lines', j, 'source'], message: `orders "${o.id}" line ${j}: houseItemId "${source.houseItemId}" is not in houseItems` });
+        out.push({ path: at, message: `${where}: houseItemId "${source.houseItemId}" is not in houseItems` });
       }
     });
   });
@@ -539,6 +571,8 @@ export type HouseItem = z.infer<typeof houseItemSchema>;
 export type Shop = z.infer<typeof shopSchema>;
 export type Price = z.infer<typeof priceSchema>;
 export type OrderLine = z.infer<typeof orderLineSchema>;
+export type OrderSource = z.infer<typeof orderSourceSchema>;
+export type OrderShare = z.infer<typeof orderShareSchema>;
 export type Order = z.infer<typeof orderSchema>;
 export type Settings = z.infer<typeof settingsSchema>;
 export type Root = z.infer<typeof rootSchema>;

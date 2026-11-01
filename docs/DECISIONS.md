@@ -770,3 +770,48 @@ What was built: `#/` (and the empty app) opens v3 Home; v2 Home moved to `#/old`
 - Ask again, same rule as `DataContext.addMedicine` (BRIEF 3.2): in `LiveAdd` (`AddMedPage.tsx`), after `saveRoot` succeeds and the house had no medicine before, `requestPersistence(undefined, { again: true })`. "No medicine" here = no assignment **and** no house medicine (v2 counted only assignments; v3 has house medicines on the same page, so a first house medicine counts too).
 - Failure is silent: `requestPersistence` catches everything and only sets its status; no message was added. The v2 keys are not read or written (tested).
 - Tests: `PersistV3.test.tsx` (asks once on `#/`, `#/n`, `#/n/meds`, demo; not again when moving between pages; not when already promised; refused / failing / missing `navigator.storage` = page opens, no alert; first medicine asks again, second does not; a house that already has medicines does not; no `judya.v2*` call).
+
+## M4 PR 11.1 — order data and rules, domain only (1 พ.ย. 2569)
+
+Branch `m4-pr11-order`. No screen is touched (`pages/`, `components/`, `App.tsx`, `HomeV3.tsx` unchanged). New: `src/domain/v3/prices.ts`, `orderLines.ts`, `orderCompare.ts` (+ tests). Changed: `orderSchema` / `orderLineSchema` and the reference check in `schema.ts`, the order rows in `fixtures.ts`, and the tests that used the old order shape. `prices` / `shops` schemas, `isLowStock` and storage keys are not changed. Data version stays 3.
+
+### Rules locked by the owner (built as given)
+1. One order = one shop (compare, then pick one).
+2. A medicine typed by hand (`free`) never has a price remembered; only regular and house medicines are (`prices.ts` takes no `free` item).
+3. A shop with orders can be deleted; the order keeps `shopName` (name when the order was made).
+4. Cancelling an order that was partly received keeps the stock already added.
+5. The draft order lives in the page only; nothing is written to the root until "สั่งแล้ว".
+6. Same medicine for several people: split by the `shares` that were ordered; the odd rest goes to the person short the most. Tubes / drop bottles fewer than people: one at a time to the person short the most; people who get none are named on the receiving sheet. *(Built in the receiving step, not in 11.1.)*
+7. Medicine "อื่น ๆ" (kind `other`): stock is not updated automatically when received.
+8. House medicine: the order unit must be the unit its stock is counted in.
+9. A medicine never counted: counting starts from what is received, with a warning that it does not include what was there before.
+10. Tubes: counted in tubes / bottles, received = `spare += qty`; ticked automatically when `tubeLevel` is `low` or `out`. This rule lives only in `orderLines.ts`; `isLowStock` is unchanged because Home and the list use it.
+11. Old orders have no cap. A file with the older order shape is refused with a clear message (see below).
+12. `qtyOrdered` / `qtyReceived` count **sell units** (e.g. 2 boxes); medicine units = `qty x perSellUnit`. `source.shares[].qty` is in **medicine units**.
+
+### Schema (11.1)
+- `source` is now `med { medicationId, shares[{ assignmentId, qty }] }` | `house` | `free`. `shares` has at least 1 entry, `qty` > 0, no assignment twice.
+- Added to the order: `shopName` (required, 1–40), `shippingFee?` (>= 0; the fee at order time, so editing the shop later does not change history), `closedAt?`.
+- Reference check: `medicationId` -> medications; every share's `assignmentId` -> assignments **and** that assignment must belong to the line's medication (an assignment whose own medicine is missing is reported once, by the assignment rule).
+- The older shape (`source.kind = 'assignment'`) is refused; the error text says "the older 'assignment' order format is not supported". Nothing in the owner's phone uses it (orders were always `[]`).
+
+### Compare rule (`orderCompare.ts`)
+- A shop is compared on the lines it has a usable price for; the others are not counted and the row says **"ไม่รวม N รายการที่ยังไม่มีราคา"**. A typed (`free`) line is therefore "not counted" in every shop.
+- Delivery: pick-up 0; delivery shop: fee, or 0 when items total >= `freeOver` (exactly equal = free). **"ซื้อเพิ่มอีก ฿N ส่งฟรี"** where N = `freeOver` - items total while that is positive (only for a shop with a fee > 0). The switch "รวม / ไม่รวมค่าส่ง" only changes `total`; `shipping` is always reported. Money is rounded to the satang.
+- Units: a price in the same sell unit (same name, and the same `perSellUnit` when both are known) is used as it is, the newest first. Otherwise the newest price that can be converted: medicine units = `qtyOrdered x line.perSellUnit`, shop sell units = that / shop `perSellUnit`, **rounded up**, at least 1. If either count is unknown, no price. This matches v2 (`ceil(qty / perSellUnit)`); v2 had only one price per shop and medicine, so choosing between units is new.
+
+### Decided on my own — please check
+1. **Order's `shopId` is no longer checked against `shops`.** The owner allows deleting a shop that has orders; with the old check the whole file would be refused. `shopName` is the kept name. (The old test "order -> shop" was turned into "a deleted shop is fine".)
+2. **House medicine and units:** its count per unit is always 1, so a price in another unit *cannot be converted* and counts as no price. v2 took any price of the shop whatever its unit; this is stricter, following rule "if it cannot be converted, no price".
+3. **Order of shops with partly missing prices** (the owner did not say): shops with every line priced (cheapest total first), then shops missing some (fewer missing first, then cheaper), then shops with no price at all. Without this a shop with one cheap item would look cheapest.
+4. **A shop with no price at all** is still a row (total 0, no delivery fee, "ไม่รวม N รายการ…") and sorts last, so the screen can say so.
+5. **Upsert key** is (shop, item, trimmed sell unit) as asked; `perSellUnit` is not part of the key, so a second price with the same unit name but another count replaces the first (newest wins).
+6. **Draft line start:** sell unit = unit of the newest remembered price of that medicine in any shop (`perSellUnit` from it), else the medicine's own unit (เม็ด, มล., หลอด …) with 1 per unit. `qtyOrdered` = need / `perSellUnit` rounded up.
+7. **Unknown stock:** need = the whole target over `orderDays` (as v2). Tubes never counted: 1 tube, shown, not ticked. A line that is low but needs nothing (`orderDays` short) stays listed, unticked, with `shares: []` — the receiving / save step must rebuild shares before saving (the schema needs at least 1).
+8. **Line quantity** = sum of all users' needs, not only the low ones (as v2); ticked only if some user is low.
+9. **Name clash for typed medicines** compares with every medicine in the app and house medicines that are not removed, ignoring case and all spaces; the line is still made and `clash` tells the screen to offer the app's medicine.
+10. Tests: 759 now (684 before).
+
+### Still open for the owner
+- Is the shop order in item 3 right, or should shops with missing prices be left out of the ranking?
+- The compare screen needs an order for `free` lines when no shop is chosen yet — not decided here (11.2).
