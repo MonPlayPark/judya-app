@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('virtual:pwa-register', () => ({ registerSW: () => async () => {} }));
@@ -36,7 +36,6 @@ const flush = async (): Promise<void> => {
     await Promise.resolve();
   });
 };
-const btn = (name: string | RegExp) => screen.getByRole('button', { name });
 
 beforeEach(() => {
   localStorage.clear();
@@ -94,7 +93,7 @@ describe('asking the browser to keep the data', () => {
     go('#/');
     render(<App />);
     await flush();
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('สวัสดีค่ะ');
+    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent('สวัสดีค่ะ');
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });
@@ -102,11 +101,16 @@ describe('asking the browser to keep the data', () => {
 describe('asking again after the first medicine is saved', () => {
   const addMedicine = async (name: string): Promise<void> => {
     await navigate('#/n/meds/new?person=p2');
-    fireEvent.change(screen.getByLabelText('ชื่อยา'), { target: { value: name } });
-    fireEvent.click(document.querySelector<HTMLButtonElement>('button[class*="primary"]') as HTMLButtonElement);
-    fireEvent.click(btn('ถัดไป'));
-    fireEvent.click(btn('ไม่นับสต็อก'));
-    fireEvent.click(btn('บันทึกยา'));
+    fireEvent.change(await screen.findByLabelText('ชื่อยา'), { target: { value: name } });
+    const primary = await waitFor(() => {
+      const el = document.querySelector<HTMLButtonElement>('button[class*="primary"]');
+      if (!el) throw new Error('step 1 button not shown yet');
+      return el;
+    });
+    fireEvent.click(primary);
+    fireEvent.click(await screen.findByRole('button', { name: 'ถัดไป' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'ไม่นับสต็อก' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'บันทึกยา' }));
     await flush();
   };
 
@@ -117,11 +121,11 @@ describe('asking again after the first medicine is saved', () => {
     go('#/n');
     render(<App />);
     await flush();
-    expect(persist).toHaveBeenCalledTimes(1); // when the app opened
+    await waitFor(() => expect(persist).toHaveBeenCalledTimes(1)); // when the app opened
 
     await addMedicine('ยาทดสอบหนึ่ง');
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}').assignments).toHaveLength(1);
-    expect(persist).toHaveBeenCalledTimes(2);
+    await waitFor(() => expect(persist).toHaveBeenCalledTimes(2));
 
     await addMedicine('ยาทดสอบสอง');
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}').assignments).toHaveLength(2);
