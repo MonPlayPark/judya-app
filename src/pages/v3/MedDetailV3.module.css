@@ -1,5 +1,5 @@
 /* v3 medicine detail (M4 PR 5b). Values copied from the board MedDetail (390px): text as px at "normal" times
-   var(--fs); colours from the `.v3theme` tokens. Cards: white, radius 16, the same shadow as Home, 10px apart. */
+   var(--fs); colours from the tokens of tokens.css. Cards: white, radius 16, the same shadow as Home, 10px apart. */
 .page {
   display: flex;
   flex-direction: column;

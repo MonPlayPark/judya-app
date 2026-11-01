@@ -1,5 +1,5 @@
 /* Parts inside a bottom sheet (M4 PR 5b): buttons, number boxes, date button, summary box, option buttons.
-   Colours from the .v3theme tokens of the page. Every tap target is 44px or more; the main buttons are 52px. */
+   Colours from the tokens of tokens.css. Every tap target is 44px or more; the main buttons are 52px. */
 .body {
   display: flex;
   flex-direction: column;

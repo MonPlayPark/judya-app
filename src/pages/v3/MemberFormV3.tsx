@@ -9,7 +9,6 @@ import { defaultNewId } from '../../domain/v3/medActions';
 import { NAME_MAX, createMember, defaultSelfManaged, draftState, emptyDraft, hasSelf, type MemberDraft } from '../../domain/v3/members';
 import { AVATAR_NAMES_V3, RELATIONS_V3, SELF_RELATION, maxBirthYearBE, type Person, type Root } from '../../domain/v3/schema';
 import { avatarUrl } from '../../visual';
-import '../../styles/v3theme.css';
 import styles from './MemberFormV3.module.css';
 
 const SHOWN = 4; // pictures in the row; the rest are in the "+" sheet
@@ -52,7 +51,7 @@ export function MemberForm({ initial, persons, title, saveError, onBack, onSubmi
   const birth = state.birth;
 
   return (
-    <div className={`v3theme ${styles.page}`}>
+    <div className={styles.page}>
       {banner}
       <header className={styles.head}>
         <button type="button" className={styles.back} aria-label="กลับ" onClick={onBack}>

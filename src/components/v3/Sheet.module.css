@@ -1,5 +1,5 @@
 /* Bottom sheet (M4 PR 5b, board "C"): curtain rgba(32,33,36,.48); white sheet, top corners 24, at most 88% high and
-   scrolls inside; handle 40x4 #80868B. Colours come from the .v3theme tokens of the page that holds it. */
+   scrolls inside; handle 40x4 #80868B. Colours come from the tokens of tokens.css. */
 .root {
   position: fixed;
   inset: 0;

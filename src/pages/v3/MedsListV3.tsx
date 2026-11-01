@@ -23,7 +23,6 @@ import {
 import type { Root } from '../../domain/v3/schema';
 import { avatarUrl, iconUrl, type IconName } from '../../visual';
 import mascotUrl from '../../assets/visual/mascot/pharmacist-clipboard.svg?url';
-import '../../styles/v3theme.css';
 import { HouseInfoSheet, HouseRefillSheet, type HouseSheetKind } from './HouseSheets';
 import styles from './MedsListV3.module.css';
 
@@ -114,7 +113,7 @@ export function MedsListView({ root: initialRoot, today, demo, persist, linkSuff
   };
 
   return (
-    <div className={`v3theme ${styles.page}`}>
+    <div className={styles.page}>
       {demo && (
         <p className={styles.demo} role="status">
           <InfoIcon />

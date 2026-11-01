@@ -59,7 +59,6 @@ import { label } from '../../domain/v3/medsList';
 import { defaultNewId } from '../../domain/v3/medActions';
 import { STRENGTH_UNITS, type MedKind, type Person, type Root, type Schedule } from '../../domain/v3/schema';
 import { avatarUrl } from '../../visual';
-import '../../styles/v3theme.css';
 import styles from './AddMedV3.module.css';
 
 const squash = (s: string): string => s.replace(/\s+/g, '').toLowerCase();
@@ -202,7 +201,7 @@ export function AddMedView({ root, today, demo, persist, linkSuffix = '', medsSu
   }
 
   return (
-    <div className={`v3theme ${styles.page}`}>
+    <div className={styles.page}>
       {demo && (
         <p className={styles.demo} role="status">
           <InfoIcon />

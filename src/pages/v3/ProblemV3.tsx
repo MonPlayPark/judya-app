@@ -11,7 +11,6 @@ import { RESTORE_ERRORS, restoreUnreadable, startOver } from '../../domain/v3/da
 import type { KeyValueStore } from '../../domain/v3/storage';
 import type { Loaded } from './HomeV3Page';
 import { RestoreSheet, useRestoreFlow } from './restoreFlow';
-import '../../styles/v3theme.css';
 import styles from './DataV3.module.css';
 
 type Problem = Extract<Loaded, { kind: 'problem' }>;
@@ -34,7 +33,7 @@ export function ProblemV3({ loaded, store }: { loaded: Problem; store?: KeyValue
   };
 
   return (
-    <div className={`v3theme ${styles.page}`}>
+    <div className={styles.page}>
       <main className={styles.body}>
         <section className={styles.card} aria-labelledby="pv-title">
           <h1 id="pv-title" className={styles.cardTitle}>

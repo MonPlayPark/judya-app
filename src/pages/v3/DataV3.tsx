@@ -24,7 +24,6 @@ import {
   type RestoreOutcome,
 } from '../../domain/v3/dataPage';
 import type { Root } from '../../domain/v3/schema';
-import '../../styles/v3theme.css';
 import { RestoreSheet, useRestoreFlow, type PendingRestore } from './restoreFlow';
 import styles from './DataV3.module.css';
 
@@ -76,7 +75,7 @@ export function DataView({ root, today, demo, persist, onBackup, onRestore, onBa
   };
 
   return (
-    <div className={`v3theme ${styles.page}`}>
+    <div className={styles.page}>
       {demo && (
         <p className={styles.demo} role="status">
           <InfoIcon />

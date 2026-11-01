@@ -7,7 +7,6 @@ import { V3Nav } from '../../components/v3/V3Nav';
 import { PERIOD_LABEL, type CareItem, type DoseRow, type HomeModel, type Period } from '../../domain/v3/home';
 import { avatarUrl, iconUrl } from '../../visual';
 import mascotUrl from '../../assets/visual/mascot/pharmacist-clipboard.svg?url';
-import '../../styles/v3theme.css';
 import styles from './HomeV3.module.css';
 
 export interface HomeViewProps {
@@ -36,7 +35,7 @@ export function HomeView({ model, demo, saveError, onPick, onToggle, linkSuffix 
   const m = model;
   const hero = m.headline.done ? `${styles.hero} ${styles.heroDone}` : styles.hero;
   return (
-    <div className={`v3theme ${styles.page}`}>
+    <div className={styles.page}>
       {demo && (
         <p className={styles.demo} role="status">
           <InfoIcon />

@@ -1,5 +1,5 @@
 /* v3 medicine list (M4 PR 5a). Values copied from the board MedsList: text as px at "normal" times var(--fs);
-   colours come from the `.v3theme` tokens (src/styles/v3theme.css). Tap targets 44px (48px where the board says 48). */
+   colours come from the tokens of tokens.css. Tap targets 44px (48px where the board says 48). */
 
 .page {
   display: flex;
