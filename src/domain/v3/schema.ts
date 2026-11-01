@@ -96,6 +96,7 @@ export const packSchema = z.discriminatedUnion('type', [
 
 export type MedKind = (typeof MED_KINDS)[number];
 export type Pack = z.infer<typeof packSchema>;
+export type Strength = z.infer<typeof strengthSchema>;
 
 /** Loose kind <-> pack rule (see DECISIONS.md, M4 PR 1): every kind may have no pack; otherwise the pack must be
  * a shape that makes sense for the kind. Returns an error text, or null when fine. */
@@ -381,7 +382,9 @@ export const orderSourceSchema = z.discriminatedUnion(
         message: 'shares: an assignment is listed twice',
       }),
     z.object({ kind: z.literal('house'), houseItemId: id }).strict(),
-    z.object({ kind: z.literal('free'), name: z.string().min(1).max(60) }).strict(),
+    // M4 PR 11.2: a typed medicine may also keep its kind and strength (both optional, so older data still passes).
+    // The kind is called `medKind` because `kind` is the tag of this union.
+    z.object({ kind: z.literal('free'), name: z.string().min(1).max(60), medKind: z.enum(MED_KINDS).optional(), strength: strengthSchema.optional() }).strict(),
   ],
   { error: "order line source: kind must be 'med' (with medicationId and shares), 'house' or 'free' - the older 'assignment' order format is not supported" },
 );
