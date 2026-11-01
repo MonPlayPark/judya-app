@@ -1,0 +1,322 @@
+/* The bottom sheets of the order draft page (M4 PR 11.2). Colours from tokens.css; every tap target 44px or more. */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-top: 12px;
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--color-band);
+}
+.tab {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-navy);
+  font-family: inherit;
+  font-size: calc(15px * var(--fs));
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+.tabOn {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.search {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-family: inherit;
+  font-size: calc(16px * var(--fs));
+  color: var(--color-ink);
+}
+.search:focus {
+  border-color: var(--color-primary);
+  outline: 0;
+}
+.empty {
+  margin: 0;
+  padding: 16px 4px;
+  font-size: calc(15px * var(--fs));
+  line-height: calc(22px * var(--fs));
+  color: var(--color-ink-muted);
+  text-align: center;
+}
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 60px;
+  padding: 8px 0;
+  border-top: 1px solid var(--color-border);
+}
+.item:first-child {
+  border-top: 0;
+}
+.itemText {
+  flex: 1;
+  min-width: 0;
+}
+.itemName {
+  margin: 0;
+  font-size: calc(15px * var(--fs));
+  line-height: calc(22px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-navy);
+  overflow-wrap: anywhere;
+}
+.itemSub {
+  margin: 0;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  color: var(--color-ink-muted);
+  overflow-wrap: anywhere;
+}
+.addChip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  padding: 0 16px 0 10px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+  font-family: inherit;
+  font-size: calc(15px * var(--fs));
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+.addChip svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ----- new medicine form ----- */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.strengthRow {
+  display: flex;
+  gap: 8px;
+}
+.strengthRow > :first-child {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.select {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  min-width: 112px;
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-family: inherit;
+  font-size: calc(16px * var(--fs));
+  color: var(--color-ink);
+}
+.kinds {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.kindTile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 72px;
+  padding: 8px 2px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-navy);
+  font-family: inherit;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(18px * var(--fs));
+  font-weight: var(--weight-semibold);
+  text-align: center;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pill {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-navy);
+  font-family: inherit;
+  font-size: calc(15px * var(--fs));
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+.on {
+  border-color: var(--color-primary);
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+.qtyRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.round {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+  cursor: pointer;
+}
+.round:disabled {
+  background: var(--color-background);
+  color: var(--color-ink-muted);
+  cursor: not-allowed;
+}
+.qtyInput {
+  box-sizing: border-box;
+  width: 72px;
+  min-height: 48px;
+  padding: 0 8px;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-family: inherit;
+  font-size: calc(18px * var(--fs));
+  font-weight: var(--weight-bold);
+  color: var(--color-navy);
+  text-align: center;
+}
+.qtyUnit {
+  min-width: 0;
+  flex: 1;
+  font-size: calc(15px * var(--fs));
+  color: var(--color-ink-muted);
+  overflow-wrap: anywhere;
+}
+.checkRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  font-size: calc(15px * var(--fs));
+  line-height: calc(22px * var(--fs));
+  color: var(--color-ink);
+  cursor: pointer;
+}
+.check {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin: 10px;
+  accent-color: var(--color-primary);
+}
+
+.suggest {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 4px 12px 4px 8px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+  font-family: inherit;
+  font-size: calc(15px * var(--fs));
+  text-align: left;
+  cursor: pointer;
+}
+.suggestTag {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-weight: var(--weight-semibold);
+}
+.suggestTag svg {
+  width: 18px;
+  height: 18px;
+}
+.suggestName {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--color-navy);
+}
+.warn {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-warning-tint);
+}
+.warnText {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-warning-ink);
+}
+.warnText svg {
+  flex: none;
+  width: 20px;
+  height: 20px;
+}
+.warnButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sheetNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  color: var(--color-ink-muted);
+}
+.sheetNote svg {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: var(--color-primary-ink);
+}
