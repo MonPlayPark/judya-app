@@ -3,6 +3,43 @@
 Decisions Q1–Q12 are in `docs/BRIEF.md` section 7 and are not repeated here. This file records
 decisions taken **while building**, and questions the BRIEF does not answer. Newest step last.
 
+## M4 PR 7b — remove v2 (list written before anything was deleted)
+
+Owner decision (after PR 7 and a pass on the S24): v2 cannot read v3 data and holds no real data, so v2 is deleted. No data is moved.
+The leftover `judya.v2` / `judya.v2.prev` keys on the owner's phone are **left alone on purpose**; no code deletes them. The last
+commit that still contains v2 is `e36c6d3` (`git show e36c6d3:src/domain/order.ts` brings any file back).
+
+**How the list was made:** an import graph of `src/` (script, not by eye). Roots = every non-test file under a `v3/` folder, plus
+`main.tsx`, `state/persist.ts` and `components/UpdateBar.tsx`. Anything a root reaches is kept. `App.tsx` is not a root (it mixes both).
+
+**Kept, non-v3 files that v3 imports (proved by the graph):** `main.tsx`, `fonts.ts`, `visual.ts`, `router.ts`, `prefs/fontSize.ts`,
+`state/persist.ts`, `state/backupFile.ts`, `components/UpdateBar.*`, `components/icons.tsx`, `domain/calc.ts` (types + date maths;
+also holds the reference `compareShops` / `lineCost` and their 18 tests), `styles/tokens.css`, `styles/global.css`, `globals.d.ts`
+(`__APP_VERSION__`, used by `UpdateBar`), `src/assets/visual/**`.
+
+**Kept although no v3 file imports them yet (reused by the v3 order / settings pages, PR 11–14):**
+- `domain/format.ts` (+ test): `formatPills`, `thaiDate*`. It only needs `calc.ts`; the LINE order text and the order lines print pill counts with it.
+- `domain/shop.ts` (+ test): shop form check, `deliveryText`, `shopSub`. The v3 `shopSchema` is byte-for-byte the v2 one (checked with a diff), so the only edit is the type import (`./schema` → `./v3/schema`). Logic untouched. Used by the order page and "สั่งยาและร้านค้า" (PR 12 / 14).
+
+**Deleted although they look reusable (and why):** `domain/order.ts` (`orderLines`, v2 `compareShops`), `orderMessage.ts`, `orderPage.ts`,
+`price.ts`, `priceView.ts`, `suggest.ts`, `doctorSummary.ts`, `care.ts`. Every one is typed on the **v2 `Root`** (or v2 `Price` / `OrderLine`),
+so keeping them would mean keeping the whole v2 `schema.ts`. M4-GAP rows 11–13 also change their rules (new `orders` table, `Price.date`,
+"count only priced lines" instead of dropping a shop with a missing price), so they are rewritten against the v3 `Root` anyway.
+Start from `git show e36c6d3:<path>`. The same goes for the v2 `SharePage` / `summaryImage.ts` (doctor summary, PR 9–10).
+
+**Deleted (v2), 137 files:**
+- Pages (30 files, `src/pages/*` outside `v3/`): Home, Today, Meds, MedDetail, AddMedicine, HousePages, Members, MemberDetail, MemberForm, Order, OrderMessageCard, Settings, Share, ShopsCard, Problem, NotFound, `doseView.ts` (+ their `.module.css`).
+- Components (27 files): Avatar, BottomNav, Button, Card, ClearSampleDialog, ConfirmDialog, MedicineNameField, PageHeader, PriceSection, QuickAddMember, RestorePanel, SaveErrorBar, ScheduleEditor, StatusBadge, SubLine, `form.tsx`, `summaryImage.ts` (+ css).
+- Domain (v2 data layer, 27 files): `schema`, `storage`, `actions`, `backup`, `care`, `doctorSummary`, `errorText`, `fixtures`, `house`, `houseForm`, `houseView`, `medView`, `medicine`, `memberView`, `order*`, `prep`, `price*`, `sample`, `schedule`, `scheduleForm`, `stock`, `suggest`, `today`.
+- State (4): `DataContext`, `DraftContext`, `shareImages`, `useToday`.
+- `App.module.css` (v2 shell only), `styles/v3theme.css` (moved to `:root`, step 2).
+- Tests (42 files): every `App.*.test.tsx` that drives v2 (data, house, meds, members, order, ordersettings, prices, sample, screens, settings, share), all v2 domain tests and test-utils, `summaryImage.test`, `DataContext*.test`, `v3theme.test`.
+- Rewritten, not deleted: `App.tsx`, `App.test.tsx`, `App.updatebar.test.tsx` (v3 only). The persistence unit test that lived in `App.data.test.tsx` moves to `state/persist.test.ts`.
+
+**Outside `src/`:** `scripts/check-overflow.mjs` (v2 route list and the v2 sample-data scenario go; the v3 scenarios stay), `README.md`, `CLAUDE.md`.
+
+**Unknown routes** go to v3 Home (no new screen, no new text). Old v2 links such as `#/meds` therefore land on Home.
+
 ## Step 3.1
 
 ### Open questions (BRIEF is silent — need an answer before the step that uses them)
