@@ -1,3 +1,4 @@
+import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import { BottomNav } from './components/BottomNav';
 import { SaveErrorBar } from './components/SaveErrorBar';
 import { UpdateBar } from './components/UpdateBar';
@@ -6,6 +7,7 @@ import { HomePage } from './pages/HomePage';
 import { AddMedV3Route } from './pages/v3/AddMedPage';
 import { DataV3Route } from './pages/v3/DataPage';
 import { HomeV3Route } from './pages/v3/HomeV3Page';
+import { RecoveryContext } from './components/v3/recovery';
 import { MedDetailV3Route } from './pages/v3/MedDetailPage';
 import { MedsListV3Route } from './pages/v3/MedsListPage';
 import { MemberFormV3Route } from './pages/v3/MemberFormPage';
@@ -24,26 +26,49 @@ import { TodayPage } from './pages/TodayPage';
 import type { IsoDate } from './domain/calc';
 import { useRoute } from './router';
 import { DataProvider, useData } from './state/DataContext';
+import { requestPersistence } from './state/persist';
 import { DraftProvider } from './state/DraftContext';
 import styles from './App.module.css';
 
 /** `getToday` is only for tests: it replaces the real clock. */
 export function App({ getToday }: { getToday?: () => IsoDate }) {
   const { path } = useRoute();
-  // v3 Home (M4 PR 4): outside DataProvider on purpose, so this route never opens the v2 data (`judya.v2`).
-  if (path === '/n') return <HomeV3Route getToday={getToday} />;
-  if (path === '/n/meds') return <MedsListV3Route getToday={getToday} />; // M4 PR 5a: same rule, read only
-  if (path === '/n/members/new') return <MemberFormV3Route getToday={getToday} />; // M4 PR 6a: add member, same rule
-  if (path === '/n/settings/data') return <DataV3Route getToday={getToday} />; // M4 PR 6c: data and backup, same rule (outside DataProvider)
-  if (path === '/n/meds/new') return <AddMedV3Route getToday={getToday} />; // M4 PR 6b: add medicine, same rule; checked before V3_MED_PATH so "new" is not an id
-  const v3Med = V3_MED_PATH.exec(path); // M4 PR 5b: medicine detail, same rule (outside DataProvider)
-  if (v3Med?.[1]) return <MedDetailV3Route id={safeDecode(v3Med[1])} getToday={getToday} />;
+  const v3 = v3Screen(path, getToday);
+  if (v3) return <V3Frame>{v3}</V3Frame>;
   return (
     <DataProvider getToday={getToday}>
       <DraftProvider>
         <Shell />
       </DraftProvider>
     </DataProvider>
+  );
+}
+
+/** The v3 screens (all outside DataProvider on purpose, so they never open the v2 data `judya.v2`). M4 PR 7: `#/` is v3 Home too.
+ * Returns null for a route that belongs to v2 (v2 Home is `#/old`). */
+function v3Screen(path: string, getToday: (() => IsoDate) | undefined): ReactNode {
+  if (path === '/' || path === '/n') return <HomeV3Route getToday={getToday} />;
+  if (path === '/n/meds') return <MedsListV3Route getToday={getToday} />; // M4 PR 5a: same rule, read only
+  if (path === '/n/members/new') return <MemberFormV3Route getToday={getToday} />; // M4 PR 6a: add member, same rule
+  if (path === '/n/settings/data') return <DataV3Route getToday={getToday} />; // M4 PR 6c: data and backup, same rule (outside DataProvider)
+  if (path === '/n/meds/new') return <AddMedV3Route getToday={getToday} />; // M4 PR 6b: add medicine, same rule; checked before V3_MED_PATH so "new" is not an id
+  const v3Med = V3_MED_PATH.exec(path); // M4 PR 5b: medicine detail, same rule (outside DataProvider)
+  if (v3Med?.[1]) return <MedDetailV3Route id={safeDecode(v3Med[1])} getToday={getToday} />;
+  return null;
+}
+
+/** Around every v3 screen: the "new version" bar (the v2 shell has its own) and the way out of an unreadable-data screen:
+ * after "start over" / "restore" the screen is built again (new key) and reads the data again. */
+function V3Frame({ children }: { children: ReactNode }) {
+  const [epoch, setEpoch] = useState(0);
+  useEffect(() => {
+    void requestPersistence(); // M4 PR 7 fix: v3 pages have no DataProvider, which used to ask. Once per page load; failure is silent.
+  }, []);
+  return (
+    <RecoveryContext.Provider value={() => setEpoch((n) => n + 1)}>
+      <UpdateBar />
+      <Fragment key={epoch}>{children}</Fragment>
+    </RecoveryContext.Provider>
   );
 }
 
@@ -81,7 +106,7 @@ const MEMBER_SHARE_PATH = /^\/members\/([^/]+)\/share$/;
  * so "new" is never read as an id. */
 function Screen({ path }: { path: string }) {
   switch (path) {
-    case '/':
+    case '/old': // M4 PR 7: v2 Home moved here until v2 is removed (PR 7b); `#/` is v3 Home
       return <HomePage />;
     case '/today':
       return <TodayPage />;

@@ -13,7 +13,7 @@ import { handOffBackup } from '../../state/backupFile';
 import { refreshPersistStatus, usePersistStatus } from '../../state/persist';
 import { openRoot, useBangkokToday, type HomePageProps, type Loaded } from './HomeV3Page';
 import { DataView, type BackupResult, type DataViewProps } from './DataV3';
-import homeStyles from './HomeV3.module.css';
+import { ProblemV3 } from './ProblemV3';
 
 /** A demo name of Home (normal, backup ...) or of the medicine list (nomeds ...); the same names are carried in links.
  * Home's names win where both have one ("normal"), because they carry a backup date. */
@@ -67,17 +67,8 @@ function LiveData({ getToday, store }: HomePageProps) {
   const [loaded] = useState<Loaded>(() => openRoot(store === undefined ? loadRoot() : loadRoot(store)));
   const [root, setRoot] = useState<Root | null>(loaded.kind === 'ok' ? loaded.root : null);
 
-  if (loaded.kind === 'problem' || root === null) {
-    return (
-      <div className={`v3theme ${homeStyles.page}`}>
-        <main className={homeStyles.body}>
-          <p className={homeStyles.saveError} role="alert">
-            {loaded.kind === 'problem' ? loaded.text : ''}
-          </p>
-        </main>
-      </div>
-    );
-  }
+  if (loaded.kind === 'problem') return <ProblemV3 loaded={loaded} {...(store === undefined ? {} : { store })} />;
+  if (root === null) return null; // not reachable: root is set whenever the data opened
 
   const onBackup = async (): Promise<BackupResult> => {
     const nowIso = new Date().toISOString();

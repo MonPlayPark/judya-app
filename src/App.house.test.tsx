@@ -393,7 +393,7 @@ describe('home: ยาที่ต้องดูแล includes house medicines
       { id: 'c', name: 'ยาสามัญ หมดอายุ', expiry: '2026-10-18' },
       { id: 'd', name: 'ยาสามัญ สต๊อกพอ', stock: { qty: 50, unit: 'เม็ด' }, lowAt: 5 },
     ];
-    open('#/', withHouse(...items));
+    open('#/old', withHouse(...items));
     expect(screen.getByRole('link', { name: 'ดูทั้งหมด 3' })).toBeInTheDocument(); // 3 medicines need care (round 9: no group headings)
     const low = screen.getByRole('link', { name: /ยาสามัญ ใกล้หมด/ });
     expect(low).toHaveAttribute('href', '#/house/a');
@@ -405,17 +405,17 @@ describe('home: ยาที่ต้องดูแล includes house medicines
 
   it('cutting stock to the warn level makes it appear on home; deleting makes it disappear', () => {
     open('#/house/h1', withHouse(para));
-    nav('#/');
+    nav('#/old');
     expect(screen.getByText('ตอนนี้ไม่มียาที่ต้องดูแล')).toBeInTheDocument();
     nav('#/house/h1');
     for (let i = 0; i < 4; i += 1) click(button('เพิ่มจำนวนที่ใช้'));
     click(button('ตัดออก 5 เม็ด')); // 10 -> 5 = the warn level
-    nav('#/');
+    nav('#/old');
     expect(screen.getByRole('link', { name: /ยาสามัญทดสอบ ก/ })).toBeInTheDocument();
     nav('#/house/h1');
     click(button('ลบยานี้'));
     click(button('ลบ'));
-    nav('#/');
+    nav('#/old');
     expect(screen.getByText('ตอนนี้ไม่มียาที่ต้องดูแล')).toBeInTheDocument();
   });
 });

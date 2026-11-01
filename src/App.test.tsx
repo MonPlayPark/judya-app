@@ -13,7 +13,7 @@ const go = (hash: string) =>
 
 describe('app shell', () => {
   beforeEach(() => {
-    window.location.hash = '';
+    window.location.hash = '#/old'; // v2 Home (M4 PR 7: `#/` is v3 Home)
   });
 
   it('shows the four tabs in the bottom menu', () => {
@@ -32,6 +32,20 @@ describe('app shell', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('สมาชิก');
     expect(screen.getByRole('link', { name: 'สมาชิก' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: 'หน้าแรก' })).not.toHaveAttribute('aria-current');
+  });
+
+  it.each(['', '#/'])('the empty app (hash "%s") opens v3 Home, not the old home (M4 PR 7)', (hash) => {
+    window.location.hash = hash;
+    render(<App />);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('สวัสดีค่ะ');
+    expect(screen.getByRole('navigation', { name: 'เมนูหลัก' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'หน้าหลัก' })).toHaveAttribute('href', '#/n');
+  });
+
+  it('#/old opens the old home and its menu links "หน้าแรก" to #/old', () => {
+    window.location.hash = '#/old';
+    render(<App />);
+    expect(screen.getByRole('link', { name: 'หน้าแรก' })).toHaveAttribute('href', '#/old');
   });
 
   it('shows a not-found page for an unknown route', () => {

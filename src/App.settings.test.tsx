@@ -115,11 +115,11 @@ describe('thresholds apply at once, with no save button', () => {
       assignments: [assignment({ schedule: morning, expiry: '2026-11-01' })],
     });
     expect(saveRoot({ ...base, meta: { ...base.meta, lastBackupAt: CLOCK }, settings: { ...base.settings, expiryWarnDays: 7 } }).ok).toBe(true);
-    open('#/');
+    open('#/old');
     expect(screen.queryByText('14')).not.toBeInTheDocument(); // 7-day window: not listed (round 9: the day number is its own text)
     go('#/settings');
     fireEvent.click(chip('เตือนยาใกล้หมดอายุ', '30 วัน'));
-    go('#/');
+    go('#/old');
     expect(screen.getByText('14')).toBeInTheDocument();
     expect(screen.getByText('14').closest('a')).toHaveTextContent('Sample Med 5 mg');
   });
@@ -324,7 +324,7 @@ describe('restore from a backup file', () => {
     expect(screen.queryByText(/นำกลับข้อมูลแล้ว/)).not.toBeInTheDocument();
     expect(rawStored()).toBe(before);
     expect(localStorage.getItem(PREV_KEY)).toBe('older-copy');
-    go('#/');
+    go('#/old');
     expect(screen.getByText('Test Person A')).toBeInTheDocument();
     expect(screen.queryByText('Test Person B')).not.toBeInTheDocument();
   });
@@ -385,7 +385,7 @@ describe('quiet backup reminder on the home screen', () => {
 
   it('more than 14 days: a plain line with an icon and a link to Settings (no dialog, no alert)', () => {
     expect(saveRoot(house('2026-10-03T23:30:00+07:00')).ok).toBe(true);
-    open('#/');
+    open('#/old');
     expect(screen.getByText(/ไม่ได้สำรองข้อมูลมา 15 วันแล้ว/)).toBeInTheDocument();
     expect(reminder()).toHaveAttribute('href', '#/settings');
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
@@ -393,25 +393,25 @@ describe('quiet backup reminder on the home screen', () => {
   });
   it('never backed up but the house has data: shown', () => {
     expect(saveRoot(house()).ok).toBe(true);
-    open('#/');
+    open('#/old');
     expect(screen.getByText(/ยังไม่เคยสำรองข้อมูล/)).toBeInTheDocument();
     expect(reminder()).toBeInTheDocument();
   });
   it('14 days or less: not shown', () => {
     expect(saveRoot(house('2026-10-04T10:00:00+07:00')).ok).toBe(true);
-    open('#/');
+    open('#/old');
     expect(reminder()).not.toBeInTheDocument();
   });
   it('sample data: not shown', () => {
     const r = house();
     expect(saveRoot({ ...r, meta: { ...r.meta, isSample: true } }).ok).toBe(true);
-    open('#/');
+    open('#/old');
     expect(screen.getByText('นี่คือข้อมูลตัวอย่าง')).toBeInTheDocument();
     expect(reminder()).not.toBeInTheDocument();
   });
   it('blank house: not shown', () => {
     expect(saveRoot(emptyRoot(NOW)).ok).toBe(true);
-    open('#/');
+    open('#/old');
     expect(reminder()).not.toBeInTheDocument();
   });
 });
@@ -419,7 +419,7 @@ describe('quiet backup reminder on the home screen', () => {
 describe('problem screen (unreadable data) offers restore from a backup file', () => {
   it('corrupt data: pick a file, the current data is shown as unreadable, confirm -> the app opens with the restored data', async () => {
     localStorage.setItem(STORAGE_KEY, '{"version":2,"persons":[');
-    open('#/');
+    open('#/old');
     expect(screen.getByRole('alert')).toHaveTextContent('อ่านข้อมูลที่เก็บไว้ไม่ได้');
     pick(backupFile(threeMeds()));
     await screen.findByText('จะแทนที่ข้อมูลปัจจุบันทั้งหมดด้วยข้อมูลในไฟล์นี้');
@@ -431,21 +431,21 @@ describe('problem screen (unreadable data) offers restore from a backup file', (
   });
   it('a bad file there says the data was not touched', async () => {
     localStorage.setItem(STORAGE_KEY, '{"version":2,"persons":[');
-    open('#/');
+    open('#/old');
     pick(new File(['abc'], 'x.json'));
     expect(await screen.findAllByText(/ข้อมูลปัจจุบันไม่ถูกแตะ/)).not.toHaveLength(0);
     expect(rawStored()).toBe('{"version":2,"persons":[');
   });
   it('data from another version: the button is there too', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 3 }));
-    open('#/');
+    open('#/old');
     expect(screen.getByRole('button', { name: 'นำกลับจากไฟล์สำรอง' })).toBeInTheDocument();
   });
   it('browser blocks storage: no restore button (nothing could be written)', () => {
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new DOMException('blocked', 'SecurityError');
     });
-    open('#/');
+    open('#/old');
     expect(screen.getByRole('alert')).toHaveTextContent('เบราว์เซอร์ไม่ให้เก็บข้อมูล');
     expect(screen.queryByRole('button', { name: 'นำกลับจากไฟล์สำรอง' })).not.toBeInTheDocument();
   });

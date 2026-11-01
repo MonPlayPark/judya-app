@@ -77,7 +77,7 @@ afterEach(() => {
 
 describe('members list (#/members)', () => {
   it('the bottom tab "สมาชิก" opens the real page, not "being built"', () => {
-    open('#/');
+    open('#/old');
     click(screen.getByRole('link', { name: 'สมาชิก' }));
     nav('#/members');
     expect(h1()).toHaveTextContent('สมาชิกในบ้าน');
@@ -431,7 +431,7 @@ describe('edit form (#/members/:id/edit)', () => {
 
 describe('taking a member out and putting them back', () => {
   it('the confirm box: cancel changes nothing; confirming hides the member everywhere; putting back brings everything back', () => {
-    open('#/');
+    open('#/old');
     expect(screen.getByText('สมาชิกทดสอบ ก · ยาจะหมดใน')).toBeInTheDocument(); // the numbers before taking ก out (round 9 row: owner line + day number)
     expect(screen.getByText('7')).toBeInTheDocument();
     nav('#/members/pA/edit');
@@ -465,7 +465,7 @@ describe('taking a member out and putting them back', () => {
     expect(todayRows()).toHaveLength(1);
     expect(screen.queryByText('สมาชิกทดสอบ ก')).not.toBeInTheDocument();
     // gone from the home screen (care list: ก's low medicine; members card)
-    nav('#/');
+    nav('#/old');
     expect(screen.queryByText(/สมาชิกทดสอบ ก/)).not.toBeInTheDocument();
     expect(screen.getByText('ตอนนี้ไม่มียาที่ต้องดูแล')).toBeInTheDocument();
     // gone from all medicines
@@ -481,7 +481,7 @@ describe('taking a member out and putting them back', () => {
     expect(within(card('สมาชิกทดสอบ ก')).getByText('ทานวันนี้ 2 ครั้ง')).toBeInTheDocument();
     nav('#/today');
     expect(todayRows()).toHaveLength(3);
-    nav('#/');
+    nav('#/old');
     expect(screen.getByText('สมาชิกทดสอบ ก · ยาจะหมดใน')).toBeInTheDocument(); // exactly the same numbers as before (round 9 row)
     expect(screen.getByText('7')).toBeInTheDocument();
     nav('#/meds');

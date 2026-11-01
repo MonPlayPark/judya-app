@@ -9,12 +9,13 @@ const ORIGIN = `http://localhost:${PORT}`;
 const BASE = `${ORIGIN}/judya-app/`;
 const WIDTHS = [360, 412];
 const SIZES = ['n', 'm', 'l'];
-const STATIC_ROUTES = ['/', '/today', '/meds', '/meds?tab=house', '/meds/new', '/meds/new/schedule', '/meds/new/stock',
+// M4 PR 7: '/' is v3 Home now (in V3_ROUTES); the old v2 home is '/old'.
+const STATIC_ROUTES = ['/old', '/today', '/meds', '/meds?tab=house', '/meds/new', '/meds/new/schedule', '/meds/new/stock',
   '/house/new', '/members', '/members/new', '/order', '/settings', '/no-such-page'];
 
 // v3 Home (M4 PR 4): the real data route (a new user = S0) and the six demo states. Checked for sideways overflow
 // like every page, and also for text under the minimum size and tap targets under 44px on v3 pages (route starts with #/n).
-const V3_ROUTES = ['/n', '/n?demo=normal', '/n?demo=alert', '/n?demo=empty0', '/n?demo=empty1', '/n?demo=notoday', '/n?demo=backup',
+const V3_ROUTES = ['/', '/n', '/n?demo=normal', '/n?demo=alert', '/n?demo=empty0', '/n?demo=empty1', '/n?demo=notoday', '/n?demo=backup',
   // v3 medicine list (M4 PR 5a): real data (empty), every demo, the house tab and both folded sections open
   '/n/meds', '/n/meds?demo=normal', '/n/meds?demo=normal&open=stopped', '/n/meds?demo=normal&tab=house', '/n/meds?demo=normal&open=deleted',
   '/n/meds?demo=nomember', '/n/meds?demo=nomeds', '/n/meds?demo=nohouse&tab=house',
@@ -178,8 +179,29 @@ for (const width of WIDTHS) {
       if (small) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 add-med(${label}): ${small}`); }
     }
 
-    // 2) house with the sample data (pages that need ids too)
-    await page.goto(`${BASE}#/`);
+    // 1e) v3 "can't read the data" screen (M4 PR 7): corrupt judya.v3 on Home and on two other pages, then the start-over sheets
+    await page.goto(`${BASE}#/old`);
+    await page.evaluate(() => window.localStorage.setItem('judya.v3', '{not json'));
+    const problemScenarios = [
+      ['home', '/', async () => {}],
+      ['meds list', '/n/meds', async () => {}],
+      ['data page', '/n/settings/data', async () => {}],
+      ['start over, step 1', '/', async (pg) => { await pg.getByRole('button', { name: 'เริ่มใหม่', exact: true }).click(); }],
+      ['start over, step 2', '/', async (pg) => { await pg.getByRole('button', { name: 'เริ่มใหม่', exact: true }).click(); await pg.getByRole('button', { name: 'ต่อไป', exact: true }).click(); }],
+    ];
+    for (const [label, route, act] of problemScenarios) {
+      await visit(route, 'v3 problem');
+      await act(page);
+      const bad = await page.evaluate(measure);
+      checked += 1;
+      if (bad) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 problem(${label}): ${bad}`); }
+      const small = await page.evaluate(measureV3, fs === 'n' ? 13.9 : 14.9);
+      if (small) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 problem(${label}): ${small}`); }
+    }
+    await page.evaluate(() => window.localStorage.removeItem('judya.v3'));
+
+    // 2) house with the sample data (pages that need ids too). The sample button is on the old v2 home, '#/old'.
+    await page.goto(`${BASE}#/old`);
     await page.getByRole('button', { name: 'ลองดูด้วยข้อมูลตัวอย่าง' }).click();
     await page.waitForTimeout(300);
     const ids = await page.evaluate(() => {

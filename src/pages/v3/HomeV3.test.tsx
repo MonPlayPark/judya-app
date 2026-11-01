@@ -263,10 +263,19 @@ describe('route #/n in the app', () => {
     expect(screen.getByText('ยาหมดอายุแล้ว 1 รายการ')).toBeInTheDocument();
     expect(get).not.toHaveBeenCalled();
   });
-  it('leaves the old home alone at #/', () => {
-    go('#/');
+  it.each(['', '#/', '#/n'])('opens the v3 home at "%s" (the empty app) and never reads the v2 key', (hash) => {
+    const get = vi.spyOn(Storage.prototype, 'getItem');
+    go(hash);
+    render(<App />);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('สวัสดีค่ะ');
+    expect(get).not.toHaveBeenCalledWith('judya.v2');
+    expect(get).not.toHaveBeenCalledWith('judya.v2.prev');
+  });
+  it('keeps the old home at #/old (v2, until PR 7b)', () => {
+    go('#/old');
     render(<App />);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('ยินดีต้อนรับค่ะ');
+    expect(screen.getByRole('link', { name: 'หน้าแรก' })).toHaveAttribute('href', '#/old');
   });
 });
 

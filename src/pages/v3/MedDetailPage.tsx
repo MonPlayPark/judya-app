@@ -8,8 +8,8 @@ import { isMedsDemoName, medsDemoRoot, type MedsDemoName } from '../../domain/v3
 import type { Root } from '../../domain/v3/schema';
 import { loadRoot, saveRoot } from '../../domain/v3/storage';
 import { openRoot, saveErrorText, useBangkokToday, type HomePageProps, type Loaded } from './HomeV3Page';
+import { ProblemV3 } from './ProblemV3';
 import { MedDetailNotFound, MedDetailView, type DetailSheet, type MedDetailViewProps, type Persist } from './MedDetailV3';
-import homeStyles from './HomeV3.module.css';
 
 const SHEETS: readonly string[] = ['refill', 'stop', 'resume', 'history'];
 const isSheet = (v: string | null): v is DetailSheet => v !== null && SHEETS.includes(v);
@@ -41,15 +41,7 @@ function LiveDetail({ id, initialSheet, getToday, store }: HomePageProps & { id:
   const today = useBangkokToday(getToday);
   const [loaded] = useState<Loaded>(() => openRoot(store === undefined ? loadRoot() : loadRoot(store)));
   if (loaded.kind === 'problem') {
-    return (
-      <div className={`v3theme ${homeStyles.page}`}>
-        <main className={homeStyles.body}>
-          <p className={homeStyles.saveError} role="alert">
-            {loaded.text}
-          </p>
-        </main>
-      </div>
-    );
+    return <ProblemV3 loaded={loaded} {...(store === undefined ? {} : { store })} />;
   }
   const persist: Persist = (root) => {
     const result = store === undefined ? saveRoot(root) : saveRoot(root, store);

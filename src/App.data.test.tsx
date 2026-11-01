@@ -20,7 +20,7 @@ const clearOurKeys = () => {
 
 beforeEach(() => {
   clearOurKeys();
-  window.location.hash = '';
+  window.location.hash = '#/old'; // v2 Home (M4 PR 7: `#/` is v3 Home)
   resetPersistenceAsked();
 });
 afterEach(() => {

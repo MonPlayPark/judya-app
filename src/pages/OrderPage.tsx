@@ -60,7 +60,7 @@ export function OrderPage() {
 
   return (
     <>
-      <StepHeader title="สั่งยา" backTo="/" backLabel="กลับหน้าแรก" />
+      <StepHeader title="สั่งยา" backTo="/old" backLabel="กลับหน้าแรก" />
       <div className={styles.body}>
         <Card>
           <CardTitle icon={<BagIcon />}>ยาที่ต้องสั่ง</CardTitle>
