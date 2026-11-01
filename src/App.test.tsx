@@ -11,46 +11,30 @@ const go = (hash: string) =>
     window.dispatchEvent(new HashChangeEvent('hashchange'));
   });
 
-describe('app shell', () => {
+describe('app routes (v3 only)', () => {
   beforeEach(() => {
-    window.location.hash = '#/old'; // v2 Home (M4 PR 7: `#/` is v3 Home)
+    localStorage.clear();
+    window.location.hash = '';
   });
 
-  it('shows the four tabs in the bottom menu', () => {
-    render(<App />);
-    const nav = screen.getByRole('navigation', { name: 'เมนูหลัก' });
-    const labels = Array.from(nav.querySelectorAll('a')).map((a) => a.textContent);
-    expect(labels).toEqual(['หน้าแรก', 'ยา', 'สมาชิก', 'ตั้งค่า']);
-  });
-
-  it('opens on the home tab and follows the hash', () => {
-    render(<App />);
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('ยินดีต้อนรับค่ะ'); // empty house: first-run hero (round 9)
-    expect(screen.getByRole('link', { name: 'หน้าแรก' })).toHaveAttribute('aria-current', 'page');
-
-    go('#/members');
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('สมาชิก');
-    expect(screen.getByRole('link', { name: 'สมาชิก' })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('link', { name: 'หน้าแรก' })).not.toHaveAttribute('aria-current');
-  });
-
-  it.each(['', '#/'])('the empty app (hash "%s") opens v3 Home, not the old home (M4 PR 7)', (hash) => {
+  it.each(['', '#/', '#/n'])('the empty app (hash "%s") opens Home', (hash) => {
     window.location.hash = hash;
     render(<App />);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('สวัสดีค่ะ');
-    expect(screen.getByRole('navigation', { name: 'เมนูหลัก' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'หน้าหลัก' })).toHaveAttribute('href', '#/n');
   });
 
-  it('#/old opens the old home and its menu links "หน้าแรก" to #/old', () => {
-    window.location.hash = '#/old';
+  it.each(['#/old', '#/meds', '#/members', '#/order', '#/nowhere', '#/n/nowhere'])('an unknown or retired route (%s) opens Home', (hash) => {
+    window.location.hash = hash;
     render(<App />);
-    expect(screen.getByRole('link', { name: 'หน้าแรก' })).toHaveAttribute('href', '#/old');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('สวัสดีค่ะ');
   });
 
-  it('shows a not-found page for an unknown route', () => {
+  it('follows the hash from Home to the medicine list and back', () => {
     render(<App />);
-    go('#/nowhere');
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('ไม่พบหน้านี้');
+    go('#/n/meds');
+    expect(screen.getByRole('link', { name: 'รายการยา' })).toHaveAttribute('aria-current', 'page');
+    go('#/');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('สวัสดีค่ะ');
   });
 });

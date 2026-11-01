@@ -268,14 +268,8 @@ describe('route #/n in the app', () => {
     go(hash);
     render(<App />);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('สวัสดีค่ะ');
-    expect(get).not.toHaveBeenCalledWith('judya.v2');
-    expect(get).not.toHaveBeenCalledWith('judya.v2.prev');
-  });
-  it('keeps the old home at #/old (v2, until PR 7b)', () => {
-    go('#/old');
-    render(<App />);
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('ยินดีต้อนรับค่ะ');
-    expect(screen.getByRole('link', { name: 'หน้าแรก' })).toHaveAttribute('href', '#/old');
+    expect(get).not.toHaveBeenCalledWith('old.app');
+    expect(get).not.toHaveBeenCalledWith('old.app.prev');
   });
 });
 

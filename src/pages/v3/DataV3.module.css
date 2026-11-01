@@ -1,6 +1,6 @@
 /* v3 page "ข้อมูลและสำรองข้อมูล" (M4 PR 6c). No board for this page (owner's decision, 25 Oct): it follows the standard card / list
-   row of the design system and the v3 pages already built. Text as px at "normal" times var(--fs); colours from the `.v3theme`
-   tokens. Tap targets 44px or more (the two main buttons 52px). Status never by colour alone: every state has an icon and words. */
+   row of the design system and the v3 pages already built. Text as px at "normal" times var(--fs); colours from
+   tokens.css. Tap targets 44px or more (the two main buttons 52px). Status never by colour alone: every state has an icon and words. */
 .page {
   display: flex;
   flex-direction: column;

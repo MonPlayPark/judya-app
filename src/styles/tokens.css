@@ -1,10 +1,10 @@
 /* Design tokens from the JudYa Design System v2 (project/ds/judya/tokens.json). Do not invent new values. */
 :root {
   /* colour */
-  --color-primary: #1a73e8;
-  --color-primary-pressed: #1557b0;
-  --color-primary-ink: #1967d2;
-  --color-primary-tint: #e8f0fe;
+  --color-primary: #006DF5;
+  --color-primary-pressed: #0056C2;
+  --color-primary-ink: #005FD6;
+  --color-primary-tint: #E4F0FE;
   --color-secondary: #4285f4; /* illustration only, never a button fill */
   --color-success: #34a853;
   --color-success-ink: #137333;
@@ -18,9 +18,9 @@
   --color-error-tint: #fce8e6;
   --color-ink: #202124;
   --color-ink-muted: #5f6368;
-  --color-background: #f8f9fa;
+  --color-background: #F6FAFF;
   --color-surface: #ffffff;
-  --color-border: #dadce0; /* decoration only */
+  --color-border: #E3E8EF; /* decoration only */
   --color-border-strong: #80868b; /* boundary of controls */
   --color-navy: #013073; /* brand mark colour (M4 PR 4b) */
 
@@ -46,7 +46,7 @@
   --space-2: 1rem;
   --space-3: 1.5rem;
   --space-4: 2rem;
-  --touch-min: 48px; /* never below 48px, even at "normal" */
+  --touch-min: 44px; /* v3 tap target (board); spots the board makes 48px write 48px themselves */
   --button-h: 52px;
 
   /* radius */
@@ -57,17 +57,28 @@
   --radius-pill: 999px;
 
   /* shadow */
-  --elevation-1: 0 1px 2px rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+  --elevation-1: 0 1px 2px rgba(60, 64, 67, 0.22), 0 1px 3px 1px rgba(60, 64, 67, 0.1);
   --elevation-2: 0 1px 2px rgba(60, 64, 67, 0.3), 0 2px 6px 2px rgba(60, 64, 67, 0.15);
+
+  /* ---- v3 (M4 PR 7b): moved here from v3theme.css; values from the locked board. A name that v2 also had now has the v3 value ---- */
+  --color-header-cloud: #DDEEFE;
+  --color-header-cloud-2: #E3F1FF;
+  --color-header-spark: #0A74F5;
+  --color-logo-blue: #047AF9;
+  --color-period-sun: #F29900;
+  --color-period-dusk: #D9480F;
+  --color-period-dusk-fill: #FF9F43;
+  --shadow-selected-ring: 0 0 0 3px #006DF5;
+  --fs: 1; /* text size multiplier: v3 sizes are px at "normal" times --fs; set per size below */
 
   /* ---- visual refresh (V1): spec docs/design/visual-refresh-spec.md. Sizes are rem: 1rem = 16px at "medium". ---- */
 
   /* colour (new) */
   --color-bg-outer: #e8eaed; /* behind the phone frame */
-  --color-band: #d6e6fd; /* home hero, single flat colour (D5) */
+  --color-band: #EAF3FF; /* home hero, single flat colour (D5) */
   --color-band-done: #cdebd6; /* home hero when everything is done */
   --color-hero-ink-muted: #3c4043;
-  --color-member-blue: #1a73e8; /* avatar ring (D3) */
+  --color-member-blue: #006DF5; /* avatar ring (D3) */
   --color-member-green: #34a853;
   --color-member-yellow: #fbbc05;
   /* ring and done dot use --color-success (#34a853) */
@@ -143,4 +154,13 @@ html[data-fs='m'] {
 }
 html[data-fs='l'] {
   font-size: 115%;
+}
+html[data-fs='n'] {
+  --fs: 1;
+}
+html[data-fs='m'] {
+  --fs: 1.075;
+}
+html[data-fs='l'] {
+  --fs: 1.24;
 }

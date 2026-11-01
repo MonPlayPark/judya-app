@@ -25,8 +25,8 @@ const touched: string[] = [];
 
 beforeEach(() => {
   localStorage.clear();
-  localStorage.setItem('judya.v2', V2_MARK);
-  localStorage.setItem('judya.v2.prev', V2_MARK);
+  localStorage.setItem('old.app', V2_MARK);
+  localStorage.setItem('old.app.prev', V2_MARK);
   touched.length = 0;
   const record = (key: unknown): void => void touched.push(String(key));
   for (const m of ['getItem', 'setItem', 'removeItem'] as const) {
@@ -43,9 +43,9 @@ afterEach(() => {
 });
 
 const v2Untouched = (): void => {
-  expect(touched.filter((k) => k.startsWith('judya.v2'))).toEqual([]);
-  expect(localStorage.getItem('judya.v2')).toBe(V2_MARK);
-  expect(localStorage.getItem('judya.v2.prev')).toBe(V2_MARK);
+  expect(touched.filter((k) => k.startsWith('old.app'))).toEqual([]);
+  expect(localStorage.getItem('old.app')).toBe(V2_MARK);
+  expect(localStorage.getItem('old.app.prev')).toBe(V2_MARK);
 };
 
 describe('data that cannot be read shows the two buttons', () => {

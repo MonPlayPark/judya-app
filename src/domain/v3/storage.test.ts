@@ -138,10 +138,10 @@ describe('storage v3 (key judya.v3)', () => {
 });
 
 describe('storage v3 touches only judya.v3 and judya.v3.prev', () => {
-  it('every operation, including failures, stays inside the two keys and leaves judya.v2 alone', () => {
+  it('every operation, including failures, stays inside the two keys and leaves old.app alone', () => {
     const s = new FakeStore();
-    s.data.set('judya.v2', 'v2 data');
-    s.data.set('judya.v2.prev', 'v2 prev');
+    s.data.set('old.app', 'v2 data');
+    s.data.set('old.app.prev', 'v2 prev');
     s.data.set('judya.v1', 'v1 data');
     const root = sampleRootV3();
 
@@ -157,14 +157,14 @@ describe('storage v3 touches only judya.v3 and judya.v3.prev', () => {
     startFresh(NOW, s);
 
     expect([...s.touched].sort()).toEqual(['judya.v3', 'judya.v3.prev']);
-    expect(s.data.get('judya.v2')).toBe('v2 data');
-    expect(s.data.get('judya.v2.prev')).toBe('v2 prev');
+    expect(s.data.get('old.app')).toBe('v2 data');
+    expect(s.data.get('old.app.prev')).toBe('v2 prev');
     expect(s.data.get('judya.v1')).toBe('v1 data');
   });
 
   it('with the real localStorage, only the two v3 keys are accessed', () => {
     localStorage.clear();
-    localStorage.setItem('judya.v2', 'v2 data');
+    localStorage.setItem('old.app', 'v2 data');
     const keys: string[] = [];
     const proto = Object.getPrototypeOf(localStorage) as Storage;
     const originals = { g: proto.getItem, s: proto.setItem, r: proto.removeItem };
@@ -183,7 +183,7 @@ describe('storage v3 touches only judya.v3 and judya.v3.prev', () => {
     }
     expect(keys.length).toBeGreaterThan(0);
     expect(new Set(keys)).toEqual(new Set(['judya.v3', 'judya.v3.prev']));
-    expect(localStorage.getItem('judya.v2')).toBe('v2 data');
+    expect(localStorage.getItem('old.app')).toBe('v2 data');
     localStorage.clear();
   });
 });

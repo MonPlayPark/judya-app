@@ -1,8 +1,7 @@
 // localStorage access for JudYa data v3 (M4 PR 1). Two keys only: `judya.v3` and its safety copy `judya.v3.prev`
 // (written by startFresh and restoreRoot, before the old text is replaced).
-// This module never reads, writes, lists or deletes any other key (judya.v2, judya.v2.prev, judya.v1 and
-// medmate.v1 live on the same origin and belong to older apps). Same logic as the v2 storage module, written as
-// a separate file so the two do not depend on each other.
+// This module never reads, writes, lists or deletes any other key (keys of older apps live on the same origin and
+// are left alone).
 //
 // Saving = validate -> write -> read back -> validate; if anything goes wrong the previous value is put back.
 import { emptyRoot, rootSchema, type Root } from './schema';

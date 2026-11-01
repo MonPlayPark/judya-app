@@ -1,5 +1,5 @@
 /* v3 add-member page (M4 PR 6a). Values copied from the board MemberForm (390px): text as px at "normal" times var(--fs);
-   colours from the `.v3theme` tokens. Page #F6FAFF, no bottom menu; white cards radius 16 with the Home shadow, 10px apart. */
+   colours from the tokens of tokens.css. Page #F6FAFF, no bottom menu; white cards radius 16 with the Home shadow, 10px apart. */
 .page {
   display: flex;
   flex-direction: column;

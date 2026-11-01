@@ -1,5 +1,5 @@
 /* v3 add-medicine page (M4 PR 6b). Same look as the add-member page (6a): text as px at "normal" times var(--fs),
-   colours from the `.v3theme` tokens, white cards radius 16 with the Home shadow, 10px apart. Every tap target >= 44px. */
+   colours from the tokens of tokens.css, white cards radius 16 with the Home shadow, 10px apart. Every tap target >= 44px. */
 .page {
   display: flex;
   flex-direction: column;

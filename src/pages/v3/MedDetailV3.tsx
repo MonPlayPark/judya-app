@@ -25,7 +25,6 @@ import {
 import { RESUME_REASONS, RESUME_REASON_LABEL, STOP_REASONS, STOP_REASON_LABEL, type Root } from '../../domain/v3/schema';
 import { openNewTube } from '../../domain/v3/stock';
 import { avatarUrl, iconUrl } from '../../visual';
-import '../../styles/v3theme.css';
 import styles from './MedDetailV3.module.css';
 
 export type DetailSheet = 'refill' | 'stop' | 'resume' | 'history';
@@ -56,7 +55,7 @@ const HISTORY_SHOWN = 3;
 
 export function MedDetailNotFound({ listHref }: { listHref: string }) {
   return (
-    <div className={`v3theme ${styles.page}`}>
+    <div className={styles.page}>
       <main className={styles.notFound}>
         <h1 className={styles.notFoundTitle}>ไม่พบยานี้</h1>
         <p className={styles.sub}>ยานี้อาจถูกลบไปแล้ว หรือลิงก์ไม่ถูกต้อง</p>
@@ -118,7 +117,7 @@ export function MedDetailView({ root: initialRoot, id, today, demo, persist, lis
 
   const s = d.stock;
   return (
-    <div className={`v3theme ${styles.page}`}>
+    <div className={styles.page}>
       {demo && (
         <p className={styles.demo} role="status">
           <InfoIcon />

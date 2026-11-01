@@ -1,4 +1,4 @@
-/* v3 Home (M4 PR 4, theme sync PR 4d). Colours come from tokens.css overridden by `.v3theme` (src/styles/v3theme.css).
+/* v3 Home (M4 PR 4, theme sync PR 4d). Colours come from tokens.css .
    Sizes, spacing and radii are copied from the locked board HomeV3.dc.html: text as px at "normal" times var(--fs).
    Tap targets are 44px on v3 pages (board value, CLAUDE.md); 48px only where the board says 48px (order button). */
 

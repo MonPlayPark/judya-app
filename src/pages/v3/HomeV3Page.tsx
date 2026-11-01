@@ -9,7 +9,6 @@ import { emptyRoot, type Root } from '../../domain/v3/schema';
 import { loadRoot, saveRoot, type KeyValueStore, type LoadResult, type SaveResult } from '../../domain/v3/storage';
 import { HomeView } from './HomeV3';
 import { ProblemV3 } from './ProblemV3';
-import '../../styles/v3theme.css';
 
 export interface HomePageProps {
   /** Tests only: the Thai date of "now". */

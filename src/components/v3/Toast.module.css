@@ -1,5 +1,5 @@
 /* Floating message (M4 PR 5b): black #202124, white text, radius 12, at the bottom. Values written out because the
-   message is drawn in <body>, outside the .v3theme class. */
+   message is drawn in <body>, outside any page wrapper. */
 .toast {
   position: fixed;
   left: 50%;
