@@ -7,7 +7,7 @@ Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every
 Branch `m4-pr11-order` (draft PR). Domain only; the app looks exactly the same. Details and the points to check: `docs/DECISIONS.md` "M4 PR 11.1".
 
 ### Status
-`npm test` 759 pass (684 before); `npm run build` passes. No file in `pages/`, `components/`, `App.tsx`, `HomeV3.tsx` changed; only `judya.v3` / `judya.v3.prev` are used.
+`npm test` 762 pass (684 before); `npm run build` passes. No file in `pages/`, `components/`, `App.tsx`, `HomeV3.tsx` changed; only `judya.v3` / `judya.v3.prev` are used.
 
 ### What is there now
 - `schema.ts`: order line source `med { medicationId, shares[] }`; order has `shopName`, `shippingFee?`, `closedAt?`; new reference check (medication, share -> assignment of that medication). Order `shopId` is no longer checked (a shop can be deleted; the order keeps its name).

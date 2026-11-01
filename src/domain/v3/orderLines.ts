@@ -12,10 +12,9 @@ const byName = (a: { name: string }, b: { name: string }): number => a.name.loca
 /** Why a line is on the list: 'low' = running low (ticked), 'unknown' = no stock count (shown, not ticked), 'typed' = added by hand. */
 export type DraftReason = 'low' | 'unknown' | 'typed';
 
-export interface DraftLine {
+interface DraftBase {
   /** 'med:<medicationId>' / 'house:<houseItemId>' / 'free:<name without spaces, lower case>' */
   key: string;
-  source: OrderSource;
   name: string;
   /** Medicine unit (เม็ด, มล., หลอด ...). `need` is in this unit. */
   unit: string;
@@ -23,11 +22,24 @@ export interface DraftLine {
   need: number;
   /** What the owner buys: `qtyOrdered` x `sellUnit`, each holding `perSellUnit` medicine units. */
   sellUnit: string;
-  perSellUnit: number;
   qtyOrdered: number;
   reason: DraftReason;
   ticked: boolean;
 }
+
+/** A regular or house medicine line: the count per sell unit is always known. */
+export interface KnownDraftLine extends DraftBase {
+  source: Exclude<OrderSource, { kind: 'free' }>;
+  perSellUnit: number;
+}
+
+/** A line typed by hand: the count per sell unit is only there when the owner gave it (never filled in for them). */
+export interface FreeDraftLine extends DraftBase {
+  source: Extract<OrderSource, { kind: 'free' }>;
+  perSellUnit?: number;
+}
+
+export type DraftLine = KnownDraftLine | FreeDraftLine;
 
 const clean = (n: number): number => Number(n.toFixed(6));
 const ceilUnits = (n: number): number => Math.ceil(n - 1e-9);
@@ -69,7 +81,7 @@ function needOf(a: Assignment, m: Medication, root: Root, today: IsoDate): Need 
  * Listed when any user is low or none has a stock count; ticked only when low and something is needed (unknown stock: shown, not
  * ticked). People who were taken out of the house and stopped medicines are left out. House medicine: only when low or out, 1 sell unit
  * in the unit of its stock, ticked. */
-export function buildOrderLines(root: Root, today: IsoDate): DraftLine[] {
+export function buildOrderLines(root: Root, today: IsoDate): KnownDraftLine[] {
   const live = new Set(root.persons.filter((p) => p.removedAt === undefined).map((p) => p.id));
   const byMed = new Map<string, Need[]>();
   for (const a of root.assignments) {
@@ -79,7 +91,7 @@ export function buildOrderLines(root: Root, today: IsoDate): DraftLine[] {
     byMed.set(m.id, [...(byMed.get(m.id) ?? []), needOf(a, m, root, today)]);
   }
 
-  const meds: DraftLine[] = [];
+  const meds: KnownDraftLine[] = [];
   for (const [medicationId, needs] of byMed) {
     const m = root.medications.find((x) => x.id === medicationId);
     if (!m) continue;
@@ -104,7 +116,7 @@ export function buildOrderLines(root: Root, today: IsoDate): DraftLine[] {
   }
   meds.sort(byName);
 
-  const house: DraftLine[] = [];
+  const house: KnownDraftLine[] = [];
   for (const h of root.houseItems) {
     if (h.removedAt !== undefined || !h.stock) continue;
     const status = houseStatus(h);
@@ -116,7 +128,7 @@ export function buildOrderLines(root: Root, today: IsoDate): DraftLine[] {
 }
 
 // A house medicine is ordered in the unit its stock is counted in (decision of the owner), one sell unit to start with.
-const houseLine = (h: HouseItem, unit: string): DraftLine => ({
+const houseLine = (h: HouseItem, unit: string): KnownDraftLine => ({
   key: `house:${h.id}`,
   source: { kind: 'house', houseItemId: h.id },
   name: h.name,
@@ -146,20 +158,23 @@ export function findNameClash(root: Root, typed: string): NameClash | null {
   return h ? { kind: 'house', houseItemId: h.id, name: h.name } : null;
 }
 
-export type FreeLineError = 'invalid_name' | 'invalid_qty' | 'invalid_sell_unit';
+export type FreeLineError = 'invalid_name' | 'invalid_qty' | 'invalid_sell_unit' | 'invalid_per_sell_unit';
 export type FreeLineResult =
-  | { ok: true; line: DraftLine; clash: NameClash | null }
-  | { ok: false; errors: Partial<Record<'name' | 'qty' | 'sellUnit', FreeLineError>> };
+  | { ok: true; line: FreeDraftLine; clash: NameClash | null }
+  | { ok: false; errors: Partial<Record<'name' | 'qty' | 'sellUnit' | 'perSellUnit', FreeLineError>> };
 
 /** A line for a medicine typed by hand: name 1..60 after trimming (inner spaces squeezed to one), quantity > 0, a sell unit. Ticked. Its price
  * is never remembered. `clash` says when the name is already a medicine in the app (the screen then offers that one instead). */
-export function makeFreeLine(root: Root, input: { name: string; qty: number; sellUnit: string }): FreeLineResult {
-  const errors: Partial<Record<'name' | 'qty' | 'sellUnit', FreeLineError>> = {};
+export function makeFreeLine(root: Root, input: { name: string; qty: number; sellUnit: string; perSellUnit?: number | null }): FreeLineResult {
+  const errors: Partial<Record<'name' | 'qty' | 'sellUnit' | 'perSellUnit', FreeLineError>> = {};
   const name = input.name.trim().replace(/\s+/g, ' ');
   if (name.length < 1 || name.length > 60) errors.name = 'invalid_name';
   if (!(typeof input.qty === 'number' && Number.isFinite(input.qty) && input.qty > 0)) errors.qty = 'invalid_qty';
   const sellUnit = input.sellUnit.trim();
   if (sellUnit === '') errors.sellUnit = 'invalid_sell_unit';
+  const per = input.perSellUnit;
+  const hasPer = per !== undefined && per !== null;
+  if (hasPer && !(typeof per === 'number' && Number.isFinite(per) && per > 0)) errors.perSellUnit = 'invalid_per_sell_unit';
   if (Object.keys(errors).length > 0) return { ok: false, errors };
   return {
     ok: true,
@@ -171,7 +186,7 @@ export function makeFreeLine(root: Root, input: { name: string; qty: number; sel
       unit: sellUnit,
       need: input.qty,
       sellUnit,
-      perSellUnit: 1,
+      ...(hasPer ? { perSellUnit: per } : {}),
       qtyOrdered: input.qty,
       reason: 'typed',
       ticked: true,

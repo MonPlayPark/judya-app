@@ -811,6 +811,7 @@ Branch `m4-pr11-order`. No screen is touched (`pages/`, `components/`, `App.tsx`
 8. **Line quantity** = sum of all users' needs, not only the low ones (as v2); ticked only if some user is low.
 9. **Name clash for typed medicines** compares with every medicine in the app and house medicines that are not removed, ignoring case and all spaces; the line is still made and `clash` tells the screen to offer the app's medicine.
 10. Tests: 759 now (684 before).
+11. **Free line: `perSellUnit` is optional and never filled in by the app** (`makeFreeLine` takes it as an option; given it must be a number > 0, else `invalid_per_sell_unit`; left out the line has none). `DraftLine.perSellUnit` is optional only for free lines; regular and house lines keep a number. Tests: 762.
 
 ### Still open for the owner
 - Is the shop order in item 3 right, or should shops with missing prices be left out of the ranking?

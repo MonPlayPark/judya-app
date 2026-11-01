@@ -175,4 +175,30 @@ describe('typed medicines and name clashes', () => {
     expect(makeFreeLine(r, { name: 'ก', qty: 0, sellUnit: 'กล่อง' })).toEqual({ ok: false, errors: { qty: 'invalid_qty' } });
     expect(makeFreeLine(r, { name: 'ก', qty: 1, sellUnit: '' })).toEqual({ ok: false, errors: { sellUnit: 'invalid_sell_unit' } });
   });
+
+  it('perSellUnit left out: the line has none (not 1), and it still fits the order schema', () => {
+    const r = copy();
+    const res = makeFreeLine(r, { name: 'ยาพิมพ์เอง', qty: 2, sellUnit: 'กล่อง' });
+    expect(res.ok && 'perSellUnit' in res.line).toBe(false);
+    expect(res.ok && res.line.perSellUnit).toBeUndefined();
+    if (!res.ok) throw new Error('expected ok');
+    const l = res.line;
+    r.orders.push({
+      id: 'o9', shopId: 's1', shopName: 'ร้านตัวอย่าง 1', createdAt: NOW, status: 'waiting', includeShipping: false,
+      lines: [{ source: l.source, qtyOrdered: l.qtyOrdered, sellUnit: l.sellUnit, qtyReceived: 0, leftover: null }],
+    });
+    expect(rootSchema.safeParse(r).success).toBe(true);
+    expect(makeFreeLine(r, { name: 'ยาพิมพ์เอง', qty: 2, sellUnit: 'กล่อง', perSellUnit: null }).ok).toBe(true);
+  });
+
+  it('perSellUnit given is kept as given', () => {
+    const res = makeFreeLine(copy(), { name: 'ยาพิมพ์เอง', qty: 2, sellUnit: 'กล่อง', perSellUnit: 10 });
+    expect(res.ok && res.line.perSellUnit).toBe(10);
+  });
+
+  it('perSellUnit given as 0, negative or NaN -> invalid_per_sell_unit', () => {
+    for (const perSellUnit of [0, -3, Number.NaN]) {
+      expect(makeFreeLine(copy(), { name: 'ยาพิมพ์เอง', qty: 2, sellUnit: 'กล่อง', perSellUnit })).toEqual({ ok: false, errors: { perSellUnit: 'invalid_per_sell_unit' } });
+    }
+  });
 });
