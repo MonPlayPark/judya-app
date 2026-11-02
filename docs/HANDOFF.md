@@ -2,6 +2,25 @@
 
 Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every session.
 
+## M4 PR 11.3a — shop form and the "ร้านค้า" page (2 พ.ย. 2569)
+
+Branch `m4-pr11-order` (PR #39). **First step that writes to storage:** `#/n/shops` (link only, `?demo=normal|empty|long`) lists shops and adds / edits / deletes them in `judya.v3` through `saveRoot`. Nothing else writes. No button on Home or the order page; 11.3b (compare card, LINE text, "สั่งแล้วใช่ไหม" sheet, saving an order) is **not** started. Details and points to check: `docs/DECISIONS.md` "M4 PR 11.3a".
+
+### Status
+`npx tsc`, `npm test` 877 pass (828 before), `npm run build` pass (JS gzip 149.62 kB, was 146.25), `npm run check:overflow` see the PR comment for the last run. Schema and data version (3) unchanged.
+
+### What is there now
+- `domain/v3/shops.ts`: `addShop`, `updateShop` (keeps `freeOver`), `deleteShop` (shop + its prices, orders stay), `shopLine`, `SHOP_ERROR_TEXT`. `shopsDemo.ts`.
+- `components/v3/ShopForm.tsx`: one component (sheet + delete question), props `shop?`, `onSave`, `onCancel`, `onDelete?`; reusable by PR 14.
+- `pages/v3/ShopsPage.tsx` (route, demo / live), `ShopsV3.tsx` (list, toast).
+
+### Left for later (do not start before the owner says)
+11.3b, 11.4, 11.5, 11.6 as in the 11.2 notes below.
+
+### Waiting for the owner
+Two questions at the end of DECISIONS "M4 PR 11.3a", and a look at the form (screenshots on branch `shots-pr11-3a`).
+
+
 ## M4 PR 11.2 — order draft page and "add an item" sheet (1 พ.ย. 2569)
 
 Branch `m4-pr11-order` (PR #39). First screen of the order work: `#/n/order` (test links only: `?demo=normal|nolow|nomeds`, `&sheet=add&tab=meds|new[&name=…]`, `&sheet=unit[&item=med:m1]`). Not tied to Home (that is 11.6). **Nothing is written to storage** (tests prove it). Details and the points to check: `docs/DECISIONS.md` "M4 PR 11.2".

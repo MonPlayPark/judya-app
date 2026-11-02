@@ -855,3 +855,34 @@ Branch `m4-pr11-order` (PR #39). First step with a screen: route `#/n/order` (te
 - House medicines that are **not counted** cannot be ordered from the list (no unit). Should the page ask for a unit, or leave them out as now?
 - Is "ผงชงดื่ม" / "ยาเม็ด" fine on the kind grid, or should it read "ซอง" / "เม็ด" as in your message?
 - Is the ask-later box ticked at the start right?
+
+
+## M4 PR 11.3a — shop form and the "ร้านค้า" page (2 พ.ย. 2569)
+
+Branch `m4-pr11-order` (PR #39). First step that writes data: shops are added / edited / deleted in `judya.v3` through `saveRoot`. Route `#/n/shops` (link only; no button on Home or the order page; `?demo=normal|empty|long`, `&sheet=add`, `&sheet=edit&item=<id>`). New: `src/domain/v3/shops.ts`, `shopsDemo.ts`, `src/components/v3/ShopForm.tsx` (+css), `src/pages/v3/ShopsPage.tsx`, `ShopsV3.tsx` (+css) and tests. Changed: `App.tsx` (route), `scripts/check-overflow.mjs`. Schema, `shop.ts`, storage keys and the data version (3) are **not** changed, so older backup files still open.
+
+### Rules locked by the owner (built as given)
+1. No "free over N baht" on any screen (no box, no text, no "buy N more"). The `freeOver` field stays in schema and domain; editing a shop that has one keeps it (not shown, not lost).
+2. Every shop charges a fee except "ไปรับเอง"; fee 0 is allowed (the shop always delivers free).
+3. A shop can be deleted; old orders keep the name they were made under (`shopName`, 11.1).
+4. No board for this form: designed on the style of the 11.2 sheets (tall sheet, round 44px X, 48px boxes, full-width blue main button, light-blue "ยกเลิก", the pressed tile like the kind grid).
+
+### Decided on my own — please check
+1. **Same name** (trimmed, upper/lower case ignored; spaces inside the name count) is refused with "มีร้านชื่อนี้แล้ว" under the name box; the shop being edited is skipped. A same name in another script or with different inner spacing is allowed.
+2. **Delete = shop + its remembered prices in one new root.** Orders are not touched. The sheet says so before: "ใบสั่งเก่ายังเห็นชื่อร้าน แต่ราคาที่จำไว้ของร้านนี้จะถูกลบ". The test saves, wipes and restores the result from a backup file.
+3. **Fee has at most 2 decimals** (satang); more is "invalid_fee". `shop.ts` allowed any decimals. The box takes only digits and one dot.
+4. **Form layout:** opens as "ส่งถึงบ้าน" (as you asked), name box first, phone (`type=tel`), two tiles, fee box with "บาท" and the hint "ถ้าร้านส่งฟรีเสมอ ให้ใส่ 0". Save is grey only while the name is empty (the sentence "พิมพ์ชื่อร้านก่อน" says why); every other wrong value is shown under its box after pressing บันทึก (warning icon + words), and typing in a box clears that box's message. Name box has no `maxLength`, so a too-long name shows the message instead of being cut quietly.
+5. **A failed save** (storage full, etc.): the page root and the form stay as they were, the red line "บันทึกไม่ได้ ข้อมูลเดิมยังอยู่ …" shows above the buttons, pressing again works.
+6. **Switching "ส่งถึงบ้าน" → "ไปรับเอง" → back** inside one open form keeps the fee typed; saving as pick-up drops fee and `freeOver` for good (a pick-up shop keeps no fee).
+7. **List line:** "เบอร์ · ส่งถึงบ้าน ค่าส่ง ฿40" / "ไปรับเอง"; a shop without a phone shows only the delivery words (v2 printed "ยังไม่ใส่เบอร์โทร"). Fee 0 prints "ค่าส่ง ฿0" so the list never says "free". Order is the order of adding.
+8. **The form is one component** (`ShopForm`) that draws its own sheet and the delete question; the page decides what saving means (`onSave` / `onDelete` answer ok or the reason), so PR 14 can reuse it with its own page.
+9. **Third demo `?demo=long`** (40-letter name, long phone, fee with satang) for the overflow check, beside `normal` and `empty`. The `normal` demo has one shop with a `freeOver` to prove it is never shown.
+10. **Back button** goes to the page before, else Home (same as the add-member page). The history length is the only thing it looks at.
+11. Tests: 877 now (828 before). JS 534.20 kB, gzip 149.62 kB (was 520.56 / 146.25).
+
+### Missing tokens (no colour was made)
+None. The delivery tiles use `--color-primary-tint` / `-ink` / `--color-primary` (the same as the kind grid of 11.2), errors use `--color-error-ink`, the delete button uses the existing `sheetStyles.danger` (`--color-error-ink` fill, white text).
+
+### Still open for the owner
+- Should the page be reachable from somewhere before PR 14 (settings)? Now it is a link only.
+- A delete is allowed with no extra warning when orders still wait for that shop. Is the plain question enough, or should it say "มีใบสั่งที่ยังรอของจากร้านนี้"?
