@@ -14,7 +14,6 @@ import {
   HANDOFF_TEXT,
   NO_UPLOAD_TEXT,
   PRIVACY_TEXT,
-  RECIPIENT_NOT_BACKED_UP_TEXT,
   RESTORED_TEXT,
   RESTORE_ERRORS,
   backupStatus,
@@ -122,10 +121,6 @@ export function DataView({ root, today, demo, persist, onBackup, onRestore, onBa
           <p className={styles.privacy}>
             <ShieldIcon />
             <span>{PRIVACY_TEXT}</span>
-          </p>
-          <p className={styles.privacy}>
-            <InfoIcon />
-            <span>{RECIPIENT_NOT_BACKED_UP_TEXT}</span>
           </p>
           {backupError !== null && (
             <p className={styles.error} role="alert">
