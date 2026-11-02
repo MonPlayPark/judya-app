@@ -34,3 +34,6 @@ export function orderDemoRoot(name: OrderDemoName): Root {
     }
   }
 }
+
+/** A made-up recipient for the test link `&recipient=full` (demo only; the address, name and phone are not real). */
+export const DEMO_RECIPIENT = { address: 'บ้านเลขที่ 99 ซอยตัวอย่าง 1 เขตสมมติ 10000', name: 'คุณสมมติ ทดสอบ', phone: '081-000-0000' } as const;

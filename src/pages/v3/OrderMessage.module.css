@@ -1,0 +1,215 @@
+/* The order message card (M4 PR 11.3b-1). Colours and sizes only from tokens.css; same card, chip and button looks as 11.2 / 11.3a.
+   Every button is 44px or more (the main ones 52px); text 14px or more at "normal". */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 12px 14px;
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  box-shadow: var(--elevation-1);
+}
+.title {
+  margin: 0 4px;
+  font-size: calc(16px * var(--fs));
+  line-height: calc(24px * var(--fs));
+  font-weight: var(--weight-bold);
+  color: var(--color-navy);
+}
+
+.recipientBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  padding: 6px 12px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.recipientBar > svg {
+  flex: none;
+  color: var(--color-ink-muted);
+}
+.recipientLabel {
+  flex: none;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-ink-muted);
+}
+.recipientText {
+  flex: 1;
+  min-width: 0;
+  font-size: calc(15px * var(--fs));
+  line-height: calc(22px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-navy);
+  overflow-wrap: anywhere;
+}
+.recipientEmpty {
+  font-weight: var(--weight-regular);
+  color: var(--color-ink-muted);
+}
+
+.modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.mode {
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 48px;
+  padding: 6px 4px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-navy);
+  font-family: inherit;
+  font-size: calc(15px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.modeOn {
+  border-color: var(--color-primary);
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.preview {
+  box-sizing: border-box;
+  max-height: 320px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+  color: var(--color-ink);
+  font-family: inherit;
+  font-size: calc(15px * var(--fs));
+  line-height: calc(24px * var(--fs));
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  overflow-y: auto;
+  user-select: text;
+}
+.previewEmpty {
+  color: var(--color-ink-muted);
+}
+
+.warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-warning-ink);
+}
+.warn svg {
+  flex: none;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.copy,
+.line {
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 52px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: calc(15px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-bold);
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.copy {
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+}
+.line {
+  background: var(--color-primary);
+  color: #fff;
+}
+.copy:disabled,
+.line:disabled {
+  background: var(--color-border);
+  color: var(--color-ink-muted);
+  cursor: not-allowed;
+}
+
+/* ----- the recipient sheet ----- */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 14px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.area {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 84px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: 12px;
+  background: var(--color-surface);
+  font-family: inherit;
+  font-size: calc(16px * var(--fs));
+  line-height: calc(24px * var(--fs));
+  color: var(--color-ink);
+  resize: vertical;
+}
+.area:focus {
+  border-color: var(--color-primary);
+  outline: 0;
+}
+.field .invalid {
+  border-color: var(--color-error-ink);
+}
+.error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-error-ink);
+}
+.error svg {
+  flex: none;
+}
+.plainCancel {
+  min-height: 52px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--color-ink-muted);
+  font-family: inherit;
+  font-size: calc(16px * var(--fs));
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}

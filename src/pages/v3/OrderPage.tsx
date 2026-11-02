@@ -1,13 +1,12 @@
 // The v3 order draft page (route #/n/order, M4 PR 11.2): owns the data and the clock, hands them to OrderView.
-// This page NEVER writes: it does not import saveRoot, and nothing here touches localStorage. Normal mode only reads `judya.v3`
-// (loadRoot). Demo mode (#/n/order?demo=...) works on a made-up house in memory and does not call storage in any form (not even a read).
-// Saving an order is the job of step 11.3.
+// The only thing this page writes is the recipient (a setting), through saveRoot (M4 PR 11.3b-1); it never saves an order (step 11.3b-2 and
+// later). Demo mode (#/n/order?demo=...) works on a made-up house in memory and does not call storage in any form (not even a read).
 import { useState } from 'react';
 import { useRoute } from '../../router';
 import { DEMO_TODAY } from '../../domain/v3/homeDemo';
-import { isOrderDemoName, orderDemoRoot, type OrderDemoName } from '../../domain/v3/orderDemo';
-import { loadRoot } from '../../domain/v3/storage';
-import { openRoot, useBangkokToday, type HomePageProps, type Loaded } from './HomeV3Page';
+import { DEMO_RECIPIENT, isOrderDemoName, orderDemoRoot, type OrderDemoName } from '../../domain/v3/orderDemo';
+import { loadRoot, saveRoot } from '../../domain/v3/storage';
+import { openRoot, saveErrorText, useBangkokToday, type HomePageProps, type Loaded } from './HomeV3Page';
 import { OrderView, type OrderViewProps } from './OrderV3';
 import { ProblemV3 } from './ProblemV3';
 
@@ -19,19 +18,21 @@ function initialFrom(query: URLSearchParams): OrderViewProps['initial'] {
   const item = query.get('item');
   if (sheet === 'add') return { sheet: 'add', tab: tab === 'new' ? 'new' : 'meds', ...(name ? { name } : {}) };
   if (sheet === 'unit') return { sheet: 'unit', ...(item ? { item } : {}) };
-  return {};
+  const mode = query.get('mode') === 'pickup' ? ({ mode: 'pickup' } as const) : {};
+  if (sheet === 'recipient' || sheet === 'incomplete') return { sheet, ...mode };
+  return mode;
 }
 
 export function OrderV3Route(props: HomePageProps) {
   const { query } = useRoute();
   const demo = query.get('demo');
   const initial = initialFrom(query);
-  return isOrderDemoName(demo) ? <DemoOrder key={demo} name={demo} initial={initial} /> : <LiveOrder key="live" initial={initial} {...props} />;
+  return isOrderDemoName(demo) ? <DemoOrder key={demo} name={demo} initial={initial} withRecipient={query.get('recipient') === 'full'} /> : <LiveOrder key="live" initial={initial} {...props} />;
 }
 
-function DemoOrder({ name, initial }: { name: OrderDemoName; initial: OrderViewProps['initial'] }) {
+function DemoOrder({ name, initial, withRecipient }: { name: OrderDemoName; initial: OrderViewProps['initial']; withRecipient: boolean }) {
   const [root] = useState(() => orderDemoRoot(name));
-  return <OrderView root={root} today={DEMO_TODAY} demo initial={initial} />;
+  return <OrderView root={root} today={DEMO_TODAY} demo initial={{ ...initial, ...(withRecipient ? { recipient: DEMO_RECIPIENT } : {}) }} />; // no persist: a demo saves nothing
 }
 
 function LiveOrder({ getToday, store, initial }: HomePageProps & { initial: OrderViewProps['initial'] }) {
@@ -40,5 +41,9 @@ function LiveOrder({ getToday, store, initial }: HomePageProps & { initial: Orde
   if (loaded.kind === 'problem') {
     return <ProblemV3 loaded={loaded} {...(store === undefined ? {} : { store })} />;
   }
-  return <OrderView root={loaded.root} today={today} demo={false} initial={initial} />;
+  const persist: NonNullable<OrderViewProps['persist']> = (root) => {
+    const result = store === undefined ? saveRoot(root) : saveRoot(root, store);
+    return result.ok ? { ok: true } : { ok: false, text: saveErrorText(result) };
+  };
+  return <OrderView root={loaded.root} today={today} demo={false} initial={initial} persist={persist} />;
 }

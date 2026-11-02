@@ -1,0 +1,300 @@
+// The order message on the order page (M4 PR 11.3b-1): the small bar with the recipient, the temporary delivery / pick-up switch, the
+// read-only preview, and the buttons "คัดลอกข้อความ" / "ส่งทาง LINE". Nothing here saves an order. The recipient is saved by the page
+// (`onSaveRecipient`, through saveRoot; a demo keeps it in memory only).
+import { useState, type FormEvent } from 'react';
+import { ChevronRightIcon, InfoIcon, WarningIcon } from '../../components/icons';
+import { Sheet } from '../../components/v3/Sheet';
+import { sheetStyles } from '../../components/v3/sheetParts';
+import {
+  buildOrderMessage,
+  lineLink,
+  lineLinkTooLong,
+  recipientMissing,
+  type MessageItem,
+  type OrderMode,
+  type Recipient,
+} from '../../domain/v3/orderMessage';
+import { RECIPIENT_ERROR_TEXT, RECIPIENT_MAX, checkRecipient, formOf, recipientBarText, type RecipientError, type RecipientField, type RecipientForm } from '../../domain/v3/recipient';
+import styles from './OrderMessage.module.css';
+
+export type SendAction = 'copy' | 'line';
+export type SaveOutcome = { ok: true } | { ok: false; text: string };
+
+const FIELD_NAME: Record<RecipientField, string> = { address: 'ที่อยู่', name: 'ชื่อผู้รับ', phone: 'เบอร์โทร' };
+export const LINE_TOO_LONG_TEXT = 'ข้อความยาวเกินไปสำหรับลิงก์ LINE ให้กด "คัดลอกข้อความ" แล้ววางใน LINE แทน';
+export const COPIED_TEXT = 'คัดลอกข้อความแล้ว';
+export const COPY_FAILED_TEXT = 'คัดลอกไม่ได้ ลองกดค้างที่ข้อความแล้วเลือกคัดลอก';
+
+type OpenSheet = { kind: 'edit' } | { kind: 'incomplete'; action: SendAction } | null;
+
+export interface OrderMessageProps {
+  /** The ticked lines as message items. */
+  items: readonly MessageItem[];
+  recipient: Recipient;
+  /** Saves the recipient. The page answers ok only when it is really saved (a demo: kept in memory). */
+  onSaveRecipient: (r: Recipient) => SaveOutcome;
+  showToast: (text: string) => void;
+  /** Test links only. */
+  initial?: { sheet?: 'recipient' | 'incomplete'; mode?: OrderMode };
+}
+
+/** Puts the text on the clipboard; false when the browser refuses or has no clipboard. */
+async function copyText(text: string): Promise<boolean> {
+  try {
+    if (!navigator.clipboard) return false;
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function OrderMessage({ items, recipient, onSaveRecipient, showToast, initial }: OrderMessageProps) {
+  // TEMP (11.3b-1): this switch stands in for the shop. 11.3b-2 replaces it with the choice of a shop, whose own delivery setting decides the mode.
+  const [mode, setMode] = useState<OrderMode>(initial?.mode ?? 'delivery');
+  const [sheet, setSheet] = useState<OpenSheet>(() => {
+    if (initial?.sheet === 'recipient') return { kind: 'edit' };
+    if (initial?.sheet === 'incomplete') return { kind: 'incomplete', action: 'copy' };
+    return null;
+  });
+  const [lineWarning, setLineWarning] = useState(false);
+
+  const text = buildOrderMessage(items, mode, recipient);
+  const empty = items.length === 0;
+  const tooLong = !empty && lineLinkTooLong(text);
+
+  /** Does the sending itself with the text of `r` (the recipient to use). */
+  const send = async (action: SendAction, r: Recipient): Promise<void> => {
+    const body = buildOrderMessage(items, mode, r);
+    if (body === '') return;
+    if (action === 'copy') {
+      showToast((await copyText(body)) ? COPIED_TEXT : COPY_FAILED_TEXT);
+      return;
+    }
+    if (lineLinkTooLong(body)) {
+      setLineWarning(true);
+      showToast(LINE_TOO_LONG_TEXT);
+      return;
+    }
+    window.open(lineLink(body), '_blank', 'noopener,noreferrer');
+  };
+
+  const press = (action: SendAction): void => {
+    if (empty) return;
+    if (!recipientMissing(mode, recipient).length) void send(action, recipient);
+    else setSheet({ kind: 'incomplete', action });
+  };
+
+  return (
+    <section id="order-message" className={styles.card} aria-labelledby="order-message-title">
+      <h2 id="order-message-title" className={styles.title}>
+        ข้อความสั่งยา
+      </h2>
+
+      <button type="button" className={styles.recipientBar} aria-label={`ข้อมูลผู้รับ: ${recipientBarText(recipient)} แก้ไข`} onClick={() => setSheet({ kind: 'edit' })}>
+        <span className={styles.recipientLabel}>ผู้รับ</span>
+        <span className={recipient.name || recipient.phone ? styles.recipientText : `${styles.recipientText} ${styles.recipientEmpty}`}>{recipientBarText(recipient)}</span>
+        <ChevronRightIcon />
+      </button>
+
+      {/* TEMP (11.3b-1): replaced by the shop choice in 11.3b-2 */}
+      <div className={styles.modes} role="group" aria-label="วิธีรับยา">
+        <button type="button" className={mode === 'delivery' ? `${styles.mode} ${styles.modeOn}` : styles.mode} aria-pressed={mode === 'delivery'} onClick={() => setMode('delivery')}>
+          ส่งถึงบ้าน
+        </button>
+        <button type="button" className={mode === 'pickup' ? `${styles.mode} ${styles.modeOn}` : styles.mode} aria-pressed={mode === 'pickup'} onClick={() => setMode('pickup')}>
+          มารับเอง
+        </button>
+      </div>
+
+      <pre className={empty ? `${styles.preview} ${styles.previewEmpty}` : styles.preview} tabIndex={0} aria-label="ตัวอย่างข้อความ">
+        {empty ? 'ติ๊กยาที่ต้องการสั่ง แล้วข้อความจะขึ้นที่นี่' : text}
+      </pre>
+
+      {(tooLong || lineWarning) && (
+        <p className={styles.warn} role="note">
+          <WarningIcon />
+          {LINE_TOO_LONG_TEXT}
+        </p>
+      )}
+
+      <div className={styles.actions}>
+        <button type="button" className={styles.copy} disabled={empty} onClick={() => press('copy')}>
+          คัดลอกข้อความ
+        </button>
+        <button type="button" className={styles.line} disabled={empty} onClick={() => press('line')}>
+          ส่งทาง LINE
+        </button>
+      </div>
+
+      {sheet?.kind === 'edit' && (
+        <RecipientSheet
+          recipient={recipient}
+          missing={[]}
+          onSave={(r) => {
+            const res = onSaveRecipient(r);
+            if (res.ok) {
+              setSheet(null);
+              showToast('บันทึกข้อมูลผู้รับแล้ว');
+            }
+            return res;
+          }}
+          onClose={() => setSheet(null)}
+        />
+      )}
+      {sheet?.kind === 'incomplete' && (
+        <RecipientSheet
+          recipient={recipient}
+          missing={recipientMissing(mode, recipient)}
+          action={sheet.action}
+          onSave={(r) => {
+            const res = onSaveRecipient(r);
+            if (res.ok) {
+              const action = sheet.action;
+              setSheet(null);
+              void send(action, r);
+            }
+            return res;
+          }}
+          onSendWithout={() => {
+            const action = sheet.action;
+            setSheet(null);
+            void send(action, {});
+          }}
+          onClose={() => setSheet(null)}
+        />
+      )}
+    </section>
+  );
+}
+
+function RecipientSheet({
+  recipient,
+  missing,
+  action,
+  onSave,
+  onSendWithout,
+  onClose,
+}: {
+  recipient: Recipient;
+  missing: readonly RecipientField[];
+  /** Given when the sheet opened because the owner pressed copy / LINE with the recipient not complete. */
+  action?: SendAction;
+  onSave: (r: Recipient) => SaveOutcome;
+  onSendWithout?: () => void;
+  onClose: () => void;
+}) {
+  const [form, setForm] = useState<RecipientForm>(() => formOf(recipient));
+  const [errors, setErrors] = useState<Partial<Record<RecipientField, RecipientError>>>({});
+  const [message, setMessage] = useState<string | null>(null);
+  const set = (patch: Partial<RecipientForm>): void => {
+    setForm((f) => ({ ...f, ...patch }));
+    setErrors((e) => {
+      const next = { ...e };
+      for (const k of Object.keys(patch) as RecipientField[]) delete next[k];
+      return next;
+    });
+    setMessage(null);
+  };
+  const submit = (e: FormEvent): void => {
+    e.preventDefault();
+    const checked = checkRecipient(form);
+    if (!checked.ok) return setErrors(checked.errors);
+    const res = onSave(checked.value);
+    if (!res.ok) setMessage(res.text);
+  };
+  const err = (f: RecipientField): JSX.Element | null =>
+    errors[f] ? (
+      <p id={`rc-${f}-err`} className={styles.error}>
+        <WarningIcon />
+        {RECIPIENT_ERROR_TEXT[errors[f] as RecipientError]}
+      </p>
+    ) : null;
+
+  return (
+    <Sheet
+      title={action ? 'ข้อมูลผู้รับยังไม่ครบ' : 'ข้อมูลผู้รับ'}
+      subtitle={action ? `ยังไม่ได้ใส่: ${missing.map((f) => FIELD_NAME[f]).join(', ')}` : 'ใส่ให้ร้านรู้ว่าส่งยาหรือติดต่อใคร (พิมพ์เอง ไม่ผูกกับสมาชิก)'}
+      onClose={onClose}
+      closeButton
+      tall
+    >
+      <form className={styles.form} onSubmit={submit} noValidate>
+        <div className={styles.field}>
+          <label className={sheetStyles.label} htmlFor="rc-address">
+            ที่อยู่ (ใช้เมื่อให้ส่งถึงบ้าน)
+          </label>
+          <textarea
+            id="rc-address"
+            className={`${styles.area} ${errors.address ? styles.invalid : ''}`}
+            rows={3}
+            placeholder="เช่น บ้านเลขที่ 99 ซอยตัวอย่าง 1 เขตสมมติ"
+            value={form.address}
+            aria-invalid={errors.address !== undefined}
+            aria-describedby={errors.address ? 'rc-address-err' : undefined}
+            onChange={(e) => set({ address: e.target.value })}
+          />
+          <p className={sheetStyles.hint}>ไม่เกิน {RECIPIENT_MAX.address} ตัวอักษร</p>
+          {err('address')}
+        </div>
+        <div className={styles.field}>
+          <label className={sheetStyles.label} htmlFor="rc-name">
+            ชื่อผู้รับ
+          </label>
+          <input
+            id="rc-name"
+            className={`${sheetStyles.textInput} ${errors.name ? styles.invalid : ''}`}
+            type="text"
+            autoComplete="off"
+            placeholder="เช่น คุณสมมติ"
+            value={form.name}
+            aria-invalid={errors.name !== undefined}
+            aria-describedby={errors.name ? 'rc-name-err' : undefined}
+            onChange={(e) => set({ name: e.target.value })}
+          />
+          {err('name')}
+        </div>
+        <div className={styles.field}>
+          <label className={sheetStyles.label} htmlFor="rc-phone">
+            เบอร์โทร
+          </label>
+          <input
+            id="rc-phone"
+            className={`${sheetStyles.textInput} ${errors.phone ? styles.invalid : ''}`}
+            type="tel"
+            inputMode="tel"
+            autoComplete="off"
+            placeholder="เช่น 081-000-0000"
+            value={form.phone}
+            aria-invalid={errors.phone !== undefined}
+            aria-describedby={errors.phone ? 'rc-phone-err' : undefined}
+            onChange={(e) => set({ phone: e.target.value })}
+          />
+          {err('phone')}
+        </div>
+        <p className={sheetStyles.hint}>
+          <InfoIcon /> เก็บในเครื่องนี้เท่านั้น ไม่เข้าไฟล์สำรอง
+        </p>
+        {message !== null && (
+          <p className={styles.error} role="alert">
+            <WarningIcon />
+            {message}
+          </p>
+        )}
+        <div className={sheetStyles.actions}>
+          <button type="submit" className={sheetStyles.primary}>
+            {action ? 'บันทึกแล้วส่ง' : 'บันทึก'}
+          </button>
+          {action && onSendWithout && (
+            <button type="button" className={sheetStyles.cancel} onClick={onSendWithout}>
+              ส่งโดยไม่ใส่ผู้รับ
+            </button>
+          )}
+          <button type="button" className={styles.plainCancel} onClick={onClose}>
+            ยกเลิก
+          </button>
+        </div>
+      </form>
+    </Sheet>
+  );
+}

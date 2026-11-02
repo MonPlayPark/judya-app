@@ -10,7 +10,10 @@ import type { IsoDate } from '../../domain/calc';
 import { label } from '../../domain/v3/medsList';
 import { REASON_LABEL, qtyText, stepLine } from '../../domain/v3/orderDraft';
 import { buildOrderLines, type DraftLine, type DraftReason } from '../../domain/v3/orderLines';
+import { messageItems, type OrderMode, type Recipient } from '../../domain/v3/orderMessage';
+import { recipientOf, withRecipient } from '../../domain/v3/recipient';
 import type { MedKind, Root } from '../../domain/v3/schema';
+import { OrderMessage, type SaveOutcome } from './OrderMessage';
 import { AddItemSheet, UnitSheet, type AddTab } from './OrderSheets';
 import styles from './OrderV3.module.css';
 
@@ -19,7 +22,17 @@ export interface OrderViewProps {
   today: IsoDate;
   demo: boolean;
   /** Test links only: which sheet starts open. `item` = the key of the line for the unit sheet. */
-  initial?: { sheet?: 'add' | 'unit'; tab?: AddTab; name?: string; item?: string };
+  initial?: {
+    sheet?: 'add' | 'unit' | 'recipient' | 'incomplete';
+    tab?: AddTab;
+    name?: string;
+    item?: string;
+    mode?: OrderMode;
+    /** Demo only: starts with this made-up recipient (kept in memory). */
+    recipient?: Recipient;
+  };
+  /** Writes a changed root (the recipient is a setting). Not given in a demo: the recipient then lives in memory only. */
+  persist?: (root: Root) => { ok: true } | { ok: false; text: string };
 }
 
 type OpenSheet = { kind: 'add' } | { kind: 'unit'; key: string } | null;
@@ -71,7 +84,8 @@ export function titleOfLine(root: Root, line: DraftLine): string {
   }
 }
 
-export function OrderView({ root, today, demo, initial }: OrderViewProps) {
+export function OrderView({ root: first, today, demo, initial, persist }: OrderViewProps) {
+  const [root, setRoot] = useState(first);
   const [lines, setLines] = useState<DraftLine[]>(() => buildOrderLines(root, today));
   const [sheet, setSheet] = useState<OpenSheet>(() => {
     if (initial?.sheet === 'add') return { kind: 'add' };
@@ -82,7 +96,24 @@ export function OrderView({ root, today, demo, initial }: OrderViewProps) {
     return null;
   });
   const [toast, showToast] = useToast();
+  const [demoRecipient, setDemoRecipient] = useState<Recipient>(() => (demo ? (initial?.recipient ?? {}) : {}));
+  const recipient = demo ? demoRecipient : recipientOf(root);
   const ticked = useMemo(() => lines.filter((l) => l.ticked).length, [lines]);
+
+  /** Saves the recipient: the page takes the new root only when the write worked (a demo keeps it in memory, no storage). */
+  const saveRecipient = (r: Recipient): SaveOutcome => {
+    if (demo) {
+      setDemoRecipient(r);
+      return { ok: true };
+    }
+    const next = withRecipient(root, r);
+    const res = persist ? persist(next) : ({ ok: false, text: 'บันทึกไม่ได้ ข้อมูลเดิมยังอยู่' } as const);
+    if (!res.ok) return res;
+    setRoot(next);
+    return { ok: true };
+  };
+  const items = useMemo(() => messageItems(root, lines), [root, lines]);
+  const showMessage = (): void => document.getElementById('order-message')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
 
   const update = (key: string, fn: (l: DraftLine) => DraftLine): void => setLines((all) => all.map((l) => (l.key === key ? fn(l) : l)));
   const unitLine = sheet?.kind === 'unit' ? lines.find((l) => l.key === sheet.key) : undefined;
@@ -140,6 +171,14 @@ export function OrderView({ root, today, demo, initial }: OrderViewProps) {
           </button>
         </section>
 
+        <OrderMessage
+          items={items}
+          recipient={recipient}
+          onSaveRecipient={saveRecipient}
+          showToast={showToast}
+          {...(initial?.sheet === 'recipient' || initial?.sheet === 'incomplete' ? { initial: { sheet: initial.sheet, ...(initial.mode ? { mode: initial.mode } : {}) } } : initial?.mode ? { initial: { mode: initial.mode } } : {})}
+        />
+
         {lines.length > 0 && ticked === 0 && (
           <p className={styles.hintCard} role="note">
             <InfoIcon />
@@ -153,7 +192,9 @@ export function OrderView({ root, today, demo, initial }: OrderViewProps) {
           <span className={styles.barNumber}>{ticked} รายการ</span>
           <span className={styles.barTotal}>ยอดรวม –</span>
         </p>
-        <ComingSoon className={styles.barButton}>ดูข้อความสั่งยา</ComingSoon>
+        <button type="button" className={styles.barButton} onClick={showMessage}>
+          ดูข้อความสั่งยา
+        </button>
       </div>
       <V3Nav current="home" />
 

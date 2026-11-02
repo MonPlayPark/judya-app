@@ -90,14 +90,20 @@ describe('the list', () => {
     }
   });
 
-  it('the history button and the main button are "coming soon": faded, they only show the floating message', () => {
+  it('the history button is "coming soon": faded, it only shows the floating message', () => {
     demo('normal');
-    for (const name of ['ประวัติการสั่งซื้อ', 'ดูข้อความสั่งยา']) {
-      const b = screen.getByRole('button', { name });
-      expect(b).toHaveAttribute('aria-disabled', 'true');
-      fireEvent.click(b);
-      expect(toastOf()).toHaveTextContent('เร็ว ๆ นี้');
-    }
+    const b = screen.getByRole('button', { name: 'ประวัติการสั่งซื้อ' });
+    expect(b).toHaveAttribute('aria-disabled', 'true');
+    fireEvent.click(b);
+    expect(toastOf()).toHaveTextContent('เร็ว ๆ นี้');
+  });
+
+  it('the main button "ดูข้อความสั่งยา" is a real button now (it scrolls to the message card), not coming soon (M4 PR 11.3b-1)', () => {
+    demo('normal');
+    const b = screen.getByRole('button', { name: 'ดูข้อความสั่งยา' });
+    expect(b).not.toHaveAttribute('aria-disabled');
+    fireEvent.click(b);
+    expect(screen.queryByText('เร็ว ๆ นี้')).toBeNull();
   });
 
   it('is reached from #/n/order in the app, and the route is not tied to any button of Home', () => {
@@ -323,15 +329,16 @@ describe('the add sheet: a new medicine', () => {
   });
 });
 
-describe('F. this page never writes storage', () => {
-  const FILES = ['OrderPage.tsx', 'OrderV3.tsx', 'OrderSheets.tsx'];
+describe('F. this page writes storage in one way only', () => {
+  const FILES = ['OrderPage.tsx', 'OrderV3.tsx', 'OrderSheets.tsx', 'OrderMessage.tsx'];
 
-  it('the three source files never mention a write (saveRoot, restoreRoot, startFresh, setItem, removeItem, localStorage)', () => {
+  it('the source files never mention a write; only OrderPage names saveRoot (the one function that saves, used for the recipient)', () => {
     for (const f of FILES) {
       const code = readFileSync(resolve(__dirname, f), 'utf8').replace(/\/\/.*$/gm, '');
-      for (const word of ['saveRoot', 'restoreRoot', 'startFresh', 'setItem', 'removeItem', 'localStorage', 'sessionStorage', 'indexedDB']) {
+      for (const word of ['restoreRoot', 'startFresh', 'setItem', 'removeItem', 'localStorage', 'sessionStorage', 'indexedDB']) {
         expect(code, `${f} mentions ${word}`).not.toContain(word);
       }
+      if (f !== 'OrderPage.tsx') expect(code, `${f} mentions saveRoot`).not.toContain('saveRoot');
     }
   });
 
