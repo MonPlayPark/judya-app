@@ -38,7 +38,23 @@ const V3_ROUTES = ['/', '/n', '/no-such-page', '/old', // M4 PR 7b: an unknown o
   '/n/order', '/n/order?demo=normal', '/n/order?demo=nolow', '/n/order?demo=nomeds',
   '/n/order?demo=normal&sheet=add&tab=meds', '/n/order?demo=normal&sheet=add&tab=new', '/n/order?demo=normal&sheet=add&tab=new&name=Simvastatin',
   '/n/order?demo=normal&sheet=add&tab=new&name=Meto', '/n/order?demo=normal&sheet=unit', '/n/order?demo=normal&sheet=unit&item=med:m8',
-  '/n/order?demo=nolow&sheet=add&tab=meds', '/n/order?demo=nomeds&sheet=add&tab=meds', '/n/order?demo=nomeds&sheet=add&tab=new'];
+  '/n/order?demo=nolow&sheet=add&tab=meds', '/n/order?demo=nomeds&sheet=add&tab=meds', '/n/order?demo=nomeds&sheet=add&tab=new',
+  // v3 shops page (M4 PR 11.3a): real data (empty), an empty house, three shops, a 40-letter name, the add form (delivery), the edit form
+  '/n/shops', '/n/shops?demo=empty', '/n/shops?demo=normal', '/n/shops?demo=long', '/n/shops?demo=normal&sheet=add', '/n/shops?demo=long&sheet=edit&item=s1',
+  '/n/shops?demo=normal&sheet=edit&item=s3'];
+
+// v3 shops page (M4 PR 11.3a): states that need pressing (pick-up form, wrong values, long values, the delete question).
+const SHOPS_ADD = '/n/shops?demo=normal&sheet=add';
+const fill = (page, label, value) => page.getByLabel(label, { exact: true }).fill(value);
+const SHOPS_SCENARIOS = [
+  ['add, pick-up', SHOPS_ADD, async (page) => { await click(page, 'ไปรับเอง'); }],
+  ['add, wrong values', SHOPS_ADD, async (page) => { await fill(page, 'ชื่อร้าน', 'ก'); await fill(page, 'เบอร์โทร (ไม่บังคับ)', 'abc'); await click(page, 'บันทึก'); }],
+  ['add, same name', SHOPS_ADD, async (page) => { await fill(page, 'ชื่อร้าน', 'ร้านทดสอบ ก'); await fill(page, 'ค่าส่ง (บาท)', '40'); await click(page, 'บันทึก'); }],
+  ['add, long values', SHOPS_ADD, async (page) => { await fill(page, 'ชื่อร้าน', 'ก'.repeat(40)); await fill(page, 'เบอร์โทร (ไม่บังคับ)', '+66 2 123 4567 000 00'); await fill(page, 'ค่าส่ง (บาท)', '1234567.89'); }],
+  ['edit, delete question', '/n/shops?demo=normal&sheet=edit&item=s1', async (page) => { await click(page, 'ลบร้านนี้'); }],
+  ['edit long, delete question', '/n/shops?demo=long&sheet=edit&item=s1', async (page) => { await click(page, 'ลบร้านนี้'); }],
+  ['saved toast', SHOPS_ADD, async (page) => { await fill(page, 'ชื่อร้าน', 'ร้านทดสอบ ง'); await fill(page, 'ค่าส่ง (บาท)', '20'); await click(page, 'บันทึก'); }],
+];
 
 // v3 add medicine (M4 PR 6b): states that need pressing. Each one opens `route`, runs the clicks, then is measured like the rest.
 const ADD = '/n/meds/new?demo=normal&person=p2&name=ยาใหม่ทดสอบ';
@@ -209,6 +225,17 @@ for (const width of WIDTHS) {
       if (bad) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 order(${label}): ${bad}`); }
       const small = await page.evaluate(measureV3, fs === 'n' ? 13.9 : 14.9);
       if (small) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 order(${label}): ${small}`); }
+    }
+
+    // 1g) v3 shops page after pressing (M4 PR 11.3a)
+    for (const [label, route, act] of SHOPS_SCENARIOS) {
+      await visit(route, 'v3');
+      await act(page);
+      const bad = await page.evaluate(measure);
+      checked += 1;
+      if (bad) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 shops(${label}): ${bad}`); }
+      const small = await page.evaluate(measureV3, fs === 'n' ? 13.9 : 14.9);
+      if (small) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 shops(${label}): ${small}`); }
     }
 
     // 1e) v3 "can't read the data" screen (M4 PR 7): corrupt judya.v3 on Home and on two other pages, then the start-over sheets
