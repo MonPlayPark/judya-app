@@ -886,3 +886,41 @@ None. The delivery tiles use `--color-primary-tint` / `-ink` / `--color-primary`
 ### Still open for the owner
 - Should the page be reachable from somewhere before PR 14 (settings)? Now it is a link only.
 - A delete is allowed with no extra warning when orders still wait for that shop. Is the plain question enough, or should it say "มีใบสั่งที่ยังรอของจากร้านนี้"?
+
+
+## M4 PR 11.3b-1 — order message, recipient, copy and LINE (2 พ.ย. 2569)
+
+Branch `m4-pr11-order` (PR #39, draft). The message to the shop, the recipient (typed by the owner), and the "copy" / "LINE" buttons on `#/n/order`. **No order is saved**, no shop comparison and no "สั่งแล้วใช่ไหม" sheet (that is 11.3b-2). The only thing the page writes is the recipient (a setting) through `saveRoot`.
+
+### Rules locked by the owner (built as given)
+1. The message is a fixed shape kept in the code (`domain/v3/orderMessage.ts`). It does **not** read `settings.orderTemplate`. That field stays in the schema untouched (still `''` by default, data version still 3). The line "replace the default of orderTemplate" in the first brief was cancelled by the owner's later answer (ก), so nothing about `orderTemplate` changed.
+2. Shape: `สั่งยาค่ะ`, blank line, `N) name strength qty unit pack size` per ticked line, blank line, then `ส่ง <address>` (delivery, only when there is an address) or `มารับเองค่ะ` (pick-up), blank line, then `<recipient name> <phone>` (only when there is a name or a phone). Empty parts are left out whole; no double space, no extra blank line. No member name, price or shop name.
+3. Strength is the text the app keeps (`strengthText`, the same text as the lists: `500 mg`, `1%`, `1,000 IU`). Typed medicines follow the same rule as the others.
+4. Delivery/pick-up comes from a switch; the mode adds the last block automatically (no placeholder). The switch is **TEMP** (marked in the code): 11.3b-2 replaces it with the choice of a shop.
+5. LINE link is `https://line.me/R/msg/text/?` + `encodeURIComponent(text)` (line breaks are `%0A`). A message too long for the link makes the LINE button warn and point to "คัดลอกข้อความ".
+6. The recipient is three optional settings, `recipientAddress` (≤300), `recipientName` (≤60), `recipientPhone` (≤20, digits, `+`, `-`, spaces), trimmed before saving; an empty one is not stored. Not tied to any member. Data version stays 3 (settings is not strict and the fields are optional, so old data and old backup files load as before).
+7. The owner chose (asked in this step): **the recipient is not in the backup file.** The existing rule of PR 6c stays (settings are not in a backup; a restore keeps the settings of the device). The one line asked for on the data page therefore says the opposite of what the brief guessed: "ข้อมูลผู้รับสั่งยา (ที่อยู่ ชื่อ เบอร์) ไม่อยู่ในไฟล์สำรอง เก็บไว้เฉพาะในเครื่องนี้ ต้องกรอกใหม่เมื่อย้ายเครื่อง". A backup file that does carry the three fields (made by hand) still passes the check and restores; a file without them restores and keeps the device's recipient.
+
+### Decided on my own — please check
+1. **`buildOrderMessage(items, mode, recipient)` takes ready items**, not draft lines. `messageItems(root, lines)` makes the items from the ticked lines (quantity above 0). It reads only medicines and house medicines — never `persons` — so a member's name cannot come in. (This answers the "shares" question: no `shares` are needed, the order source is not changed.)
+2. **Pack size** = the count in one sell unit + the small unit, e.g. `2 กล่อง 30 ซอง`, `1 ขวด 60 มล.`. It is left out when: the count is not known (typed medicine without it), the sell unit is already the small unit (`10 เม็ด`), cream / drops (counted by the tube), and house medicines (ordered in the unit of their stock). For a medicine of the app the small unit is the medicine's own unit word; for a typed one it is the unit of the kind chosen.
+3. **Cream example:** the brief wrote `ยาครีมตัวอย่าง 25g 1 หลอด`. The strength text is built like everywhere else in the app, with a space: `25 g`. I did not special-case "g".
+4. **"ส่งโดยไม่ใส่ผู้รับ"** sends the message with an **empty recipient** (no address, name or phone), only for this send and without saving. In pick-up it still says `มารับเองค่ะ`. Meaning chosen: "without the recipient" = nothing about the recipient at all, even when part of it is filled.
+5. **Incomplete means:** delivery lacks address, name or phone; pick-up lacks name or phone. Pressing copy / LINE then opens the sheet "ข้อมูลผู้รับยังไม่ครบ" with what is missing. "บันทึกแล้วส่ง" saves what is typed and sends even if something is still missing (it does not ask twice). If saving fails (storage), the sheet stays with a red line and nothing is sent.
+6. **Long-link limit = 8000 characters of the finished link** (Thai letters become 9 characters each). This is my safe guess, **not** a number published by LINE; it has to be tried on a real phone. A normal 20-line message is about 6,000. Over the limit: a warning line shows under the preview (icon + words) and the LINE button opens nothing and shows the same words.
+7. **Copy** uses `navigator.clipboard.writeText`; when the browser refuses a toast says "คัดลอกไม่ได้ ลองกดค้างที่ข้อความแล้วเลือกคัดลอก". LINE opens in a new tab with `noopener,noreferrer`.
+8. **Card on the page:** "ข้อความสั่งยา" is always there (even with nothing ticked: the box says to tick a medicine, both buttons are off). The bottom-bar button "ดูข้อความสั่งยา" is a real button now: it scrolls to the card (it was "coming soon").
+9. **Demo (`?demo=…`)** keeps the recipient in memory only. Test links: `&recipient=full` (made-up recipient), `&mode=pickup`, `&sheet=recipient`, `&sheet=incomplete`.
+10. **Whitespace:** every part is squeezed to single spaces, so a line break typed in the address becomes a space and the message never has a broken line.
+11. **Part F (11.3a notes):** the shop name label has a red star (`*`; the box has `aria-label="ชื่อร้าน"` and `aria-required`), and the fee label is "ค่าส่ง" so "บาท" shows once (in the box). Own commit.
+12. The test that said the order page "never writes" now says: no file mentions `restoreRoot`, `startFresh`, `setItem`, `removeItem`, `localStorage` …, and only `OrderPage.tsx` names `saveRoot`.
+
+13. Tests: 935 now (877 before). JS 546.67 kB, gzip 152.97 kB (was 534.20 / 149.62). `check:overflow`: 1176 page checks, 0 problems (new routes and 6 pressed scenarios for the message card added to the script; the shop scenarios there now use the label "ค่าส่ง").
+
+### Missing tokens (no colour was made)
+None. The card uses the same tokens as 11.2 / 11.3a (`--color-primary*`, `--color-border*`, `--color-warning-ink`, `--color-error-ink`).
+
+### Still open for the owner
+- Is 8000 characters the right limit for the LINE link? (try a long order on the phone)
+- "ส่งโดยไม่ใส่ผู้รับ" drops the whole recipient (decision 4). Should it keep a partly filled name / phone instead?
+- The recipient needs to be typed again on a new device (not in the backup). Is that fine, or should it travel in the backup file (this would change the rule of PR 6c)?

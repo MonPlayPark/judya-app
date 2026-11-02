@@ -2,6 +2,24 @@
 
 Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every session.
 
+## M4 PR 11.3b-1 — order message, recipient, copy and LINE (2 พ.ย. 2569)
+
+Branch `m4-pr11-order` (PR #39, draft). On `#/n/order`: a card "ข้อความสั่งยา" with the recipient bar (opens a sheet: address, name, phone), a TEMP switch "ส่งถึงบ้าน / มารับเอง" (11.3b-2 replaces it with the shop), a read-only preview, and "คัดลอกข้อความ" / "ส่งทาง LINE". **No order is saved.** The recipient is three optional settings saved with `saveRoot`; it is not in the backup file (owner's choice). Data version stays 3; `orderTemplate` untouched.
+
+### Status
+See DECISIONS "M4 PR 11.3b-1" for every choice made on my own. Checks and numbers are in the PR comment.
+
+### What is there now
+- `domain/v3/orderMessage.ts` (`buildOrderMessage`, `messageItems`, `recipientMissing`, `lineLink`, `lineLinkTooLong`), `domain/v3/recipient.ts` (`checkRecipient`, `withRecipient`, `recipientOf`).
+- `pages/v3/OrderMessage.tsx` (+ css): the card and the recipient sheet. `OrderPage.tsx` is the only order file that names `saveRoot`.
+- `dataPage.ts` / `DataV3.tsx`: one line saying the recipient is not in the backup.
+
+### Left for later (do not start before the owner says)
+11.3b-2: shop choice replaces the TEMP switch, shop comparison, the "สั่งแล้วใช่ไหม" sheet, saving the order. Then 11.4–11.6.
+
+### Waiting for the owner
+Three questions at the end of DECISIONS "M4 PR 11.3b-1", and a look at the screenshots (branch `shots-pr11-3b1`).
+
 ## M4 PR 11.3a — shop form and the "ร้านค้า" page (2 พ.ย. 2569)
 
 Branch `m4-pr11-order` (PR #39). **First step that writes to storage:** `#/n/shops` (link only, `?demo=normal|empty|long`) lists shops and adds / edits / deletes them in `judya.v3` through `saveRoot`. Nothing else writes. No button on Home or the order page; 11.3b (compare card, LINE text, "สั่งแล้วใช่ไหม" sheet, saving an order) is **not** started. Details and points to check: `docs/DECISIONS.md` "M4 PR 11.3a".

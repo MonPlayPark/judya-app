@@ -39,6 +39,9 @@ const V3_ROUTES = ['/', '/n', '/no-such-page', '/old', // M4 PR 7b: an unknown o
   '/n/order?demo=normal&sheet=add&tab=meds', '/n/order?demo=normal&sheet=add&tab=new', '/n/order?demo=normal&sheet=add&tab=new&name=Simvastatin',
   '/n/order?demo=normal&sheet=add&tab=new&name=Meto', '/n/order?demo=normal&sheet=unit', '/n/order?demo=normal&sheet=unit&item=med:m8',
   '/n/order?demo=nolow&sheet=add&tab=meds', '/n/order?demo=nomeds&sheet=add&tab=meds', '/n/order?demo=nomeds&sheet=add&tab=new',
+  // order message (M4 PR 11.3b-1): the card with an empty / filled recipient, delivery and pick-up, the recipient sheet, the "not complete" sheet
+  '/n/order?demo=normal&recipient=full', '/n/order?demo=normal&recipient=full&mode=pickup', '/n/order?demo=normal&sheet=recipient',
+  '/n/order?demo=normal&sheet=incomplete', '/n/order?demo=normal&recipient=full&sheet=recipient', '/n/order?demo=nolow&recipient=full',
   // v3 shops page (M4 PR 11.3a): real data (empty), an empty house, three shops, a 40-letter name, the add form (delivery), the edit form
   '/n/shops', '/n/shops?demo=empty', '/n/shops?demo=normal', '/n/shops?demo=long', '/n/shops?demo=normal&sheet=add', '/n/shops?demo=long&sheet=edit&item=s1',
   '/n/shops?demo=normal&sheet=edit&item=s3'];
@@ -49,11 +52,11 @@ const fill = (page, label, value) => page.getByLabel(label, { exact: true }).fil
 const SHOPS_SCENARIOS = [
   ['add, pick-up', SHOPS_ADD, async (page) => { await click(page, 'ไปรับเอง'); }],
   ['add, wrong values', SHOPS_ADD, async (page) => { await fill(page, 'ชื่อร้าน', 'ก'); await fill(page, 'เบอร์โทร (ไม่บังคับ)', 'abc'); await click(page, 'บันทึก'); }],
-  ['add, same name', SHOPS_ADD, async (page) => { await fill(page, 'ชื่อร้าน', 'ร้านทดสอบ ก'); await fill(page, 'ค่าส่ง (บาท)', '40'); await click(page, 'บันทึก'); }],
-  ['add, long values', SHOPS_ADD, async (page) => { await fill(page, 'ชื่อร้าน', 'ก'.repeat(40)); await fill(page, 'เบอร์โทร (ไม่บังคับ)', '+66 2 123 4567 000 00'); await fill(page, 'ค่าส่ง (บาท)', '1234567.89'); }],
+  ['add, same name', SHOPS_ADD, async (page) => { await fill(page, 'ชื่อร้าน', 'ร้านทดสอบ ก'); await fill(page, 'ค่าส่ง', '40'); await click(page, 'บันทึก'); }],
+  ['add, long values', SHOPS_ADD, async (page) => { await fill(page, 'ชื่อร้าน', 'ก'.repeat(40)); await fill(page, 'เบอร์โทร (ไม่บังคับ)', '+66 2 123 4567 000 00'); await fill(page, 'ค่าส่ง', '1234567.89'); }],
   ['edit, delete question', '/n/shops?demo=normal&sheet=edit&item=s1', async (page) => { await click(page, 'ลบร้านนี้'); }],
   ['edit long, delete question', '/n/shops?demo=long&sheet=edit&item=s1', async (page) => { await click(page, 'ลบร้านนี้'); }],
-  ['saved toast', SHOPS_ADD, async (page) => { await fill(page, 'ชื่อร้าน', 'ร้านทดสอบ ง'); await fill(page, 'ค่าส่ง (บาท)', '20'); await click(page, 'บันทึก'); }],
+  ['saved toast', SHOPS_ADD, async (page) => { await fill(page, 'ชื่อร้าน', 'ร้านทดสอบ ง'); await fill(page, 'ค่าส่ง', '20'); await click(page, 'บันทึก'); }],
 ];
 
 // v3 add medicine (M4 PR 6b): states that need pressing. Each one opens `route`, runs the clicks, then is measured like the rest.
@@ -85,6 +88,13 @@ const ADD_SCENARIOS = [
 const ORD = '/n/order?demo=normal';
 const NOLOW = '/n/order?demo=nolow'; // many medicines to pick from: the search box and "see more" show
 const ORDER_SCENARIOS = [
+  // order message (M4 PR 11.3b-1)
+  ['message, nothing ticked', '/n/order?demo=normal&recipient=full', async (page) => { for (const box of await page.getByRole('checkbox').all()) await box.uncheck(); }],
+  ['message, long recipient (300 + 60 + 20 letters)', '/n/order?demo=normal', async (page) => { await click(page, /^ข้อมูลผู้รับ/); await page.getByLabel(/^ที่อยู่/).fill('ก'.repeat(300)); await page.getByLabel('ชื่อผู้รับ').fill('ข'.repeat(60)); await page.getByLabel('เบอร์โทร').fill('1'.repeat(20)); await click(page, 'บันทึก'); }],
+  ['message, long recipient, pick-up', '/n/order?demo=normal&recipient=full&mode=pickup', async (page) => { await click(page, /^ข้อมูลผู้รับ/); await page.getByLabel('ชื่อผู้รับ').fill('ข'.repeat(60)); await page.getByLabel('เบอร์โทร').fill('1'.repeat(20)); await click(page, 'บันทึก'); }],
+  ['message, wrong values in the sheet', '/n/order?demo=normal&sheet=recipient', async (page) => { await page.getByLabel(/^ที่อยู่/).fill('ก'.repeat(301)); await page.getByLabel('เบอร์โทร').fill('abc'); await click(page, 'บันทึก'); }],
+  ['message, copy with no recipient (sheet)', '/n/order?demo=normal', async (page) => { await click(page, 'คัดลอกข้อความ'); }],
+  ['message, many lines (+ pressed 40 times)', '/n/order?demo=normal&recipient=full', async (page) => { const plus = page.getByRole('button', { name: /^เพิ่มจำนวน/ }).first(); for (let i = 0; i < 40; i += 1) await plus.click(); }],
   ['nothing ticked', ORD, async (page) => { for (const box of await page.getByRole('checkbox').all()) await box.uncheck(); }],
   ['long quantity (+ pressed 40 times)', ORD, async (page) => { const plus = page.getByRole('button', { name: /^เพิ่มจำนวน/ }).first(); for (let i = 0; i < 40; i += 1) await plus.click(); }],
   ['add sheet, see all', `${NOLOW}&sheet=add&tab=meds`, async (page) => { await page.getByRole('button', { name: /^ดูเพิ่ม/ }).click(); }],
