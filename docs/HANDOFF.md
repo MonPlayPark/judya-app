@@ -4,7 +4,7 @@ Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every
 
 ## M4 PR 11.3b-1 — order message, recipient, copy and LINE (2 พ.ย. 2569)
 
-Branch `m4-pr11-order` (PR #39, draft). On `#/n/order`: a card "ข้อความสั่งยา" with the recipient bar (opens a sheet: address, name, phone), a TEMP switch "ส่งถึงบ้าน / มารับเอง" (11.3b-2 replaces it with the shop), a read-only preview, and "คัดลอกข้อความ" / "ส่งทาง LINE". **No order is saved.** The recipient is three optional settings saved with `saveRoot`; it is not in the backup file (owner's choice). Data version stays 3; `orderTemplate` untouched.
+Branch `m4-pr11-order` (PR #39, draft). On `#/n/order`: a card "ข้อความสั่งยา" with the recipient bar (opens a sheet: address, name, phone), a TEMP switch "ส่งถึงบ้าน / มารับเอง" (11.3b-2 replaces it with the shop), a read-only preview, and "คัดลอกข้อความ" / "ส่งทาง LINE". **No order is saved.** The recipient is three optional settings saved with `saveRoot`; it is not in the backup file (rule of PR 6c; a new device needs it typed again). Data version stays 3; `orderTemplate` untouched.
 
 ### Status
 See DECISIONS "M4 PR 11.3b-1" for every choice made on my own. Checks and numbers are in the PR comment.
@@ -12,13 +12,12 @@ See DECISIONS "M4 PR 11.3b-1" for every choice made on my own. Checks and number
 ### What is there now
 - `domain/v3/orderMessage.ts` (`buildOrderMessage`, `messageItems`, `recipientMissing`, `lineLink`, `lineLinkTooLong`), `domain/v3/recipient.ts` (`checkRecipient`, `withRecipient`, `recipientOf`).
 - `pages/v3/OrderMessage.tsx` (+ css): the card and the recipient sheet. `OrderPage.tsx` is the only order file that names `saveRoot`.
-- `dataPage.ts` / `DataV3.tsx`: one line saying the recipient is not in the backup.
 
 ### Left for later (do not start before the owner says)
 11.3b-2: shop choice replaces the TEMP switch, shop comparison, the "สั่งแล้วใช่ไหม" sheet, saving the order. Then 11.4–11.6.
 
 ### Waiting for the owner
-Three questions at the end of DECISIONS "M4 PR 11.3b-1", and a look at the screenshots (branch `shots-pr11-3b1`).
+Two questions at the end of DECISIONS "M4 PR 11.3b-1", and a look at the screenshots (branch `shots-pr11-3b1`).
 
 ## M4 PR 11.3a — shop form and the "ร้านค้า" page (2 พ.ย. 2569)
 
@@ -55,7 +54,7 @@ Branch `m4-pr11-order` (PR #39). First screen of the order work: `#/n/order` (te
 - 11.4 history (the clock button is `ComingSoon`), 11.5 receiving, 11.6 Home buttons.
 
 ### Waiting for the owner
-Three questions at the end of DECISIONS "M4 PR 11.2" (house medicine that is not counted, kind labels, the ticked ask-later box), and a look at what I designed myself (unit sheet, empty states).
+Two questions at the end of DECISIONS "M4 PR 11.2" (house medicine that is not counted, kind labels, the ticked ask-later box), and a look at what I designed myself (unit sheet, empty states).
 
 ### Owner's test
 A PR that is not merged is not on GitHub Pages. To look at it now: on a computer run `npm run build` then `npm run preview -- --host`, open the shown network address on the phone (same Wi-Fi) and add `#/n/order?demo=normal` after `/judya-app/`.

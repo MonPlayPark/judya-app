@@ -8,7 +8,7 @@ import { sheetStyles } from '../../components/v3/sheetParts';
 import {
   buildOrderMessage,
   lineLink,
-  lineLinkTooLong,
+  lineLinkIsLong,
   recipientMissing,
   type MessageItem,
   type OrderMode,
@@ -21,7 +21,7 @@ export type SendAction = 'copy' | 'line';
 export type SaveOutcome = { ok: true } | { ok: false; text: string };
 
 const FIELD_NAME: Record<RecipientField, string> = { address: 'ที่อยู่', name: 'ชื่อผู้รับ', phone: 'เบอร์โทร' };
-export const LINE_TOO_LONG_TEXT = 'ข้อความยาวเกินไปสำหรับลิงก์ LINE ให้กด "คัดลอกข้อความ" แล้ววางใน LINE แทน';
+export const LINE_TOO_LONG_TEXT = 'ข้อความยาว LINE อาจตัดท้าย แนะนำใช้คัดลอกข้อความ';
 export const COPIED_TEXT = 'คัดลอกข้อความแล้ว';
 export const COPY_FAILED_TEXT = 'คัดลอกไม่ได้ ลองกดค้างที่ข้อความแล้วเลือกคัดลอก';
 
@@ -57,11 +57,10 @@ export function OrderMessage({ items, recipient, onSaveRecipient, showToast, ini
     if (initial?.sheet === 'incomplete') return { kind: 'incomplete', action: 'copy' };
     return null;
   });
-  const [lineWarning, setLineWarning] = useState(false);
 
   const text = buildOrderMessage(items, mode, recipient);
   const empty = items.length === 0;
-  const tooLong = !empty && lineLinkTooLong(text);
+  const isLong = !empty && lineLinkIsLong(text);
 
   /** Does the sending itself with the text of `r` (the recipient to use). */
   const send = async (action: SendAction, r: Recipient): Promise<void> => {
@@ -71,11 +70,7 @@ export function OrderMessage({ items, recipient, onSaveRecipient, showToast, ini
       showToast((await copyText(body)) ? COPIED_TEXT : COPY_FAILED_TEXT);
       return;
     }
-    if (lineLinkTooLong(body)) {
-      setLineWarning(true);
-      showToast(LINE_TOO_LONG_TEXT);
-      return;
-    }
+    if (lineLinkIsLong(body)) showToast(LINE_TOO_LONG_TEXT); // a warning only: LINE still opens
     window.open(lineLink(body), '_blank', 'noopener,noreferrer');
   };
 
@@ -111,7 +106,7 @@ export function OrderMessage({ items, recipient, onSaveRecipient, showToast, ini
         {empty ? 'ติ๊กยาที่ต้องการสั่ง แล้วข้อความจะขึ้นที่นี่' : text}
       </pre>
 
-      {(tooLong || lineWarning) && (
+      {isLong && (
         <p className={styles.warn} role="note">
           <WarningIcon />
           {LINE_TOO_LONG_TEXT}
@@ -156,10 +151,10 @@ export function OrderMessage({ items, recipient, onSaveRecipient, showToast, ini
             }
             return res;
           }}
-          onSendWithout={() => {
+          onSendWithout={(r) => {
             const action = sheet.action;
             setSheet(null);
-            void send(action, {});
+            void send(action, r); // what is typed in the boxes, not saved
           }}
           onClose={() => setSheet(null)}
         />
@@ -181,7 +176,8 @@ function RecipientSheet({
   /** Given when the sheet opened because the owner pressed copy / LINE with the recipient not complete. */
   action?: SendAction;
   onSave: (r: Recipient) => SaveOutcome;
-  onSendWithout?: () => void;
+  /** Sends with what is typed in the boxes now (an empty recipient when all are empty). Saves nothing. */
+  onSendWithout?: (r: Recipient) => void;
   onClose: () => void;
 }) {
   const [form, setForm] = useState<RecipientForm>(() => formOf(recipient));
@@ -202,6 +198,13 @@ function RecipientSheet({
     if (!checked.ok) return setErrors(checked.errors);
     const res = onSave(checked.value);
     if (!res.ok) setMessage(res.text);
+  };
+  const typed = checkRecipient(form);
+  const nothingTyped = typed.ok && Object.keys(typed.value).length === 0;
+  const sendWithout = (): void => {
+    const checked = checkRecipient(form);
+    if (!checked.ok) return setErrors(checked.errors);
+    onSendWithout?.(checked.value);
   };
   const err = (f: RecipientField): JSX.Element | null =>
     errors[f] ? (
@@ -286,8 +289,8 @@ function RecipientSheet({
             {action ? 'บันทึกแล้วส่ง' : 'บันทึก'}
           </button>
           {action && onSendWithout && (
-            <button type="button" className={sheetStyles.cancel} onClick={onSendWithout}>
-              ส่งโดยไม่ใส่ผู้รับ
+            <button type="button" className={sheetStyles.cancel} onClick={sendWithout}>
+              {nothingTyped ? 'ส่งโดยไม่ใส่ผู้รับ' : 'ส่งเท่าที่กรอกไว้'}
             </button>
           )}
           <button type="button" className={styles.plainCancel} onClick={onClose}>

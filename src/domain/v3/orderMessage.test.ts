@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { sampleRootV3 } from './fixtures';
-import { LINE_LINK_MAX, LINE_LINK_PREFIX, buildOrderMessage, lineLink, lineLinkTooLong, messageItems, recipientComplete, recipientMissing, type MessageItem } from './orderMessage';
+import { LINE_LINK_WARN_LENGTH, LINE_LINK_PREFIX, buildOrderMessage, lineLink, lineLinkIsLong, messageItems, recipientComplete, recipientMissing, type MessageItem } from './orderMessage';
 import { buildOrderLines, makeFreeLine, makeManualLine, type DraftLine } from './orderLines';
 import type { Root } from './schema';
 
@@ -180,18 +180,19 @@ describe('the LINE link', () => {
     expect(decodeURIComponent(link.slice(LINE_LINK_PREFIX.length))).toBe(text);
   });
 
-  it('a message of 20 lines still makes a usable link (decodes back to the same text, under the safe length)', () => {
+  it('the warn length is the named constant 8000; a message of 20 lines still makes a usable link (decodes back to the same text, under it)', () => {
     const text = buildOrderMessage(twenty, 'delivery', FULL);
     expect(text.split('\n').filter((l) => /^\d+\) /.test(l))).toHaveLength(20);
     const link = lineLink(text);
+    expect(LINE_LINK_WARN_LENGTH).toBe(8000);
     expect(decodeURIComponent(link.slice(LINE_LINK_PREFIX.length))).toBe(text);
-    expect(link.length).toBeLessThanOrEqual(LINE_LINK_MAX);
-    expect(lineLinkTooLong(text)).toBe(false);
+    expect(link.length).toBeLessThanOrEqual(LINE_LINK_WARN_LENGTH);
+    expect(lineLinkIsLong(text)).toBe(false);
   });
 
-  it('a very long message is too long for the link (the button warns and points to copy)', () => {
+  it('a very long message is long for the link (the page warns and points to copy; the button stays on)', () => {
     const long: MessageItem[] = Array.from({ length: 60 }, (_, i) => ({ name: `ยาตัวอย่างสำหรับทดสอบลิงก์ที่ยาวมากพอสมควร ${i + 1}`, strength: '500 mg', qty: 2, unit: 'กล่อง', pack: '60 เม็ด' }));
-    expect(lineLinkTooLong(buildOrderMessage(long, 'delivery', FULL))).toBe(true);
+    expect(lineLinkIsLong(buildOrderMessage(long, 'delivery', FULL))).toBe(true);
   });
 
   it('keeps & # ? % + in a name safe', () => {

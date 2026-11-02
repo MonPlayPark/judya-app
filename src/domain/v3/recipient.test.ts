@@ -84,7 +84,7 @@ describe('storage round trip and backups', () => {
     if (loaded.status === 'ok') expect(recipientOf(loaded.root)).toEqual({});
   });
 
-  it('a backup file from before this step (no fields) can be read and restored; the current recipient stays', () => {
+  it('an old backup file (no recipient fields) is read and restored as before; the recipient of the device stays', () => {
     const oldFile = makeBackup(sampleRootV3(), '2026-10-28T09:00:00+07:00').text;
     expect(JSON.parse(oldFile).settings.recipientName).toBeUndefined();
     const checked = summarizeBackup(oldFile);
@@ -97,18 +97,21 @@ describe('storage round trip and backups', () => {
     if (res.ok) expect(recipientOf(res.root)).toEqual(R);
   });
 
-  it('a file that does carry the fields round-trips through the check and the restore', () => {
-    const text = makeBackup(withRecipient(sampleRootV3(), R), '2026-10-28T09:00:00+07:00').text; // a file made by hand with the fields
+  it('restoring from a file never touches the recipient of the device (even a hand-made file that carries other values)', () => {
+    const other = { address: 'บ้านเลขที่ 1 ซอยอื่น', name: 'คุณอื่น', phone: '089-111-1111' };
+    const text = makeBackup(withRecipient(sampleRootV3(), other), '2026-10-28T09:00:00+07:00').text;
     const checked = summarizeBackup(text);
     expect(checked.ok).toBe(true);
     if (!checked.ok) return;
-    expect(recipientOf(checked.root)).toEqual(R);
-    const res = restoreFromBackup(checked.root, sampleRootV3(), memory());
-    expect(res.ok).toBe(true);
+    const withMine = restoreFromBackup(checked.root, withRecipient(sampleRootV3(), R), memory());
+    expect(withMine.ok && recipientOf(withMine.root)).toEqual(R);
+    const withNone = restoreFromBackup(checked.root, sampleRootV3(), memory());
+    expect(withNone.ok && recipientOf(withNone.root)).toEqual({}); // the file's values do not come in either
   });
 
   it('the backup the app hands over does NOT carry the recipient (settings are not part of a backup)', () => {
     const file = backupFileOf(withRecipient(sampleRootV3(), R), '2026-10-28T09:00:00+07:00');
+    for (const key of ['recipientAddress', 'recipientName', 'recipientPhone']) expect(file.text).not.toContain(key);
     expect(file.text).not.toContain(R.name);
     expect(file.text).not.toContain(R.phone);
     expect(file.text).not.toContain(R.address);

@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('virtual:pwa-register', () => ({ registerSW: () => async () => {} }));
-vi.mock('../../domain/v3/orderMessage', async (orig) => ({ ...(await orig<typeof import('../../domain/v3/orderMessage')>()), lineLinkTooLong: vi.fn(() => false) }));
+vi.mock('../../domain/v3/orderMessage', async (orig) => ({ ...(await orig<typeof import('../../domain/v3/orderMessage')>()), lineLinkIsLong: vi.fn(() => false) }));
 
 import { sampleRootV3 } from '../../domain/v3/fixtures';
 import { DEMO_TODAY } from '../../domain/v3/homeDemo';
@@ -138,15 +138,21 @@ describe('copy and LINE', () => {
     expect(target).toBe('_blank');
     expect(features).toContain('noopener');
   });
-  it('a message too long for the link: the button warns, shows the note, opens nothing, and points to copy', async () => {
-    vi.mocked(message.lineLinkTooLong).mockReturnValue(true);
+  it('a long message: the warning shows (before pressing and as a toast), the LINE button is NOT disabled and still opens LINE', () => {
+    vi.mocked(message.lineLinkIsLong).mockReturnValue(true);
     const open = vi.spyOn(window, 'open').mockReturnValue(null);
     demo('normal', '&recipient=full');
-    expect(screen.getByText(/ข้อความยาวเกินไปสำหรับลิงก์ LINE/)).toBeInTheDocument(); // the note is there before pressing
+    expect(screen.getByText('ข้อความยาว LINE อาจตัดท้าย แนะนำใช้คัดลอกข้อความ')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'ส่งทาง LINE' })).toBeEnabled();
     press('ส่งทาง LINE');
-    expect(open).not.toHaveBeenCalled();
-    expect(screen.getAllByText(/แทน$/).length).toBeGreaterThan(0);
-    vi.mocked(message.lineLinkTooLong).mockReturnValue(false);
+    expect(open).toHaveBeenCalledTimes(1);
+    expect(String(open.mock.calls[0]![0]).startsWith('https://line.me/R/msg/text/?')).toBe(true);
+    expect(screen.getAllByText('ข้อความยาว LINE อาจตัดท้าย แนะนำใช้คัดลอกข้อความ').length).toBeGreaterThan(1); // note + toast
+    vi.mocked(message.lineLinkIsLong).mockReturnValue(false);
+  });
+  it('a short message shows no warning', () => {
+    demo('normal', '&recipient=full');
+    expect(screen.queryByText(/อาจตัดท้าย/)).toBeNull();
   });
 });
 
@@ -172,13 +178,15 @@ describe('recipient not complete when copy / LINE is pressed', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
     await waitFor(() => expect(writeText).toHaveBeenCalled());
   });
-  it('"ส่งโดยไม่ใส่ผู้รับ" sends the message without any recipient line and saves nothing', async () => {
+  it('"ส่งโดยไม่ใส่ผู้รับ" (all boxes emptied) sends the message without any recipient line and saves nothing', async () => {
     const save = vi.spyOn(storage, 'saveRoot');
     demo('normal', '&recipient=full');
     press(/ข้อมูลผู้รับ:/);
     type('เบอร์โทร', '');
     press('บันทึก');
     press('คัดลอกข้อความ');
+    type(/ที่อยู่/, '');
+    type('ชื่อผู้รับ', '');
     press('ส่งโดยไม่ใส่ผู้รับ');
     await waitFor(() => expect(writeText).toHaveBeenCalled());
     const sent = writeText.mock.calls[0]![0];
@@ -188,6 +196,31 @@ describe('recipient not complete when copy / LINE is pressed', () => {
     expect(sent.startsWith('สั่งยาค่ะ\n\n1) ')).toBe(true);
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(save).not.toHaveBeenCalled();
+  });
+  it('partly typed: the skip button reads "ส่งเท่าที่กรอกไว้" and sends only what is typed (missing parts left out), saving nothing', async () => {
+    const save = vi.spyOn(storage, 'saveRoot');
+    const set = vi.spyOn(Storage.prototype, 'setItem');
+    demo('normal');
+    press('คัดลอกข้อความ');
+    expect(screen.getByRole('button', { name: 'ส่งโดยไม่ใส่ผู้รับ' })).toBeInTheDocument(); // all boxes empty
+    type('ชื่อผู้รับ', 'คุณสมมติ');
+    expect(screen.queryByRole('button', { name: 'ส่งโดยไม่ใส่ผู้รับ' })).toBeNull();
+    press('ส่งเท่าที่กรอกไว้');
+    await waitFor(() => expect(writeText).toHaveBeenCalled());
+    const sent = writeText.mock.calls[0]![0];
+    expect(sent.endsWith('\n\nคุณสมมติ')).toBe(true);
+    expect(sent).not.toContain('ส่ง บ้าน'); // no address typed: no "ส่ง" line
+    expect(save).not.toHaveBeenCalled();
+    expect(set).not.toHaveBeenCalled();
+    expect(screen.getByText('ยังไม่ได้ใส่ข้อมูลผู้รับ')).toBeInTheDocument(); // the bar still shows nothing saved
+  });
+  it('the skip button with a wrong value in a box stays in the sheet with the message', () => {
+    demo('normal');
+    press('คัดลอกข้อความ');
+    type('เบอร์โทร', 'abc');
+    press('ส่งเท่าที่กรอกไว้');
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(writeText).not.toHaveBeenCalled();
   });
   it('"บันทึกแล้วส่ง" with a bad phone does neither (stays in the sheet)', () => {
     demo('normal');
@@ -256,7 +289,8 @@ describe('real data: the recipient is saved through saveRoot, nothing else is', 
     await act(async () => {});
     press('ส่งถึงบ้าน');
     press('ส่งทาง LINE');
-    press('ส่งโดยไม่ใส่ผู้รับ');
+    type('ชื่อผู้รับ', 'คุณสมมติ');
+    press('ส่งเท่าที่กรอกไว้');
     await act(async () => {});
     expect(JSON.stringify(store.data)).toBe(before);
   });

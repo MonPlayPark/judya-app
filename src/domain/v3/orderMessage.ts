@@ -118,10 +118,11 @@ export const recipientComplete = (mode: OrderMode, recipient: Recipient): boolea
 // ---------- the LINE link ----------
 
 export const LINE_LINK_PREFIX = 'https://line.me/R/msg/text/?';
-/** The longest link (in characters, Thai letters count 9 each once encoded) the button opens without a warning. A guess for safety, not a
- * limit published by LINE; DECISIONS.md says to check it on a real phone. */
-export const LINE_LINK_MAX = 8000;
+/** GUESS, not a limit published by LINE: when the finished link (after encoding; each Thai letter becomes 9 characters) is longer than this,
+ * the page warns that LINE may cut the end of the text and suggests "คัดลอกข้อความ". The LINE button stays on and still opens LINE.
+ * To be tried on a real phone (DECISIONS.md, M4 PR 11.3b-1). */
+export const LINE_LINK_WARN_LENGTH = 8000;
 
 /** The link that opens LINE with the text ready to send. Line breaks become %0A (encodeURIComponent). */
 export const lineLink = (text: string): string => LINE_LINK_PREFIX + encodeURIComponent(text);
-export const lineLinkTooLong = (text: string): boolean => lineLink(text).length > LINE_LINK_MAX;
+export const lineLinkIsLong = (text: string): boolean => lineLink(text).length > LINE_LINK_WARN_LENGTH;
