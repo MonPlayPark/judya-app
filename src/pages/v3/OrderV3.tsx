@@ -10,10 +10,17 @@ import type { IsoDate } from '../../domain/calc';
 import { label } from '../../domain/v3/medsList';
 import { REASON_LABEL, qtyText, stepLine } from '../../domain/v3/orderDraft';
 import { buildOrderLines, type DraftLine, type DraftReason } from '../../domain/v3/orderLines';
-import { messageItems, type OrderMode, type Recipient } from '../../domain/v3/orderMessage';
+import { compareShops } from '../../domain/v3/orderCompare';
+import { messageItems, type Recipient } from '../../domain/v3/orderMessage';
+import { baht, compareLinesOf, feeLine, modeOfShop, saveShopPrices } from '../../domain/v3/orderShops';
+import { defaultNewId } from '../../domain/v3/medActions';
+import { addShop } from '../../domain/v3/shops';
+import { ShopForm, type ShopOutcome } from '../../components/v3/ShopForm';
+import type { ShopInput } from '../../domain/shop';
 import { recipientOf, withRecipient } from '../../domain/v3/recipient';
 import type { MedKind, Root } from '../../domain/v3/schema';
-import { OrderMessage, type SaveOutcome } from './OrderMessage';
+import { OrderCompare, type PriceOutcome } from './OrderCompare';
+import { OrderMessage, type PickedShop, type SaveOutcome } from './OrderMessage';
 import { AddItemSheet, UnitSheet, type AddTab } from './OrderSheets';
 import styles from './OrderV3.module.css';
 
@@ -23,19 +30,23 @@ export interface OrderViewProps {
   demo: boolean;
   /** Test links only: which sheet starts open. `item` = the key of the line for the unit sheet. */
   initial?: {
-    sheet?: 'add' | 'unit' | 'recipient' | 'incomplete';
+    sheet?: 'add' | 'unit' | 'recipient' | 'incomplete' | 'shop' | 'prices';
     tab?: AddTab;
     name?: string;
     item?: string;
-    mode?: OrderMode;
+    /** Id of the shop that starts chosen (a test link). `sheet: 'prices'` opens the price sheet of this shop. */
+    shop?: string;
+    /** Starts with the "รวมค่าส่ง" switch off. */
+    noShipping?: boolean;
     /** Demo only: starts with this made-up recipient (kept in memory). */
     recipient?: Recipient;
   };
   /** Writes a changed root (the recipient is a setting). Not given in a demo: the recipient then lives in memory only. */
   persist?: (root: Root) => { ok: true } | { ok: false; text: string };
+  newId?: () => string;
 }
 
-type OpenSheet = { kind: 'add' } | { kind: 'unit'; key: string } | null;
+type OpenSheet = { kind: 'add' } | { kind: 'unit'; key: string } | { kind: 'shop' } | null;
 
 const CartGlyph = () => (
   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -84,11 +95,12 @@ export function titleOfLine(root: Root, line: DraftLine): string {
   }
 }
 
-export function OrderView({ root: first, today, demo, initial, persist }: OrderViewProps) {
+export function OrderView({ root: first, today, demo, initial, persist, newId = defaultNewId }: OrderViewProps) {
   const [root, setRoot] = useState(first);
   const [lines, setLines] = useState<DraftLine[]>(() => buildOrderLines(root, today));
   const [sheet, setSheet] = useState<OpenSheet>(() => {
     if (initial?.sheet === 'add') return { kind: 'add' };
+    if (initial?.sheet === 'shop') return { kind: 'shop' };
     if (initial?.sheet === 'unit') {
       const first = buildOrderLines(root, today).find((l) => l.source.kind === 'med');
       return first || initial.item ? { kind: 'unit', key: initial.item ?? first?.key ?? '' } : null;
@@ -96,6 +108,8 @@ export function OrderView({ root: first, today, demo, initial, persist }: OrderV
     return null;
   });
   const [toast, showToast] = useToast();
+  const [includeShipping, setIncludeShipping] = useState(!initial?.noShipping);
+  const [selectedId, setSelectedId] = useState<string | null>(initial?.shop ?? null);
   const [demoRecipient, setDemoRecipient] = useState<Recipient>(() => (demo ? (initial?.recipient ?? {}) : {}));
   const recipient = demo ? demoRecipient : recipientOf(root);
   const ticked = useMemo(() => lines.filter((l) => l.ticked).length, [lines]);
@@ -113,6 +127,50 @@ export function OrderView({ root: first, today, demo, initial, persist }: OrderV
     return { ok: true };
   };
   const items = useMemo(() => messageItems(root, lines), [root, lines]);
+  const comparison = useMemo(() => compareShops(compareLinesOf(lines), root.shops, root.prices, includeShipping), [lines, root.shops, root.prices, includeShipping]);
+  const pickedRow = comparison.rows.find((r) => r.shopId === selectedId);
+  const pickedShop = pickedRow ? root.shops.find((s) => s.id === pickedRow.shopId) : undefined;
+  const picked: PickedShop | null =
+    pickedRow && pickedShop
+      ? {
+          name: pickedShop.name,
+          phone: pickedShop.phone,
+          totalText: pickedRow.lines.length === 0 ? null : `ยอดรวม ${baht(pickedRow.total)}`,
+          feeText: feeLine(pickedShop, pickedRow, includeShipping),
+          unpricedText: pickedRow.unpricedText,
+        }
+      : null;
+
+  /** Takes a new root only when the write worked (a demo keeps it in memory, no storage). */
+  const commit = (next: Root): { ok: true } | { ok: false; text: string } => {
+    if (!demo) {
+      const res = persist ? persist(next) : ({ ok: false, text: 'บันทึกไม่ได้ ข้อมูลเดิมยังอยู่' } as const);
+      if (!res.ok) return res;
+    }
+    setRoot(next);
+    return { ok: true };
+  };
+  const saveShop = (input: ShopInput): ShopOutcome => {
+    const made = addShop(root, input, newId);
+    if (!made.ok) return made.error === 'invalid' ? { ok: false, errors: made.fields } : { ok: false, message: 'บันทึกไม่ได้ ข้อมูลเดิมยังอยู่ ลองใหม่อีกครั้ง' };
+    const res = commit(made.root);
+    if (!res.ok) return { ok: false, message: res.text };
+    setSheet(null);
+    showToast('เพิ่มร้านแล้ว');
+    return { ok: true };
+  };
+  const savePrices = (shopId: string, priceLines: Parameters<typeof saveShopPrices>[2], typed: Record<string, string>): PriceOutcome => {
+    const made = saveShopPrices(root, shopId, priceLines, typed, today, newId);
+    if (!made.ok) {
+      if (made.error === 'nothing_typed') return { ok: false, message: 'ยังไม่ได้ใส่ราคา ใส่อย่างน้อย 1 ช่อง หรือกดยกเลิก' };
+      if (made.error === 'invalid') return { ok: false, errors: made.errors };
+      return { ok: false, message: 'บันทึกไม่ได้ ข้อมูลเดิมยังอยู่ ลองใหม่อีกครั้ง' };
+    }
+    const res = commit(made.root);
+    if (!res.ok) return { ok: false, message: res.text };
+    showToast('บันทึกราคาแล้ว');
+    return { ok: true };
+  };
   const showMessage = (): void => document.getElementById('order-message')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
 
   const update = (key: string, fn: (l: DraftLine) => DraftLine): void => setLines((all) => all.map((l) => (l.key === key ? fn(l) : l)));
@@ -171,12 +229,30 @@ export function OrderView({ root: first, today, demo, initial, persist }: OrderV
           </button>
         </section>
 
+        {ticked > 0 && (
+          <OrderCompare
+            shops={root.shops}
+            comparison={comparison}
+            lines={lines}
+            titleOf={(l) => titleOfLine(root, l)}
+            includeShipping={includeShipping}
+            onIncludeShipping={setIncludeShipping}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            onAddShop={() => setSheet({ kind: 'shop' })}
+            onSavePrices={savePrices}
+            {...(initial?.sheet === 'prices' && initial.shop ? { initialPriceShop: initial.shop } : {})}
+          />
+        )}
+
         <OrderMessage
           items={items}
           recipient={recipient}
+          mode={modeOfShop(pickedShop)}
+          shop={picked}
           onSaveRecipient={saveRecipient}
           showToast={showToast}
-          {...(initial?.sheet === 'recipient' || initial?.sheet === 'incomplete' ? { initial: { sheet: initial.sheet, ...(initial.mode ? { mode: initial.mode } : {}) } } : initial?.mode ? { initial: { mode: initial.mode } } : {})}
+          {...(initial?.sheet === 'recipient' || initial?.sheet === 'incomplete' ? { initial: { sheet: initial.sheet } } : {})}
         />
 
         {lines.length > 0 && ticked === 0 && (
@@ -223,6 +299,7 @@ export function OrderView({ root: first, today, demo, initial, persist }: OrderV
           onClose={() => setSheet(null)}
         />
       )}
+      {sheet?.kind === 'shop' && <ShopForm onSave={saveShop} onCancel={() => setSheet(null)} />}
       <Toast text={toast} />
     </div>
   );

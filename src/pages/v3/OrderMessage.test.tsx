@@ -38,7 +38,7 @@ beforeEach(() => {
 });
 afterEach(() => vi.restoreAllMocks());
 
-describe('the recipient bar and the switch', () => {
+describe('the recipient bar and the message', () => {
   it('empty: says that no recipient is entered; with a recipient: name and phone', () => {
     demo('normal');
     expect(screen.getByRole('button', { name: /ข้อมูลผู้รับ: ยังไม่ได้ใส่ข้อมูลผู้รับ/ })).toBeInTheDocument();
@@ -48,13 +48,21 @@ describe('the recipient bar and the switch', () => {
     demo('normal', '&recipient=full');
     expect(screen.getByText(`${DEMO_RECIPIENT.name} · ${DEMO_RECIPIENT.phone}`)).toBeInTheDocument();
   });
-  it('delivery is the start; the switch gives the pick-up text; the message has the header and numbered lines', () => {
+  it('no shop chosen: the message has the header, numbered lines, no delivery / pick-up line, and the recipient name and phone', () => {
     demo('normal', '&recipient=full');
-    expect(screen.getByRole('button', { name: 'ส่งถึงบ้าน' })).toHaveAttribute('aria-pressed', 'true');
     expect(preview().startsWith('สั่งยาค่ะ\n\n1) ')).toBe(true);
+    expect(preview()).not.toContain('ส่ง ');
+    expect(preview()).not.toContain('มารับเอง');
+    expect(preview().endsWith(`${DEMO_RECIPIENT.name} ${DEMO_RECIPIENT.phone}`)).toBe(true);
+  });
+  it('choosing a delivery shop adds "ส่ง <address>"; a pick-up shop gives "มารับเองค่ะ"; the old switch is gone', () => {
+    demo('normal', '&recipient=full&shops=three');
+    expect(screen.queryByRole('button', { name: 'ส่งถึงบ้าน' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'มารับเอง' })).toBeNull();
+    press('เลือกร้าน ร้านทดสอบ ก');
     expect(preview()).toContain(`ส่ง ${DEMO_RECIPIENT.address}`);
-    press('มารับเอง');
-    expect(screen.getByRole('button', { name: 'มารับเอง' })).toHaveAttribute('aria-pressed', 'true');
+    expect(preview()).not.toContain('มารับเอง');
+    press('เลือกร้าน ร้านทดสอบ ข');
     expect(preview()).toContain('มารับเองค่ะ');
     expect(preview()).not.toContain(DEMO_RECIPIENT.address);
     expect(preview().endsWith(`${DEMO_RECIPIENT.name} ${DEMO_RECIPIENT.phone}`)).toBe(true);
@@ -64,12 +72,12 @@ describe('the recipient bar and the switch', () => {
     for (const box of screen.getAllByRole('checkbox')) if ((box as HTMLInputElement).checked) fireEvent.click(box);
     expect(preview()).toBe('ติ๊กยาที่ต้องการสั่ง แล้วข้อความจะขึ้นที่นี่');
     expect(screen.getByRole('button', { name: 'คัดลอกข้อความ' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'ส่งทาง LINE' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'เปิด LINE' })).toBeDisabled();
   });
   it('no member name reaches the message (made-up members of the demo house)', () => {
-    demo('normal', '&recipient=full');
-    for (const mode of ['ส่งถึงบ้าน', 'มารับเอง']) {
-      press(mode);
+    demo('normal', '&recipient=full&shops=three');
+    for (const shop of ['ร้านทดสอบ ก', 'ร้านทดสอบ ข', 'ร้านทดสอบ ค']) {
+      press(`เลือกร้าน ${shop}`);
       for (const p of orderDemoRoot('normal').persons) expect(preview()).not.toContain(p.name);
     }
   });
@@ -80,7 +88,7 @@ describe('the recipient sheet (demo: memory only)', () => {
     const set = vi.spyOn(Storage.prototype, 'setItem');
     const get = vi.spyOn(Storage.prototype, 'getItem');
     const save = vi.spyOn(storage, 'saveRoot');
-    demo('normal');
+    demo('normal', '&shops=three&shop=s1');
     press(/ข้อมูลผู้รับ:/);
     const dialog = screen.getByRole('dialog', { name: 'ข้อมูลผู้รับ' });
     expect(within(dialog).getByLabelText(/ที่อยู่/)).toBeInTheDocument();
@@ -129,7 +137,7 @@ describe('copy and LINE', () => {
     const open = vi.spyOn(window, 'open').mockReturnValue(null);
     demo('normal', '&recipient=full');
     const text = preview();
-    press('ส่งทาง LINE');
+    press('เปิด LINE');
     expect(open).toHaveBeenCalledTimes(1);
     const [url, target, features] = open.mock.calls[0]!;
     expect(String(url).startsWith('https://line.me/R/msg/text/?')).toBe(true);
@@ -143,8 +151,8 @@ describe('copy and LINE', () => {
     const open = vi.spyOn(window, 'open').mockReturnValue(null);
     demo('normal', '&recipient=full');
     expect(screen.getByText('ข้อความยาว LINE อาจตัดท้าย แนะนำใช้คัดลอกข้อความ')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'ส่งทาง LINE' })).toBeEnabled();
-    press('ส่งทาง LINE');
+    expect(screen.getByRole('button', { name: 'เปิด LINE' })).toBeEnabled();
+    press('เปิด LINE');
     expect(open).toHaveBeenCalledTimes(1);
     expect(String(open.mock.calls[0]![0]).startsWith('https://line.me/R/msg/text/?')).toBe(true);
     expect(screen.getAllByText('ข้อความยาว LINE อาจตัดท้าย แนะนำใช้คัดลอกข้อความ').length).toBeGreaterThan(1); // note + toast
@@ -158,7 +166,7 @@ describe('copy and LINE', () => {
 
 describe('recipient not complete when copy / LINE is pressed', () => {
   it('delivery needs address, name and phone: the sheet opens and says what is missing', () => {
-    demo('normal', '&recipient=full');
+    demo('normal', '&recipient=full&shops=three&shop=s1');
     press(/ข้อมูลผู้รับ:/);
     type(/ที่อยู่/, '');
     press('บันทึก');
@@ -168,12 +176,11 @@ describe('recipient not complete when copy / LINE is pressed', () => {
     expect(writeText).not.toHaveBeenCalled();
   });
   it('pick-up needs only name and phone: no sheet when the address is missing', async () => {
-    demo('normal');
+    demo('normal', '&shops=three&shop=s2');
     press(/ข้อมูลผู้รับ:/);
     type('ชื่อผู้รับ', 'คุณสมมติ');
     type('เบอร์โทร', '081-000-0000');
     press('บันทึก');
-    press('มารับเอง');
     press('คัดลอกข้อความ');
     expect(screen.queryByRole('dialog')).toBeNull();
     await waitFor(() => expect(writeText).toHaveBeenCalled());
@@ -232,7 +239,7 @@ describe('recipient not complete when copy / LINE is pressed', () => {
   });
   it('the cancel button closes the sheet and sends nothing', () => {
     demo('normal');
-    press('ส่งทาง LINE');
+    press('เปิด LINE');
     const open = vi.spyOn(window, 'open').mockReturnValue(null);
     press('ยกเลิก');
     expect(screen.queryByRole('dialog')).toBeNull();
@@ -257,7 +264,8 @@ describe('real data: the recipient is saved through saveRoot, nothing else is', 
     type('เบอร์โทร', '081-000-0000');
     press('บันทึกแล้วส่ง');
     await waitFor(() => expect(writeText).toHaveBeenCalled());
-    expect(writeText.mock.calls[0]![0]).toContain('ส่ง บ้านเลขที่ 99 ซอยตัวอย่าง\n\nคุณสมมติ 081-000-0000');
+    expect(writeText.mock.calls[0]![0]).toContain('\n\nคุณสมมติ 081-000-0000'); // no shop chosen: no delivery line
+    expect(writeText.mock.calls[0]![0]).not.toContain('ส่ง บ้าน');
     const after = JSON.parse(store.data[STORAGE_KEY]!);
     expect(after.settings).toEqual({ ...before.settings, recipientAddress: 'บ้านเลขที่ 99 ซอยตัวอย่าง', recipientName: 'คุณสมมติ', recipientPhone: '081-000-0000' });
     expect({ ...after, settings: before.settings }).toEqual(before); // every table, orders included, is as it was
@@ -278,17 +286,15 @@ describe('real data: the recipient is saved through saveRoot, nothing else is', 
     expect(screen.getByText('คุณสมมติ')).toBeInTheDocument();
   });
 
-  it('pressing copy / LINE, switching the mode and looking at the preview write nothing', async () => {
+  it('pressing copy / LINE and looking at the preview write nothing', async () => {
     const store = start();
     const before = JSON.stringify(store.data);
     vi.spyOn(window, 'open').mockReturnValue(null);
     live(store);
-    press('มารับเอง');
     press('คัดลอกข้อความ');
     press('ส่งโดยไม่ใส่ผู้รับ');
     await act(async () => {});
-    press('ส่งถึงบ้าน');
-    press('ส่งทาง LINE');
+    press('เปิด LINE');
     type('ชื่อผู้รับ', 'คุณสมมติ');
     press('ส่งเท่าที่กรอกไว้');
     await act(async () => {});

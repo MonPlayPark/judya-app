@@ -923,3 +923,34 @@ None. The card uses the same tokens as 11.2 / 11.3a (`--color-primary*`, `--colo
 ### Still open for the owner
 - Try a long order on a real phone: is 8000 the right warning length for the LINE link?
 - The recipient has to be typed again on a new device (not in the backup file). Fine?
+
+## M4 PR 11.3b-2a — compare shops, choose a shop, add prices (2 พ.ย. 2569)
+
+Branch `m4-pr11-order` (PR #39, draft). Scope 2a only: no "สั่งแล้วใช่ไหม" sheet, no saved order, history, receiving, Home button or stock cut. `orderCompare.ts`, `prices.ts`, schema, storage keys and data version (3) are not changed. New: `domain/v3/orderShops.ts`, `pages/v3/OrderCompare.tsx` (+css). The only price writer is `upsertPrice` (called by `saveShopPrices`), saved with `saveRoot`; a demo keeps everything in memory.
+
+### Rules locked by the owner (built as given)
+1. Shop order: every price (cheapest first) → missing some (fewer missing first, then cheaper) → no price. Switch "รวมค่าส่ง": on = delivery shops add their fee, pick-up adds 0; off = no fee.
+2. No "ซื้อเพิ่มอีก … ส่งฟรี" line. A shop that misses prices can be chosen (no warning sheet) and has "ใส่ราคา".
+3. Price sheet: only the lines this shop has no price for; typed (free) medicines get no box; price per order unit, optional.
+4. The TEMP switch is removed. Delivery shop → "ส่ง <address>", pick-up shop → "มารับเองค่ะ", then name and phone. No shop → neither line. No shop at all → "เพิ่มร้านแรก".
+5. "บันทึกว่าสั่งแล้ว" is faded with the chip "เร็ว ๆ นี้" and does nothing.
+
+### Decided on my own — please check
+1. **Switch "รวมค่าส่ง" starts ON.**
+2. **"ถูกที่สุด"** goes to every shop with all prices whose total equals the lowest among such shops, and only when there are at least 2 shops (one shop alone is not "cheapest"). Total follows the switch.
+3. **Hidden `freeOver`:** the data still keeps it (11.3a). `orderCompare` still waives the fee when it is reached, and `shopSub` (as asked) prints "ซื้อครบ ฿X ส่งฟรี" for such a shop. So the screen shows that text only for shops that already have the value; the demo shops have none. If you want it ignored in the totals too, that is a change to `orderCompare` — not done.
+4. Compare card shows only when something is ticked. With nothing ticked only the old hint shows (also when there is no shop).
+5. A shop with no price for any line shows "ยังไม่มีราคา" instead of a total, and the chosen-shop part says "ร้านนี้ยังไม่มีราคายาที่สั่ง".
+6. Chosen-shop part: name, phone (or "ยังไม่ใส่เบอร์โทร"), "ยอดรวม ฿X", fee line ("ค่าส่ง ฿40", "ค่าส่ง ฿40 (ไม่รวมในยอด)" when the switch is off, "มารับเอง ไม่มีค่าส่ง"), yellow "ไม่รวม N รายการ". "โทรหาร้าน" is a `tel:` link only when the shop has a phone. A chosen shop is marked "เลือกแล้ว" (icon + word).
+7. The old "ส่งทาง LINE" button is now "เปิด LINE" (one set of buttons, inside the message card, used with or without a shop). Incomplete-recipient rule with no shop: name and phone needed (as pick-up).
+8. Price sheet: saving with nothing typed stays open with "ยังไม่ได้ใส่ราคา"; 0 / text shows "ใส่ราคาเป็นตัวเลขมากกว่า 0" under that box and saves nothing; typing the same unit again replaces the row. A regular medicine's price saves with the line's count per unit; a house medicine's with 1. Date = today.
+9. First shop added from this page uses the same form and `addShop` as 11.3a; the page then shows it in the comparison (not chosen automatically).
+10. Demo: `orderDemoRoot` unchanged (no shops); `&shops=three` adds three made-up shops (ก delivery ฿40, ข pick-up, ค delivery ฿30 missing 2 prices).
+11. Tests 975 (938 before). JS 561.07 kB, gzip 156.97 kB (was 546.26 / 152.90). `check:overflow` 1356 checks, 0 problems (new routes and 11 pressed scenarios).
+
+### Missing tokens (no colour was made)
+None.
+
+### Still open for the owner
+- Hidden `freeOver` in totals (decision 3): keep, or ignore it in the compare?
+- Should a shop that misses prices ever be ranked above a complete one? (Now never.)

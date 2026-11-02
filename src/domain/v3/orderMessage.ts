@@ -92,11 +92,12 @@ export function messageItems(root: Pick<Root, 'medications' | 'houseItems'>, lin
 }
 
 /** The whole message. No items = '' (nothing to send). */
-export function buildOrderMessage(items: readonly MessageItem[], mode: OrderMode, recipient: Recipient): string {
+/** `mode` null = no shop chosen yet: no delivery / pick-up line (the recipient's name and phone stay). */
+export function buildOrderMessage(items: readonly MessageItem[], mode: OrderMode | null, recipient: Recipient): string {
   if (items.length === 0) return '';
   const blocks: string[] = [MESSAGE_HEADER, items.map((it, i) => `${i + 1}) ${itemText(it)}`).join('\n')];
   if (mode === 'pickup') blocks.push(PICKUP_LINE);
-  else {
+  else if (mode === 'delivery') {
     const address = oneLine(recipient.address);
     if (address !== '') blocks.push(`${DELIVERY_PREFIX} ${address}`);
   }
@@ -106,14 +107,14 @@ export function buildOrderMessage(items: readonly MessageItem[], mode: OrderMode
 }
 
 /** Is what the owner typed enough for this mode? Delivery needs address, name and phone; pick-up needs name and phone. */
-export function recipientMissing(mode: OrderMode, recipient: Recipient): ('address' | 'name' | 'phone')[] {
+export function recipientMissing(mode: OrderMode | null, recipient: Recipient): ('address' | 'name' | 'phone')[] {
   const missing: ('address' | 'name' | 'phone')[] = [];
   if (mode === 'delivery' && oneLine(recipient.address) === '') missing.push('address');
   if (oneLine(recipient.name) === '') missing.push('name');
   if (oneLine(recipient.phone) === '') missing.push('phone');
   return missing;
 }
-export const recipientComplete = (mode: OrderMode, recipient: Recipient): boolean => recipientMissing(mode, recipient).length === 0;
+export const recipientComplete = (mode: OrderMode | null, recipient: Recipient): boolean => recipientMissing(mode, recipient).length === 0;
 
 // ---------- the LINE link ----------
 

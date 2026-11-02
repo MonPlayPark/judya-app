@@ -1,5 +1,6 @@
-// The order message on the order page (M4 PR 11.3b-1): the small bar with the recipient, the temporary delivery / pick-up switch, the
-// read-only preview, and the buttons "คัดลอกข้อความ" / "ส่งทาง LINE". Nothing here saves an order. The recipient is saved by the page
+// The order message on the order page (M4 PR 11.3b-1, shop choice 11.3b-2a): the small bar with the recipient, the chosen shop (name, phone,
+// total, fee), the read-only preview, and the buttons "คัดลอกข้อความ" / "เปิด LINE" / "โทรหาร้าน". The delivery / pick-up line follows the
+// chosen shop (none chosen = no such line). Nothing here saves an order. The recipient is saved by the page
 // (`onSaveRecipient`, through saveRoot; a demo keeps it in memory only).
 import { useState, type FormEvent } from 'react';
 import { ChevronRightIcon, InfoIcon, WarningIcon } from '../../components/icons';
@@ -17,6 +18,17 @@ import {
 import { RECIPIENT_ERROR_TEXT, RECIPIENT_MAX, checkRecipient, formOf, recipientBarText, type RecipientError, type RecipientField, type RecipientForm } from '../../domain/v3/recipient';
 import styles from './OrderMessage.module.css';
 
+/** What the "ร้านที่เลือก" part shows (ready text, made by the page from the comparison). */
+export interface PickedShop {
+  name: string;
+  phone?: string | undefined;
+  /** 'ยอดรวม ฿1,200', or null when the shop has no price for any line. */
+  totalText: string | null;
+  feeText: string;
+  /** 'ไม่รวม N รายการที่ยังไม่มีราคา', or null. */
+  unpricedText: string | null;
+}
+
 export type SendAction = 'copy' | 'line';
 export type SaveOutcome = { ok: true } | { ok: false; text: string };
 
@@ -31,11 +43,15 @@ export interface OrderMessageProps {
   /** The ticked lines as message items. */
   items: readonly MessageItem[];
   recipient: Recipient;
+  /** How the medicine gets to the owner, from the chosen shop: null = no shop chosen (no delivery / pick-up line in the message). */
+  mode: OrderMode | null;
+  /** The chosen shop, or null. */
+  shop: PickedShop | null;
   /** Saves the recipient. The page answers ok only when it is really saved (a demo: kept in memory). */
   onSaveRecipient: (r: Recipient) => SaveOutcome;
   showToast: (text: string) => void;
   /** Test links only. */
-  initial?: { sheet?: 'recipient' | 'incomplete'; mode?: OrderMode };
+  initial?: { sheet?: 'recipient' | 'incomplete' };
 }
 
 /** Puts the text on the clipboard; false when the browser refuses or has no clipboard. */
@@ -49,9 +65,7 @@ async function copyText(text: string): Promise<boolean> {
   }
 }
 
-export function OrderMessage({ items, recipient, onSaveRecipient, showToast, initial }: OrderMessageProps) {
-  // TEMP (11.3b-1): this switch stands in for the shop. 11.3b-2 replaces it with the choice of a shop, whose own delivery setting decides the mode.
-  const [mode, setMode] = useState<OrderMode>(initial?.mode ?? 'delivery');
+export function OrderMessage({ items, recipient, mode, shop, onSaveRecipient, showToast, initial }: OrderMessageProps) {
   const [sheet, setSheet] = useState<OpenSheet>(() => {
     if (initial?.sheet === 'recipient') return { kind: 'edit' };
     if (initial?.sheet === 'incomplete') return { kind: 'incomplete', action: 'copy' };
@@ -92,15 +106,21 @@ export function OrderMessage({ items, recipient, onSaveRecipient, showToast, ini
         <ChevronRightIcon />
       </button>
 
-      {/* TEMP (11.3b-1): replaced by the shop choice in 11.3b-2 */}
-      <div className={styles.modes} role="group" aria-label="วิธีรับยา">
-        <button type="button" className={mode === 'delivery' ? `${styles.mode} ${styles.modeOn}` : styles.mode} aria-pressed={mode === 'delivery'} onClick={() => setMode('delivery')}>
-          ส่งถึงบ้าน
-        </button>
-        <button type="button" className={mode === 'pickup' ? `${styles.mode} ${styles.modeOn}` : styles.mode} aria-pressed={mode === 'pickup'} onClick={() => setMode('pickup')}>
-          มารับเอง
-        </button>
-      </div>
+      {shop && (
+        <div className={styles.picked} role="group" aria-label="ร้านที่เลือก">
+          <p className={styles.pickedLabel}>ร้านที่เลือก</p>
+          <p className={styles.pickedName}>{shop.name}</p>
+          <p className={styles.pickedLine}>{shop.phone ?? 'ยังไม่ใส่เบอร์โทร'}</p>
+          <p className={styles.pickedLine}>{shop.totalText ?? 'ร้านนี้ยังไม่มีราคายาที่สั่ง'}</p>
+          <p className={styles.pickedLine}>{shop.feeText}</p>
+          {shop.unpricedText && (
+            <p className={styles.chip}>
+              <WarningIcon />
+              {shop.unpricedText}
+            </p>
+          )}
+        </div>
+      )}
 
       <pre className={empty ? `${styles.preview} ${styles.previewEmpty}` : styles.preview} tabIndex={0} aria-label="ตัวอย่างข้อความ">
         {empty ? 'ติ๊กยาที่ต้องการสั่ง แล้วข้อความจะขึ้นที่นี่' : text}
@@ -118,9 +138,23 @@ export function OrderMessage({ items, recipient, onSaveRecipient, showToast, ini
           คัดลอกข้อความ
         </button>
         <button type="button" className={styles.line} disabled={empty} onClick={() => press('line')}>
-          ส่งทาง LINE
+          เปิด LINE
         </button>
       </div>
+
+      {shop && (
+        <div className={styles.actions}>
+          {shop.phone ? (
+            <a className={styles.call} href={`tel:${shop.phone.replace(/[^0-9+]/g, '')}`}>
+              โทรหาร้าน
+            </a>
+          ) : null}
+          <button type="button" className={styles.soonButton} aria-disabled="true" onClick={() => showToast('เร็ว ๆ นี้')}>
+            บันทึกว่าสั่งแล้ว
+            <span className={styles.soonBadge}>เร็ว ๆ นี้</span>
+          </button>
+        </div>
+      )}
 
       {sheet?.kind === 'edit' && (
         <RecipientSheet

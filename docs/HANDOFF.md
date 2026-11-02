@@ -2,6 +2,24 @@
 
 Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every session.
 
+## M4 PR 11.3b-2a — compare shops, choose a shop, add prices (2 พ.ย. 2569)
+
+Branch `m4-pr11-order` (PR #39, draft). On `#/n/order`: card "เทียบราคา N ร้าน" under the ticked list (switch "รวมค่าส่ง", one card per shop, "ถูกที่สุด", yellow "ไม่รวม N รายการ", "ใส่ราคา" sheet), tapping a card chooses the shop, the message follows the shop type, the TEMP switch is gone. With no shop: big "เพิ่มร้านแรก" (opens the 11.3a form). **Still no order is saved** (no "สั่งแล้วใช่ไหม" sheet, history, receiving, Home button, stock cut). The page now also writes shops and remembered prices, only through `saveRoot`.
+
+### Status
+tsc, build, `npm test` 975 pass (938 before), JS 561.07 kB / gzip 156.97 kB (was 546.26 / 152.90), `check:overflow` 1356 checks, 0 problems. Details and own decisions: DECISIONS "M4 PR 11.3b-2a". Screenshots: branch `shots-pr11-3b2a`.
+
+### What is there now
+- `domain/v3/orderShops.ts` (compare lines, `modeOfShop`, `cheapestShopIds`, `priceableMissing`, `saveShopPrices` via `upsertPrice`, `feeLine`, `baht`); `buildOrderMessage` / `recipientMissing` accept mode `null` (no shop).
+- `pages/v3/OrderCompare.tsx` (+css): card and price sheet. `OrderMessage.tsx`: "ร้านที่เลือก" part, "เปิด LINE", "โทรหาร้าน", faded "บันทึกว่าสั่งแล้ว" with "เร็ว ๆ นี้".
+- Demo links: `&shops=three`, `&shop=s1|s2|s3`, `&sheet=prices&shop=s3`, `&sheet=shop`, `&shipping=off`. `&mode=pickup` was removed.
+
+### Left for later (do not start before the owner says)
+11.3b-2b: "สั่งแล้วใช่ไหม" sheet and saving the order, then history, receiving, Home button, stock cut.
+
+### Waiting for the owner
+Questions at the end of DECISIONS "M4 PR 11.3b-2a".
+
 ## M4 PR 11.3b-1 — order message, recipient, copy and LINE (2 พ.ย. 2569)
 
 Branch `m4-pr11-order` (PR #39, draft). On `#/n/order`: a card "ข้อความสั่งยา" with the recipient bar (opens a sheet: address, name, phone), a TEMP switch "ส่งถึงบ้าน / มารับเอง" (11.3b-2 replaces it with the shop), a read-only preview, and "คัดลอกข้อความ" / "ส่งทาง LINE". **No order is saved.** The recipient is three optional settings saved with `saveRoot`; it is not in the backup file (rule of PR 6c; a new device needs it typed again). Data version stays 3; `orderTemplate` untouched.

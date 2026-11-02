@@ -40,7 +40,10 @@ const V3_ROUTES = ['/', '/n', '/no-such-page', '/old', // M4 PR 7b: an unknown o
   '/n/order?demo=normal&sheet=add&tab=new&name=Meto', '/n/order?demo=normal&sheet=unit', '/n/order?demo=normal&sheet=unit&item=med:m8',
   '/n/order?demo=nolow&sheet=add&tab=meds', '/n/order?demo=nomeds&sheet=add&tab=meds', '/n/order?demo=nomeds&sheet=add&tab=new',
   // order message (M4 PR 11.3b-1): the card with an empty / filled recipient, delivery and pick-up, the recipient sheet, the "not complete" sheet
-  '/n/order?demo=normal&recipient=full', '/n/order?demo=normal&recipient=full&mode=pickup', '/n/order?demo=normal&sheet=recipient',
+  // shop choice (M4 PR 11.3b-2a): no shop yet, three shops, switch off, a shop that misses prices with its price sheet, delivery and pick-up chosen, the shop form
+  '/n/order?demo=normal&shops=three', '/n/order?demo=normal&shops=three&shipping=off', '/n/order?demo=normal&shops=three&sheet=prices&shop=s3',
+  '/n/order?demo=normal&shops=three&recipient=full&shop=s1', '/n/order?demo=normal&shops=three&recipient=full&shop=s3', '/n/order?demo=normal&sheet=shop',
+  '/n/order?demo=normal&recipient=full', '/n/order?demo=normal&recipient=full&shops=three&shop=s2', '/n/order?demo=normal&sheet=recipient',
   '/n/order?demo=normal&sheet=incomplete', '/n/order?demo=normal&recipient=full&sheet=recipient', '/n/order?demo=nolow&recipient=full',
   // v3 shops page (M4 PR 11.3a): real data (empty), an empty house, three shops, a 40-letter name, the add form (delivery), the edit form
   '/n/shops', '/n/shops?demo=empty', '/n/shops?demo=normal', '/n/shops?demo=long', '/n/shops?demo=normal&sheet=add', '/n/shops?demo=long&sheet=edit&item=s1',
@@ -87,11 +90,26 @@ const ADD_SCENARIOS = [
 // v3 order draft (M4 PR 11.2): states that need pressing. Same shape as ADD_SCENARIOS.
 const ORD = '/n/order?demo=normal';
 const NOLOW = '/n/order?demo=nolow'; // many medicines to pick from: the search box and "see more" show
+const SH3 = '/n/order?demo=normal&shops=three';
+const LONGSHOP = `${SH3}&recipient=full`;
 const ORDER_SCENARIOS = [
+  // shop choice (M4 PR 11.3b-2a)
+  ['shops, none yet (big button)', ORD, async () => {}],
+  ['shops, none yet, form opened', ORD, async (page) => { await click(page, 'เพิ่มร้านแรก'); }],
+  ['shops, form with a long name', ORD, async (page) => { await click(page, 'เพิ่มร้านแรก'); await page.getByLabel(/ชื่อร้าน/).fill('ร้านทดสอบ' + 'ก'.repeat(31)); await click(page, 'บันทึก'); }],
+  ['shops, three compared', SH3, async () => {}],
+  ['shops, fee switch off', SH3, async (page) => { await page.getByRole('switch').click(); }],
+  ['shops, price sheet', SH3, async (page) => { await page.getByRole('button', { name: /^ใส่ราคา/ }).click(); }],
+  ['shops, price sheet, wrong value', SH3, async (page) => { await page.getByRole('button', { name: /^ใส่ราคา/ }).click(); await page.getByLabel(/^ราคาต่อ หลอด/).fill('0'); await click(page, 'บันทึกราคา'); }],
+  ['shops, price sheet, long value', SH3, async (page) => { await page.getByRole('button', { name: /^ใส่ราคา/ }).click(); await page.getByLabel(/^ราคาต่อ หลอด/).fill('9'.repeat(30)); }],
+  ['shops, delivery shop chosen', LONGSHOP, async (page) => { await page.getByRole('button', { name: 'เลือกร้าน ร้านทดสอบ ก' }).click(); }],
+  ['shops, pick-up shop chosen', LONGSHOP, async (page) => { await page.getByRole('button', { name: 'เลือกร้าน ร้านทดสอบ ข' }).click(); }],
+  ['shops, shop that misses prices chosen', LONGSHOP, async (page) => { await page.getByRole('button', { name: 'เลือกร้าน ร้านทดสอบ ค' }).click(); }],
+  ['shops, many lines (+ pressed 40 times) with a shop chosen', LONGSHOP, async (page) => { await page.getByRole('button', { name: 'เลือกร้าน ร้านทดสอบ ก' }).click(); const plus = page.getByRole('button', { name: /^เพิ่มจำนวน/ }).first(); for (let i = 0; i < 40; i += 1) await plus.click(); }],
   // order message (M4 PR 11.3b-1)
   ['message, nothing ticked', '/n/order?demo=normal&recipient=full', async (page) => { for (const box of await page.getByRole('checkbox').all()) await box.uncheck(); }],
   ['message, long recipient (300 + 60 + 20 letters)', '/n/order?demo=normal', async (page) => { await click(page, /^ข้อมูลผู้รับ/); await page.getByLabel(/^ที่อยู่/).fill('ก'.repeat(300)); await page.getByLabel('ชื่อผู้รับ').fill('ข'.repeat(60)); await page.getByLabel('เบอร์โทร').fill('1'.repeat(20)); await click(page, 'บันทึก'); }],
-  ['message, long recipient, pick-up', '/n/order?demo=normal&recipient=full&mode=pickup', async (page) => { await click(page, /^ข้อมูลผู้รับ/); await page.getByLabel('ชื่อผู้รับ').fill('ข'.repeat(60)); await page.getByLabel('เบอร์โทร').fill('1'.repeat(20)); await click(page, 'บันทึก'); }],
+  ['message, long recipient, pick-up', '/n/order?demo=normal&recipient=full&shops=three&shop=s2', async (page) => { await click(page, /^ข้อมูลผู้รับ/); await page.getByLabel('ชื่อผู้รับ').fill('ข'.repeat(60)); await page.getByLabel('เบอร์โทร').fill('1'.repeat(20)); await click(page, 'บันทึก'); }],
   ['message, wrong values in the sheet', '/n/order?demo=normal&sheet=recipient', async (page) => { await page.getByLabel(/^ที่อยู่/).fill('ก'.repeat(301)); await page.getByLabel('เบอร์โทร').fill('abc'); await click(page, 'บันทึก'); }],
   ['message, copy with no recipient (sheet)', '/n/order?demo=normal', async (page) => { await click(page, 'คัดลอกข้อความ'); }],
   ['message, many lines (+ pressed 40 times)', '/n/order?demo=normal&recipient=full', async (page) => { const plus = page.getByRole('button', { name: /^เพิ่มจำนวน/ }).first(); for (let i = 0; i < 40; i += 1) await plus.click(); }],
