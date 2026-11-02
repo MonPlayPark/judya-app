@@ -11,6 +11,8 @@ import { DEFAULT_SETTINGS_V3, type Root } from './schema';
 import { restoreRoot, saveRoot, startFresh, type KeyValueStore, type SaveResult } from './storage';
 
 export const PRIVACY_TEXT = 'ไฟล์นี้มีข้อมูลสุขภาพของครอบครัว ส่งเฉพาะที่ที่ไว้ใจ';
+/** One line on the page (M4 PR 11.3b-1): the recipient of orders (address, name, phone) is a setting, so it is NOT in the backup file. */
+export const RECIPIENT_NOT_BACKED_UP_TEXT = 'ข้อมูลผู้รับสั่งยา (ที่อยู่ ชื่อ เบอร์) ไม่อยู่ในไฟล์สำรอง เก็บไว้เฉพาะในเครื่องนี้ ต้องกรอกใหม่เมื่อย้ายเครื่อง';
 export const NO_UPLOAD_TEXT = 'แอปนี้ไม่ส่งข้อมูลออกนอกเครื่องยกเว้นคุณกดแชร์เอง';
 export const DEMO_BLOCKED_TEXT = 'โหมดตัวอย่าง ใช้สำรองหรือนำกลับข้อมูลไม่ได้';
 export const REPLACE_ALL_TEXT = 'จะแทนที่ข้อมูลปัจจุบันทั้งหมดด้วยข้อมูลในไฟล์นี้';

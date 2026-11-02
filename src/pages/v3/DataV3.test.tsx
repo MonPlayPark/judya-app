@@ -5,7 +5,7 @@ vi.mock('virtual:pwa-register', () => ({ registerSW: () => async () => {} }));
 
 import { App } from '../../App';
 import { MAX_BACKUP_BYTES } from '../../domain/v3/backup';
-import { NO_UPLOAD_TEXT, PRIVACY_TEXT, RESTORE_ERRORS } from '../../domain/v3/dataPage';
+import { NO_UPLOAD_TEXT, PRIVACY_TEXT, RECIPIENT_NOT_BACKED_UP_TEXT, RESTORE_ERRORS } from '../../domain/v3/dataPage';
 import { sampleRootV3 } from '../../domain/v3/fixtures';
 import { DEMO_TODAY } from '../../domain/v3/homeDemo';
 import { DEFAULT_SETTINGS_V3, rootSchema, type Root } from '../../domain/v3/schema';
@@ -105,6 +105,7 @@ describe('layout and texts', () => {
     }
     expect(screen.getByText(PRIVACY_TEXT)).toBeInTheDocument();
     expect(screen.getByText(NO_UPLOAD_TEXT)).toBeInTheDocument();
+    expect(screen.getByText(RECIPIENT_NOT_BACKED_UP_TEXT)).toBeInTheDocument(); // the one-line note about the order recipient (M4 PR 11.3b-1)
     expect(screen.getByRole('link', { name: 'ตั้งค่า' })).toHaveAttribute('aria-current', 'page');
   });
 
