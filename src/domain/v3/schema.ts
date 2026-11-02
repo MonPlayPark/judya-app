@@ -435,6 +435,11 @@ export const settingsSchema = z.object({
   orderTemplate: z.string(), // variables {ร้าน} {รายการ}
   orderDays: z.number().int().min(7).max(90),
   fontSize: z.enum(FONT_SIZES).default(DEFAULT_SETTINGS_V3.fontSize),
+  // Who receives the order (M4 PR 11.3b-1): typed text, not tied to a member. Optional, so data and backups without them still load.
+  // Not part of a backup file (see dataPage.ts). Saved trimmed and never empty (see recipient.ts).
+  recipientAddress: z.string().max(300).optional(),
+  recipientName: z.string().max(60).optional(),
+  recipientPhone: z.string().max(20).regex(/^[0-9 +-]*$/).optional(),
 });
 
 // date -> doseKey -> true
