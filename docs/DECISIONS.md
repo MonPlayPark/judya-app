@@ -915,7 +915,7 @@ Branch `m4-pr11-order` (PR #39, draft). The message to the shop, the recipient (
 11. **Part F (11.3a notes):** the shop name label has a red star (`*`; the box has `aria-label="ชื่อร้าน"` and `aria-required`), and the fee label is "ค่าส่ง" so "บาท" shows once (in the box). Own commit.
 12. The test that said the order page "never writes" now says: no file mentions `restoreRoot`, `startFresh`, `setItem`, `removeItem`, `localStorage` …, and only `OrderPage.tsx` names `saveRoot`.
 
-13. Tests: see the PR comment (877 before). JS gzip about 153 kB (was 149.62). `check:overflow`: 1176 page checks, 0 problems (new routes and 6 pressed scenarios for the message card added to the script; the shop scenarios there now use the label "ค่าส่ง").
+13. Tests: 938 (877 before). JS 546.26 kB, gzip 152.90 kB (was 534.20 / 149.62). `check:overflow` 1176 checks, 0 problems. `check:overflow`: 1176 page checks, 0 problems (new routes and 6 pressed scenarios for the message card added to the script; the shop scenarios there now use the label "ค่าส่ง").
 
 ### Missing tokens (no colour was made)
 None. The card uses the same tokens as 11.2 / 11.3a (`--color-primary*`, `--color-border*`, `--color-warning-ink`, `--color-error-ink`).
