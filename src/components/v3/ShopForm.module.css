@@ -1,0 +1,81 @@
+/* Shop form (M4 PR 11.3a): drawn in a tall bottom sheet. Colours only from tokens.css; the delivery tiles copy the kind grid of the
+   order page (11.2). Every tap target is 44px or more; the boxes are 48px. */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 14px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 76px;
+  padding: 8px 4px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-navy);
+  font-family: inherit;
+  font-size: calc(15px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  text-align: center;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.tileOn {
+  border-color: var(--color-primary);
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+.field .feeBox {
+  flex: none; /* the number box is built for a row (flex-basis 96px); here the field is a column */
+  align-self: stretch;
+}
+.field .invalid {
+  border-color: var(--color-error-ink);
+}
+.error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-error-ink);
+}
+.error svg {
+  flex: none;
+  margin-top: 2px;
+}
+.reason {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  color: var(--color-ink-muted);
+}
+.reason svg {
+  flex: none;
+  margin-top: 2px;
+}
