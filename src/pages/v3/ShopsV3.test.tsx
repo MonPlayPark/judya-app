@@ -82,7 +82,10 @@ describe('the form', () => {
     demo('empty', '&sheet=add');
     const dialog = screen.getByRole('dialog', { name: 'เพิ่มร้านค้า' });
     expect(within(dialog).getByRole('button', { name: 'ส่งถึงบ้าน' })).toHaveAttribute('aria-pressed', 'true');
-    expect(within(dialog).getByLabelText('ค่าส่ง (บาท)')).toBeInTheDocument();
+    expect(within(dialog).getByLabelText('ค่าส่ง')).toBeInTheDocument();
+    expect(within(dialog).getByText('ค่าส่ง').textContent).toBe('ค่าส่ง'); // the word "บาท" is only in the box's unit, not twice
+    expect(within(dialog).getAllByText(/บาท/)).toHaveLength(1);
+    expect(dialog.querySelector('label[for="sf-name"]')?.textContent).toBe('ชื่อร้าน *'); // must-fill star
     expect(within(dialog).getByRole('button', { name: 'บันทึก' })).toBeDisabled();
     expect(within(dialog).getByText('พิมพ์ชื่อร้านก่อน')).toBeInTheDocument();
     expect(within(dialog).queryByText(/ส่งฟรีเมื่อ|ครบ/)).toBeNull(); // no free-over box
@@ -90,7 +93,7 @@ describe('the form', () => {
   it('pick-up hides the fee box; the cancel button and the X close it without saving', () => {
     demo('empty', '&sheet=add');
     press('ไปรับเอง');
-    expect(screen.queryByLabelText('ค่าส่ง (บาท)')).toBeNull();
+    expect(screen.queryByLabelText('ค่าส่ง')).toBeNull();
     press('ยกเลิก');
     expect(screen.queryByRole('dialog')).toBeNull();
     press('เพิ่มร้านแรก');
@@ -114,8 +117,8 @@ describe('the form', () => {
   });
   it('the fee box takes only digits and one dot', () => {
     demo('empty', '&sheet=add');
-    type('ค่าส่ง (บาท)', '4a0.5.5');
-    expect(screen.getByLabelText('ค่าส่ง (บาท)')).toHaveValue('40.55');
+    type('ค่าส่ง', '4a0.5.5');
+    expect(screen.getByLabelText('ค่าส่ง')).toHaveValue('40.55');
   });
 });
 
@@ -126,7 +129,7 @@ describe('add, edit, delete in the real data', () => {
     live(store, '?sheet=add');
     type('ชื่อร้าน', 'ร้านทดสอบ ใหม่');
     type('เบอร์โทร (ไม่บังคับ)', '021234567');
-    type('ค่าส่ง (บาท)', '45');
+    type('ค่าส่ง', '45');
     press('บันทึก');
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.getByText('021234567 · ส่งถึงบ้าน ค่าส่ง ฿45')).toBeInTheDocument();
@@ -141,7 +144,7 @@ describe('add, edit, delete in the real data', () => {
     const before = store.data[STORAGE_KEY];
     live(store, '?sheet=add');
     type('ชื่อร้าน', '  ร้านตัวอย่าง 2 ');
-    type('ค่าส่ง (บาท)', '10');
+    type('ค่าส่ง', '10');
     press('บันทึก');
     expect(screen.getByText('มีร้านชื่อนี้แล้ว')).toBeInTheDocument();
     expect(store.data[STORAGE_KEY]).toBe(before);
@@ -152,12 +155,12 @@ describe('add, edit, delete in the real data', () => {
     const before = store.data[STORAGE_KEY];
     live(store, '?sheet=add');
     type('ชื่อร้าน', 'ร้านทดสอบ ใหม่');
-    type('ค่าส่ง (บาท)', '45');
+    type('ค่าส่ง', '45');
     store.failQuota = true;
     press('บันทึก');
     expect(screen.getByRole('alert')).toHaveTextContent('บันทึกไม่ได้ ข้อมูลเดิมยังอยู่');
     expect(screen.getByLabelText('ชื่อร้าน')).toHaveValue('ร้านทดสอบ ใหม่');
-    expect(screen.getByLabelText('ค่าส่ง (บาท)')).toHaveValue('45');
+    expect(screen.getByLabelText('ค่าส่ง')).toHaveValue('45');
     expect(store.data[STORAGE_KEY]).toBe(before);
     store.failQuota = false; // pressing again works
     press('บันทึก');
@@ -170,9 +173,9 @@ describe('add, edit, delete in the real data', () => {
     live(store, '?sheet=edit&item=s2');
     expect(screen.getByRole('dialog', { name: 'แก้ไขร้านค้า' })).toBeInTheDocument();
     expect(screen.getByLabelText('ชื่อร้าน')).toHaveValue('ร้านตัวอย่าง 2');
-    expect(screen.getByLabelText('ค่าส่ง (บาท)')).toHaveValue('40');
+    expect(screen.getByLabelText('ค่าส่ง')).toHaveValue('40');
     expect(screen.getByRole('dialog').textContent).not.toContain('500');
-    type('ค่าส่ง (บาท)', '55');
+    type('ค่าส่ง', '55');
     press('บันทึก');
     const saved = loadRoot(store);
     if (saved.status !== 'ok') throw new Error('load');
@@ -184,7 +187,7 @@ describe('add, edit, delete in the real data', () => {
     live(store, '?sheet=edit&item=s2');
     press('ไปรับเอง');
     press('ส่งถึงบ้าน');
-    expect(screen.getByLabelText('ค่าส่ง (บาท)')).toHaveValue('40');
+    expect(screen.getByLabelText('ค่าส่ง')).toHaveValue('40');
     press('ไปรับเอง');
     press('บันทึก');
     const saved = loadRoot(store);
@@ -249,7 +252,7 @@ describe('storage', () => {
     const read = vi.spyOn(Storage.prototype, 'getItem');
     demo('normal', '&sheet=add');
     type('ชื่อร้าน', 'ร้านทดสอบ ง');
-    type('ค่าส่ง (บาท)', '20');
+    type('ค่าส่ง', '20');
     press('บันทึก');
     expect(screen.getByText('ส่งถึงบ้าน ค่าส่ง ฿20')).toBeInTheDocument();
     act(() => undefined);

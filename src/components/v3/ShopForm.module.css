@@ -79,3 +79,8 @@
   flex: none;
   margin-top: 2px;
 }
+
+/* the star after a must-fill label (name of the shop); the word "จำเป็น" is not needed because the save button says what is missing */
+.required {
+  color: var(--color-error-ink);
+}

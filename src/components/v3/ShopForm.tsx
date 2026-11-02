@@ -111,9 +111,14 @@ export function ShopForm({ shop, onSave, onCancel, onDelete }: ShopFormProps) {
           <div className={styles.field}>
             <label className={sheetStyles.label} htmlFor="sf-name">
               ชื่อร้าน
+              <span className={styles.required} aria-hidden="true">
+                {' *'}
+              </span>
             </label>
             <input
               id="sf-name"
+              aria-label="ชื่อร้าน"
+              aria-required="true"
               className={`${sheetStyles.textInput} ${errors.name ? styles.invalid : ''}`}
               type="text"
               autoComplete="off"
@@ -158,7 +163,7 @@ export function ShopForm({ shop, onSave, onCancel, onDelete }: ShopFormProps) {
           {form.ship === 'deliver' && (
             <div className={styles.field}>
               <label className={sheetStyles.label} htmlFor="sf-fee">
-                ค่าส่ง (บาท)
+                ค่าส่ง
               </label>
               <div className={`${sheetStyles.numberBox} ${styles.feeBox} ${errors.fee ? styles.invalid : ''}`}>
                 <input
