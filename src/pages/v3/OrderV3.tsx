@@ -136,7 +136,7 @@ export function OrderView({ root: first, today, demo, initial, persist, newId = 
           name: pickedShop.name,
           phone: pickedShop.phone,
           totalText: pickedRow.lines.length === 0 ? null : `ยอดรวม ${baht(pickedRow.total)}`,
-          feeText: feeLine(pickedShop, pickedRow, includeShipping),
+          feeText: feeLine(pickedShop, includeShipping),
           unpricedText: pickedRow.unpricedText,
         }
       : null;

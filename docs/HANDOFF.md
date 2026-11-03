@@ -6,8 +6,11 @@ Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every
 
 Branch `m4-pr11-order` (PR #39, draft). On `#/n/order`: card "เทียบราคา N ร้าน" under the ticked list (switch "รวมค่าส่ง", one card per shop, "ถูกที่สุด", yellow "ไม่รวม N รายการ", "ใส่ราคา" sheet), tapping a card chooses the shop, the message follows the shop type, the TEMP switch is gone. With no shop: big "เพิ่มร้านแรก" (opens the 11.3a form). **Still no order is saved** (no "สั่งแล้วใช่ไหม" sheet, history, receiving, Home button, stock cut). The page now also writes shops and remembered prices, only through `saveRoot`.
 
+### Fix 3 พ.ย.
+`freeOver` is no longer counted: `orderCompare` charges the fee for a delivery shop with a priced line; no `freeShipping` / `buyMore*`; `shopSub` has no "ซื้อครบ"; `feeLine(shop, includeShipping)`. Data still keeps `freeOver`. Both open questions are decided (DECISIONS "ตัดสินแล้ว 3 พ.ย.").
+
 ### Status
-tsc, build, `npm test` 975 pass (938 before), JS 561.07 kB / gzip 156.97 kB (was 546.26 / 152.90), `check:overflow` 1356 checks, 0 problems. Details and own decisions: DECISIONS "M4 PR 11.3b-2a". Screenshots: branch `shots-pr11-3b2a`.
+tsc, build, `npm test` 975 pass (938 before), JS 560.63 kB / gzip 156.80 kB after the 3 พ.ย. fix (156.97 before), `check:overflow` 1356 checks, 0 problems. Details and own decisions: DECISIONS "M4 PR 11.3b-2a". Screenshots: branch `shots-pr11-3b2a`.
 
 ### What is there now
 - `domain/v3/orderShops.ts` (compare lines, `modeOfShop`, `cheapestShopIds`, `priceableMissing`, `saveShopPrices` via `upsertPrice`, `feeLine`, `baht`); `buildOrderMessage` / `recipientMissing` accept mode `null` (no shop).
@@ -18,7 +21,7 @@ tsc, build, `npm test` 975 pass (938 before), JS 561.07 kB / gzip 156.97 kB (was
 11.3b-2b: "สั่งแล้วใช่ไหม" sheet and saving the order, then history, receiving, Home button, stock cut.
 
 ### Waiting for the owner
-Questions at the end of DECISIONS "M4 PR 11.3b-2a".
+Nothing open for 11.3b-2a.
 
 ## M4 PR 11.3b-1 — order message, recipient, copy and LINE (2 พ.ย. 2569)
 

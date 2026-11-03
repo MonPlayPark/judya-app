@@ -926,7 +926,7 @@ None. The card uses the same tokens as 11.2 / 11.3a (`--color-primary*`, `--colo
 
 ## M4 PR 11.3b-2a — compare shops, choose a shop, add prices (2 พ.ย. 2569)
 
-Branch `m4-pr11-order` (PR #39, draft). Scope 2a only: no "สั่งแล้วใช่ไหม" sheet, no saved order, history, receiving, Home button or stock cut. `orderCompare.ts`, `prices.ts`, schema, storage keys and data version (3) are not changed. New: `domain/v3/orderShops.ts`, `pages/v3/OrderCompare.tsx` (+css). The only price writer is `upsertPrice` (called by `saveShopPrices`), saved with `saveRoot`; a demo keeps everything in memory.
+Branch `m4-pr11-order` (PR #39, draft). Scope 2a only: no "สั่งแล้วใช่ไหม" sheet, no saved order, history, receiving, Home button or stock cut. `prices.ts`, schema, storage keys and data version (3) are not changed. New: `domain/v3/orderShops.ts`, `pages/v3/OrderCompare.tsx` (+css). The only price writer is `upsertPrice` (called by `saveShopPrices`), saved with `saveRoot`; a demo keeps everything in memory.
 
 ### Rules locked by the owner (built as given)
 1. Shop order: every price (cheapest first) → missing some (fewer missing first, then cheaper) → no price. Switch "รวมค่าส่ง": on = delivery shops add their fee, pick-up adds 0; off = no fee.
@@ -938,7 +938,7 @@ Branch `m4-pr11-order` (PR #39, draft). Scope 2a only: no "สั่งแล้
 ### Decided on my own — please check
 1. **Switch "รวมค่าส่ง" starts ON.**
 2. **"ถูกที่สุด"** goes to every shop with all prices whose total equals the lowest among such shops, and only when there are at least 2 shops (one shop alone is not "cheapest"). Total follows the switch.
-3. **Hidden `freeOver`:** the data still keeps it (11.3a). `orderCompare` still waives the fee when it is reached, and `shopSub` (as asked) prints "ซื้อครบ ฿X ส่งฟรี" for such a shop. So the screen shows that text only for shops that already have the value; the demo shops have none. If you want it ignored in the totals too, that is a change to `orderCompare` — not done.
+3. **Hidden `freeOver`:** the data still keeps it (11.3a; an edit that does not touch it keeps the old value). It is no longer counted anywhere: `orderCompare` charges the shop's fee whenever a delivery shop has at least one priced line, and `shopSub` / `deliveryText` no longer print "ซื้อครบ ฿X ส่งฟรี" (fixed 3 พ.ย., see below). A shop with fee 0 still shows "ส่งฟรี" in the list and "ค่าส่ง ฿0" in the chosen-shop part.
 4. Compare card shows only when something is ticked. With nothing ticked only the old hint shows (also when there is no shop).
 5. A shop with no price for any line shows "ยังไม่มีราคา" instead of a total, and the chosen-shop part says "ร้านนี้ยังไม่มีราคายาที่สั่ง".
 6. Chosen-shop part: name, phone (or "ยังไม่ใส่เบอร์โทร"), "ยอดรวม ฿X", fee line ("ค่าส่ง ฿40", "ค่าส่ง ฿40 (ไม่รวมในยอด)" when the switch is off, "มารับเอง ไม่มีค่าส่ง"), yellow "ไม่รวม N รายการ". "โทรหาร้าน" is a `tel:` link only when the shop has a phone. A chosen shop is marked "เลือกแล้ว" (icon + word).
@@ -951,6 +951,8 @@ Branch `m4-pr11-order` (PR #39, draft). Scope 2a only: no "สั่งแล้
 ### Missing tokens (no colour was made)
 None.
 
-### Still open for the owner
-- Hidden `freeOver` in totals (decision 3): keep, or ignore it in the compare?
-- Should a shop that misses prices ever be ranked above a complete one? (Now never.)
+### ตัดสินแล้ว 3 พ.ย. 2569
+- **`freeOver` = เลิกนับ ข้อมูลยังเก็บไว้.** `orderCompare` no longer reads `delivery.freeOver`; `ShopRow` lost `freeShipping`, `buyMore`, `buyMoreText` (and `buyMoreText()` is gone). Old data with `freeOver` 500 and items 600 still pays the fee 40 (total 640 with the switch on). `shops.ts` is unchanged, so `updateShop` keeps the stored value.
+- **ร้านราคาไม่ครบ = ไม่ขึ้นอันดับเหนือร้านที่ครบ** — kept as built, no change.
+
+Own choices in the 3 พ.ย. fix: (1) `feeLine` lost its `row` argument (nothing left to read from it); a fee-0 delivery shop now reads "ค่าส่ง ฿0" (the function's normal text) instead of "ค่าส่ง ฿0 (ส่งฟรี)". (2) `deliveryText` for fee 0 plus `freeOver` says "ให้ร้านส่ง ส่งฟรี". (3) Older sections of this file that describe the "buy N more" rule (11.1) are history and were left as written.

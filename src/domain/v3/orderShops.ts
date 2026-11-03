@@ -92,9 +92,8 @@ export function saveShopPrices(
 }
 
 /** The fee line of the chosen shop: pick-up has none; a delivery shop shows its fee (or free), and says so when the switch leaves it out of the total. */
-export function feeLine(shop: Shop, row: ShopRow, includeShipping: boolean): string {
+export function feeLine(shop: Shop, includeShipping: boolean): string {
   if (shop.delivery.kind === 'pickup') return 'มารับเอง ไม่มีค่าส่ง';
-  if (row.freeShipping) return 'ค่าส่ง ฿0 (ส่งฟรี)';
   const text = `ค่าส่ง ${baht(shop.delivery.fee)}`;
   return includeShipping || shop.delivery.fee === 0 ? text : `${text} (ไม่รวมในยอด)`;
 }

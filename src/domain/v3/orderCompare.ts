@@ -41,16 +41,11 @@ export interface ShopRow {
   unpricedText: string | null;
   /** Sum of the priced lines. */
   itemsTotal: number;
-  /** What the shop charges for delivery (0 for pick-up, when the free-delivery amount is reached, or when nothing is priced). */
+  /** What the shop charges for delivery: its fee for a delivery shop with at least one priced line, else 0 (pick-up, or nothing priced).
+   * `delivery.freeOver` is not read: the screens no longer have that field, so old data carrying it must not cut the fee silently. */
   shipping: number;
-  /** Delivery shop, something priced, and the free-delivery amount reached (a shop with no free-delivery amount is never "free over"). */
-  freeShipping: boolean;
   /** itemsTotal, plus `shipping` when `includeShipping`. */
   total: number;
-  /** freeOver - itemsTotal while that is positive (delivery shop with a fee), else null. */
-  buyMore: number | null;
-  /** 'ซื้อเพิ่มอีก ฿N ส่งฟรี', or null. */
-  buyMoreText: string | null;
 }
 
 export interface ShopComparison {
@@ -65,7 +60,6 @@ export interface ShopComparison {
 const money = (x: number): number => Math.round(x * 100) / 100;
 
 export const unpricedText = (n: number): string => `ไม่รวม ${n} รายการที่ยังไม่มีราคา`;
-export const buyMoreText = (n: number): string => `ซื้อเพิ่มอีก ฿${n} ส่งฟรี`;
 
 /** What a remembered price is looked up by; a typed medicine (`free`) has none, so it never has a price. */
 export function itemOfSource(source: OrderSource): PriceItem | null {
@@ -109,10 +103,7 @@ function rowFor(shop: Shop, lines: readonly CompareLine[], prices: readonly Pric
   const { delivery } = shop;
   const anyPriced = priced.length > 0;
   const deliver = delivery.kind === 'deliver';
-  const reached = deliver && delivery.freeOver !== undefined && itemsTotal >= delivery.freeOver;
-  const shipping = !anyPriced || !deliver || reached ? 0 : delivery.fee;
-  const buyMore =
-    anyPriced && deliver && delivery.fee > 0 && delivery.freeOver !== undefined && itemsTotal < delivery.freeOver ? money(delivery.freeOver - itemsTotal) : null;
+  const shipping = anyPriced && delivery.kind === 'deliver' ? delivery.fee : 0;
   return {
     shopId: shop.id,
     shopName: shop.name,
@@ -123,10 +114,7 @@ function rowFor(shop: Shop, lines: readonly CompareLine[], prices: readonly Pric
     unpricedText: unpricedKeys.length > 0 ? unpricedText(unpricedKeys.length) : null,
     itemsTotal,
     shipping,
-    freeShipping: anyPriced && reached,
     total: money(itemsTotal + (includeShipping ? shipping : 0)),
-    buyMore,
-    buyMoreText: buyMore === null ? null : buyMoreText(buyMore),
   };
 }
 

@@ -115,6 +115,10 @@ describe('updateShop', () => {
     const r = updateShop(root, 's3', { name: 'ร้านทดสอบ ค', delivery: { kind: 'deliver', fee: 35 } });
     expect(r.ok && r.shop.delivery).toEqual({ kind: 'deliver', fee: 35, freeOver: 500 });
   });
+  it('an edit that only renames the shop keeps the stored "free over" value', () => {
+    const r = updateShop(root, 's3', { name: 'ร้านทดสอบ ค ใหม่', delivery: { kind: 'deliver', fee: 30 } });
+    expect(r.ok && r.shop.delivery).toEqual({ kind: 'deliver', fee: 30, freeOver: 500 });
+  });
   it('keeps it when the form hands the same value back, and null clears it', () => {
     const same = updateShop(root, 's3', { name: 'ร้านทดสอบ ค', delivery: { kind: 'deliver', fee: 35, freeOver: 500 } });
     expect(same.ok && same.shop.delivery).toEqual({ kind: 'deliver', fee: 35, freeOver: 500 });

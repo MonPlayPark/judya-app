@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buyMoreText, compareShops, itemOfSource, unpricedText, type CompareLine } from './orderCompare';
+import { compareShops, itemOfSource, unpricedText, type CompareLine } from './orderCompare';
 import type { Price, Shop } from './schema';
 
 const PICKUP: Shop = { id: 'sp', name: 'ร้านรับเอง', delivery: { kind: 'pickup' } };
@@ -47,7 +47,7 @@ describe('compareShops - totals', () => {
   it('a shop with no price at all is still listed (nothing counted, no delivery fee), after the others', () => {
     const rows = row([med('m1')], [PICKUP, SEND], [price('sp', 'm1', 100, 'กล่อง', 30)]);
     expect(rows.map((r) => r.shopId)).toEqual(['sp', 'sd']);
-    expect(rows[1]).toMatchObject({ lines: [], itemsTotal: 0, shipping: 0, total: 0, unpricedCount: 1, buyMore: null, freeShipping: false });
+    expect(rows[1]).toMatchObject({ lines: [], itemsTotal: 0, shipping: 0, total: 0, unpricedCount: 1 });
   });
 
   it('totals are rounded to the satang', () => {
@@ -79,23 +79,21 @@ describe('compareShops - delivery', () => {
   const lines = [med('m1')];
   it('pick-up shop: no delivery fee, pickup flag', () => {
     const [r] = row(lines, [PICKUP], [price('sp', 'm1', 100, 'กล่อง', 30)]);
-    expect(r).toMatchObject({ pickup: true, shipping: 0, total: 100, buyMore: null, freeShipping: false });
+    expect(r).toMatchObject({ pickup: true, shipping: 0, total: 100 });
   });
 
-  it('below the free-delivery amount: fee applies and "buy N more" is the gap', () => {
-    const [r] = row(lines, [SEND], [price('sd', 'm1', 450, 'กล่อง', 30)]);
-    expect(r).toMatchObject({ shipping: 40, total: 490, buyMore: 50, buyMoreText: 'ซื้อเพิ่มอีก ฿50 ส่งฟรี', freeShipping: false });
-    expect(buyMoreText(50)).toBe('ซื้อเพิ่มอีก ฿50 ส่งฟรี');
+  it('a "free over" value left in old data is ignored: below it, at it and above it the fee is the same', () => {
+    for (const cost of [450, 500, 600]) {
+      const [r] = row(lines, [SEND], [price('sd', 'm1', cost, 'กล่อง', 30)]);
+      expect(r).toMatchObject({ shipping: 40, total: cost + 40 });
+      expect(r).not.toHaveProperty('freeShipping');
+      expect(r).not.toHaveProperty('buyMore');
+    }
   });
 
-  it('exactly at the free-delivery amount: delivery is free', () => {
-    const [r] = row(lines, [SEND], [price('sd', 'm1', 500, 'กล่อง', 30)]);
-    expect(r).toMatchObject({ shipping: 0, total: 500, buyMore: null, buyMoreText: null, freeShipping: true });
-  });
-
-  it('one satang short of the free-delivery amount: fee applies', () => {
-    const [r] = row(lines, [SEND], [price('sd', 'm1', 499.99, 'กล่อง', 30)]);
-    expect(r).toMatchObject({ shipping: 40, buyMore: 0.01 });
+  it('delivery shop with "free over" 500 and items 600: fee 40 still counted, total 640 with the switch on', () => {
+    const [r] = row(lines, [SEND], [price('sd', 'm1', 600, 'กล่อง', 30)], true);
+    expect(r).toMatchObject({ itemsTotal: 600, shipping: 40, total: 640 });
   });
 
   it('switch "without delivery": total is items only, the fee is still reported', () => {
@@ -103,19 +101,19 @@ describe('compareShops - delivery', () => {
     expect(r).toMatchObject({ itemsTotal: 100, shipping: 40, total: 100 });
   });
 
-  it('delivery shop with no free-delivery amount: always the fee, nothing to buy more', () => {
+  it('delivery shop with no free-delivery amount: always the fee', () => {
     const [r] = row(lines, [SEND_NO_LIMIT], [price('sn', 'm1', 900, 'กล่อง', 30)]);
-    expect(r).toMatchObject({ shipping: 30, total: 930, buyMore: null, freeShipping: false });
+    expect(r).toMatchObject({ shipping: 30, total: 930 });
   });
 
-  it('a shop that always delivers free (fee 0) never says "buy more"', () => {
+  it('a delivery shop whose fee is 0 charges no delivery', () => {
     const [r] = row(lines, [SEND_FREE], [price('sf', 'm1', 50, 'กล่อง', 30)]);
-    expect(r).toMatchObject({ shipping: 0, buyMore: null });
+    expect(r).toMatchObject({ shipping: 0, total: 50 });
   });
 
-  it('the free-delivery test uses only the lines that have a price', () => {
+  it('the fee needs at least one priced line, and the unpriced lines are not counted', () => {
     const [r] = row([med('m1'), med('m2')], [SEND], [price('sd', 'm1', 300, 'กล่อง', 30)]);
-    expect(r).toMatchObject({ itemsTotal: 300, shipping: 40, buyMore: 200, unpricedCount: 1 });
+    expect(r).toMatchObject({ itemsTotal: 300, shipping: 40, unpricedCount: 1 });
   });
 });
 

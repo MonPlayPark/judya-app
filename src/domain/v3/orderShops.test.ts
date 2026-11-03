@@ -71,10 +71,10 @@ describe('mode, fee line and money text', () => {
   });
   it('fee line', () => {
     const r = root();
-    const [a, b] = [rows(true).rows.find((x) => x.shopId === 's1')!, rows(true).rows.find((x) => x.shopId === 's2')!];
-    expect(feeLine(r.shops[0]!, a, true)).toBe('ค่าส่ง ฿40');
-    expect(feeLine(r.shops[0]!, a, false)).toBe('ค่าส่ง ฿40 (ไม่รวมในยอด)');
-    expect(feeLine(r.shops[1]!, b, true)).toBe('มารับเอง ไม่มีค่าส่ง');
+    expect(feeLine(r.shops[0]!, true)).toBe('ค่าส่ง ฿40');
+    expect(feeLine(r.shops[0]!, false)).toBe('ค่าส่ง ฿40 (ไม่รวมในยอด)');
+    expect(feeLine(r.shops[1]!, true)).toBe('มารับเอง ไม่มีค่าส่ง');
+    expect(feeLine({ id: 'x', name: 'ร้านทดสอบ', delivery: { kind: 'deliver', fee: 0, freeOver: 500 } }, true)).toBe('ค่าส่ง ฿0');
   });
   it('baht', () => {
     expect(baht(1234)).toBe('฿1,234');
