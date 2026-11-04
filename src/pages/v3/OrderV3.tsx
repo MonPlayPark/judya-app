@@ -9,7 +9,7 @@ import { V3Nav } from '../../components/v3/V3Nav';
 import type { IsoDate } from '../../domain/calc';
 import { label } from '../../domain/v3/medsList';
 import { REASON_LABEL, qtyText, stepLine } from '../../domain/v3/orderDraft';
-import { buildOrderLines, type DraftLine, type DraftReason } from '../../domain/v3/orderLines';
+import { buildOrderLines, markOnOrder, type DraftLine, type DraftReason } from '../../domain/v3/orderLines';
 import { compareShops } from '../../domain/v3/orderCompare';
 import { messageItems, type Recipient } from '../../domain/v3/orderMessage';
 import { baht, compareLinesOf, feeLine, modeOfShop, saveShopPrices } from '../../domain/v3/orderShops';
@@ -19,6 +19,7 @@ import { ShopForm, type ShopOutcome } from '../../components/v3/ShopForm';
 import type { ShopInput } from '../../domain/shop';
 import { recipientOf, withRecipient } from '../../domain/v3/recipient';
 import type { MedKind, Root } from '../../domain/v3/schema';
+import { OrderBook } from './OrderBook';
 import { OrderCompare, type PriceOutcome } from './OrderCompare';
 import { OrderMessage, type PickedShop, type SaveOutcome } from './OrderMessage';
 import { AddItemSheet, UnitSheet, type AddTab } from './OrderSheets';
@@ -44,9 +45,11 @@ export interface OrderViewProps {
   /** Writes a changed root (the recipient is a setting). Not given in a demo: the recipient then lives in memory only. */
   persist?: (root: Root) => { ok: true } | { ok: false; text: string };
   newId?: () => string;
+  /** The clock for `createdAt` of a saved order (the page gives the real one; a demo a fixed time). */
+  nowIso?: () => string;
 }
 
-type OpenSheet = { kind: 'add' } | { kind: 'unit'; key: string } | { kind: 'shop' } | null;
+type OpenSheet = { kind: 'add' } | { kind: 'unit'; key: string } | { kind: 'shop' } | { kind: 'book' } | null;
 
 const CartGlyph = () => (
   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -95,9 +98,9 @@ export function titleOfLine(root: Root, line: DraftLine): string {
   }
 }
 
-export function OrderView({ root: first, today, demo, initial, persist, newId = defaultNewId }: OrderViewProps) {
+export function OrderView({ root: first, today, demo, initial, persist, newId = defaultNewId, nowIso = () => new Date().toISOString() }: OrderViewProps) {
   const [root, setRoot] = useState(first);
-  const [lines, setLines] = useState<DraftLine[]>(() => buildOrderLines(root, today));
+  const [lines, setLines] = useState<DraftLine[]>(() => markOnOrder(buildOrderLines(root, today), root));
   const [sheet, setSheet] = useState<OpenSheet>(() => {
     if (initial?.sheet === 'add') return { kind: 'add' };
     if (initial?.sheet === 'shop') return { kind: 'shop' };
@@ -171,6 +174,17 @@ export function OrderView({ root: first, today, demo, initial, persist, newId = 
     showToast('บันทึกราคาแล้ว');
     return { ok: true };
   };
+  /** "ใช่ สั่งแล้ว": the sheet hands over the new root (order + prices typed there); ONE write. The lines that went into the order stay in the list,
+   * unticked, with the "รอรับของ" badge. */
+  const confirmOrder = (next: Root): { ok: true } | { ok: false; text: string } => {
+    const res = commit(next);
+    if (!res.ok) return res;
+    setLines((all) => all.map((l) => (l.ticked ? (markOnOrder([l], next)[0] ?? l) : l)));
+    setSheet(null);
+    showToast('บันทึกใบสั่งแล้ว');
+    return { ok: true };
+  };
+  const bookProps = pickedShop ? { onSent: () => setSheet({ kind: 'book' }), onBook: () => setSheet({ kind: 'book' }) } : {};
   const showMessage = (): void => document.getElementById('order-message')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
 
   const update = (key: string, fn: (l: DraftLine) => DraftLine): void => setLines((all) => all.map((l) => (l.key === key ? fn(l) : l)));
@@ -252,6 +266,7 @@ export function OrderView({ root: first, today, demo, initial, persist, newId = 
           shop={picked}
           onSaveRecipient={saveRecipient}
           showToast={showToast}
+          {...bookProps}
           {...(initial?.sheet === 'recipient' || initial?.sheet === 'incomplete' ? { initial: { sheet: initial.sheet } } : {})}
         />
 
@@ -299,6 +314,20 @@ export function OrderView({ root: first, today, demo, initial, persist, newId = 
           onClose={() => setSheet(null)}
         />
       )}
+      {sheet?.kind === 'book' && pickedShop && (
+        <OrderBook
+          root={root}
+          lines={lines}
+          shop={pickedShop}
+          includeShipping={includeShipping}
+          today={today}
+          nowIso={nowIso}
+          newId={newId}
+          titleOf={(l) => titleOfLine(root, l)}
+          onConfirm={confirmOrder}
+          onClose={() => setSheet(null)}
+        />
+      )}
       {sheet?.kind === 'shop' && <ShopForm onSave={saveShop} onCancel={() => setSheet(null)} />}
       <Toast text={toast} />
     </div>
@@ -338,6 +367,12 @@ function LineRow({
         <Icon />
         {REASON_LABEL[line.reason]}
       </span>
+      {line.onOrder && (
+        <span className={`${styles.reason} ${styles.reason_typed}`}>
+          <ClockGlyph />
+          รอรับของจาก {line.onOrder.shopName} อีก {line.onOrder.qtyLeft} {line.onOrder.sellUnit}
+        </span>
+      )}
       {q.note && <span className={styles.note}>{q.note}</span>}
     </>
   );

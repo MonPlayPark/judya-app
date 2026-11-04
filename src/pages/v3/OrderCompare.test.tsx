@@ -107,14 +107,14 @@ describe('choosing a shop', () => {
     expect(within(part).getByText('ไม่รวม 2 รายการที่ยังไม่มีราคา')).toBeInTheDocument();
     expect(within(part).getByText('ยังไม่ใส่เบอร์โทร')).toBeInTheDocument();
   });
-  it('buttons: เปิด LINE and คัดลอกข้อความ; "โทรหาร้าน" is a tel: link only for a shop that has a phone; "บันทึกว่าสั่งแล้ว" is faded with a "เร็ว ๆ นี้" chip', () => {
+  it('buttons: เปิด LINE and คัดลอกข้อความ; "โทรหาร้าน" is a tel: link only for a shop that has a phone; "บันทึกว่าสั่งแล้ว" is a working button (11.3b-2b)', () => {
     demo('normal', '&shops=three&shop=s1');
     expect(screen.getByRole('button', { name: 'เปิด LINE' })).toBeEnabled();
     expect(screen.getByRole('button', { name: 'คัดลอกข้อความ' })).toBeEnabled();
     expect(screen.getByRole('link', { name: 'โทรหาร้าน' })).toHaveAttribute('href', 'tel:021234567');
-    const soon = screen.getByRole('button', { name: /บันทึกว่าสั่งแล้ว/ });
-    expect(soon).toHaveAttribute('aria-disabled', 'true');
-    expect(within(soon).getByText('เร็ว ๆ นี้')).toBeInTheDocument();
+    const book = screen.getByRole('button', { name: 'บันทึกว่าสั่งแล้ว' });
+    expect(book).toBeEnabled();
+    expect(screen.queryByText('เร็ว ๆ นี้')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'เลือกร้าน ร้านทดสอบ ค' }));
     expect(screen.queryByRole('link', { name: 'โทรหาร้าน' })).toBeNull();
   });

@@ -1,6 +1,6 @@
 // The order message on the order page (M4 PR 11.3b-1, shop choice 11.3b-2a): the small bar with the recipient, the chosen shop (name, phone,
 // total, fee), the read-only preview, and the buttons "คัดลอกข้อความ" / "เปิด LINE" / "โทรหาร้าน". The delivery / pick-up line follows the
-// chosen shop (none chosen = no such line). Nothing here saves an order. The recipient is saved by the page
+// chosen shop (none chosen = no such line). The order itself is saved by the page (the "สั่งแล้วใช่ไหม" sheet). The recipient is saved by the page
 // (`onSaveRecipient`, through saveRoot; a demo keeps it in memory only).
 import { useState, type FormEvent } from 'react';
 import { ChevronRightIcon, InfoIcon, WarningIcon } from '../../components/icons';
@@ -50,6 +50,10 @@ export interface OrderMessageProps {
   /** Saves the recipient. The page answers ok only when it is really saved (a demo: kept in memory). */
   onSaveRecipient: (r: Recipient) => SaveOutcome;
   showToast: (text: string) => void;
+  /** Called after the text was really copied or LINE was opened (M4 PR 11.3b-2b): the page then asks "สั่งแล้วใช่ไหม". Only given when a shop is chosen. */
+  onSent?: () => void;
+  /** The button "บันทึกว่าสั่งแล้ว": opens the "สั่งแล้วใช่ไหม" sheet. */
+  onBook?: () => void;
   /** Test links only. */
   initial?: { sheet?: 'recipient' | 'incomplete' };
 }
@@ -65,7 +69,7 @@ async function copyText(text: string): Promise<boolean> {
   }
 }
 
-export function OrderMessage({ items, recipient, mode, shop, onSaveRecipient, showToast, initial }: OrderMessageProps) {
+export function OrderMessage({ items, recipient, mode, shop, onSaveRecipient, showToast, onSent, onBook, initial }: OrderMessageProps) {
   const [sheet, setSheet] = useState<OpenSheet>(() => {
     if (initial?.sheet === 'recipient') return { kind: 'edit' };
     if (initial?.sheet === 'incomplete') return { kind: 'incomplete', action: 'copy' };
@@ -81,11 +85,14 @@ export function OrderMessage({ items, recipient, mode, shop, onSaveRecipient, sh
     const body = buildOrderMessage(items, mode, r);
     if (body === '') return;
     if (action === 'copy') {
-      showToast((await copyText(body)) ? COPIED_TEXT : COPY_FAILED_TEXT);
+      const copied = await copyText(body);
+      showToast(copied ? COPIED_TEXT : COPY_FAILED_TEXT);
+      if (copied) onSent?.();
       return;
     }
     if (lineLinkIsLong(body)) showToast(LINE_TOO_LONG_TEXT); // a warning only: LINE still opens
     window.open(lineLink(body), '_blank', 'noopener,noreferrer');
+    onSent?.();
   };
 
   const press = (action: SendAction): void => {
@@ -149,9 +156,8 @@ export function OrderMessage({ items, recipient, mode, shop, onSaveRecipient, sh
               โทรหาร้าน
             </a>
           ) : null}
-          <button type="button" className={styles.soonButton} aria-disabled="true" onClick={() => showToast('เร็ว ๆ นี้')}>
+          <button type="button" className={styles.call} disabled={empty || onBook === undefined} onClick={() => onBook?.()}>
             บันทึกว่าสั่งแล้ว
-            <span className={styles.soonBadge}>เร็ว ๆ นี้</span>
           </button>
         </div>
       )}

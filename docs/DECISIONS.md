@@ -956,3 +956,24 @@ None.
 - **ร้านราคาไม่ครบ = ไม่ขึ้นอันดับเหนือร้านที่ครบ** — kept as built, no change.
 
 Own choices in the 3 พ.ย. fix: (1) `feeLine` lost its `row` argument (nothing left to read from it); a fee-0 delivery shop now reads "ค่าส่ง ฿0" (the function's normal text) instead of "ค่าส่ง ฿0 (ส่งฟรี)". (2) `deliveryText` for fee 0 plus `freeOver` says "ให้ร้านส่ง ส่งฟรี". (3) Older sections of this file that describe the "buy N more" rule (11.1) are history and were left as written.
+
+## M4 PR 11.3b-2b — "สั่งแล้วใช่ไหม" sheet and saving the order (4 พ.ย. 2569)
+
+Branch `m4-pr11-order` (PR #39, draft). Scope 2b only: no history, receiving, Home button or stock cut. Schema, `prices.ts`, storage keys and data version (3) are not changed. New: `domain/v3/orderActions.ts` (`buildOrder`, `buildShares`, `shortestFirst`), `markOnOrder` in `orderLines.ts`, `pages/v3/OrderBook.tsx` (+css). Changed: `leftOf` is exported from `orderDraft.ts`; `PriceSheet` is exported from `OrderCompare.tsx` and reused inside the new sheet.
+
+### Built as the spec says (M4-PR11-GAP 11.3)
+1. After "คัดลอกข้อความ" really worked, or after "เปิด LINE", and when a shop is chosen, the sheet "สั่งแล้วใช่ไหม" opens. The button "บันทึกว่าสั่งแล้ว" (no longer faded) opens it too.
+2. "ใช่ สั่งแล้ว" = one `waiting` order + the prices typed in the sheet, in ONE `saveRoot` (the sheet builds the new root, the page's `commit` writes it). Closing ("ยังก่อน", X, curtain) writes nothing, prices typed there are dropped. A failed write keeps the sheet open with the message and the old data.
+3. The price sheet inside it is the 2a `PriceSheet`; its save only keeps the prices in the sheet's own copy of the root until "ใช่ สั่งแล้ว".
+
+### Decided on my own — please check
+1. **`unitPrice`**: the shop's price when it is for the same sell unit; when the price had to be converted from another unit, the cost of the line divided by the quantity ordered (rounded to the satang), so quantity x unitPrice matches what the comparison showed. Typed (`free`) lines and lines without a price get none. (The owner did not answer; this was my proposal.)
+2. **Shares when the quantity was changed** (`buildShares`): total = `qtyOrdered x perSellUnit`. Pills / ml: the suggested shares stay, extra goes to the person who runs out soonest; if less was ordered, the shares shrink in proportion and the odd rest goes to that person; no shares (nothing was needed) = all to that person. Tubes / bottles: one at a time to the person who runs out soonest (people who get none are left out of the shares). "Runs out soonest" = `leftOf` of `orderDraft.ts` (days left; tube out, then in use; unknown last; ties by list order). A house medicine has no shares. A medicine nobody uses any more stops the save ("ยาบางตัวไม่มีคนใช้แล้ว").
+3. **Medicines already on an open order** (`markOnOrder`): an order `waiting` / `partial` with that medicine, `qtyReceived < qtyOrdered` and `leftover` not `dropped` → the line starts UNTICKED with the badge "รอรับของจาก <ร้าน> อีก N <หน่วย>" (icon + words). It is applied by the page when the draft starts, NOT inside `buildOrderLines`, so the suggested list and its tests do not depend on orders. A medicine added by hand from the add sheet stays ticked (the owner chose it). After a save, the lines that went into the order get the badge and are unticked.
+4. **Order fields**: `shopName` = shop name now; `shippingFee` = the shop's fee when it is a delivery shop (pick-up: none); `includeShipping` = the switch; `createdAt` = real time (`nowIso`, a fixed time in a demo); `addToList` is kept for typed lines.
+5. A shop that misses prices can be booked; the sheet says "ไม่รวม N รายการที่ยังไม่มีราคา" and offers "ใส่ราคา".
+6. A demo keeps the order in memory only (no storage call of any kind, tested).
+7. Tests 994 (975 before). JS 567.07 kB, gzip 158.52 kB (was 560.63 / 156.80). `check:overflow` 1404 checks, 0 problems (4 new pressed scenarios).
+
+### Missing tokens (no colour was made)
+None.

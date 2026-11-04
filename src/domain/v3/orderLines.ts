@@ -26,6 +26,16 @@ interface DraftBase {
   qtyOrdered: number;
   reason: DraftReason;
   ticked: boolean;
+  /** Set by `markOnOrder` (M4 PR 11.3b-2b): the medicine is already on an order that is still waiting, so the line starts unticked with a badge. */
+  onOrder?: OnOrderInfo;
+}
+
+/** What is still to come for a medicine from open orders: sell units not yet received, and the newest such order. */
+export interface OnOrderInfo {
+  shopName: string;
+  createdAt: string;
+  qtyLeft: number;
+  sellUnit: string;
 }
 
 /** A regular or house medicine line: the count per sell unit is always known. */
@@ -247,3 +257,28 @@ export function makeFreeLine(
   };
 }
 
+
+// ---------- medicines already on an open order (M4 PR 11.3b-2b) ----------
+
+/** Lines of the draft whose medicine is still on an order that is `waiting` or `partial` (not all received, and the rest not dropped) start
+ * UNTICKED with `onOrder` set. The owner can still tick one by hand. Typed (`free`) lines have no identity to match, so they are left alone.
+ * Kept apart from `buildOrderLines` so the suggested list itself does not depend on the orders. */
+export function markOnOrder<T extends DraftLine>(lines: readonly T[], root: Pick<Root, 'orders'>): T[] {
+  return lines.map((l) => {
+    if (l.source.kind === 'free') return l;
+    let info: OnOrderInfo | undefined;
+    let left = 0;
+    for (const o of root.orders) {
+      if (o.status !== 'waiting' && o.status !== 'partial') continue;
+      for (const ol of o.lines) {
+        const same =
+          (l.source.kind === 'med' && ol.source.kind === 'med' && ol.source.medicationId === l.source.medicationId) ||
+          (l.source.kind === 'house' && ol.source.kind === 'house' && ol.source.houseItemId === l.source.houseItemId);
+        if (!same || ol.leftover === 'dropped' || ol.qtyReceived >= ol.qtyOrdered) continue;
+        left += ol.qtyOrdered - ol.qtyReceived;
+        if (info === undefined || o.createdAt >= info.createdAt) info = { shopName: o.shopName, createdAt: o.createdAt, qtyLeft: 0, sellUnit: ol.sellUnit };
+      }
+    }
+    return info === undefined ? l : { ...l, ticked: false, onOrder: { ...info, qtyLeft: clean(left) } };
+  });
+}

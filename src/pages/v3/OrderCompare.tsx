@@ -121,7 +121,7 @@ export function OrderCompare({ shops, comparison, lines, titleOf, includeShippin
 }
 
 /** Boxes for the lines this shop has no price for. A price is for ONE unit of the order unit (the unit the line is ordered in). Optional. */
-function PriceSheet({
+export function PriceSheet({
   row,
   missing,
   titleOf,

@@ -106,6 +106,11 @@ const ORDER_SCENARIOS = [
   ['shops, pick-up shop chosen', LONGSHOP, async (page) => { await page.getByRole('button', { name: 'เลือกร้าน ร้านทดสอบ ข' }).click(); }],
   ['shops, shop that misses prices chosen', LONGSHOP, async (page) => { await page.getByRole('button', { name: 'เลือกร้าน ร้านทดสอบ ค' }).click(); }],
   ['shops, many lines (+ pressed 40 times) with a shop chosen', LONGSHOP, async (page) => { await page.getByRole('button', { name: 'เลือกร้าน ร้านทดสอบ ก' }).click(); const plus = page.getByRole('button', { name: /^เพิ่มจำนวน/ }).first(); for (let i = 0; i < 40; i += 1) await plus.click(); }],
+  // order saved (M4 PR 11.3b-2b)
+  ['book sheet, shop with all prices', LONGSHOP, async (page) => { await page.getByRole('button', { name: 'เลือกร้าน ร้านทดสอบ ข' }).click(); await click(page, 'บันทึกว่าสั่งแล้ว'); }],
+  ['book sheet, shop that misses prices', LONGSHOP, async (page) => { await page.getByRole('button', { name: 'เลือกร้าน ร้านทดสอบ ค' }).click(); await click(page, 'บันทึกว่าสั่งแล้ว'); }],
+  ['book sheet, price sheet inside', LONGSHOP, async (page) => { await page.getByRole('button', { name: 'เลือกร้าน ร้านทดสอบ ค' }).click(); await click(page, 'บันทึกว่าสั่งแล้ว'); await page.getByRole('dialog').getByRole('button', { name: 'ใส่ราคา' }).click(); }],
+  ['after booking: lines with the "รอรับของ" badge', LONGSHOP, async (page) => { await page.getByRole('button', { name: 'เลือกร้าน ร้านทดสอบ ก' }).click(); await click(page, 'บันทึกว่าสั่งแล้ว'); await page.getByRole('dialog').getByRole('button', { name: 'ใช่ สั่งแล้ว' }).click(); }],
   // order message (M4 PR 11.3b-1)
   ['message, nothing ticked', '/n/order?demo=normal&recipient=full', async (page) => { for (const box of await page.getByRole('checkbox').all()) await box.uncheck(); }],
   ['message, long recipient (300 + 60 + 20 letters)', '/n/order?demo=normal', async (page) => { await click(page, /^ข้อมูลผู้รับ/); await page.getByLabel(/^ที่อยู่/).fill('ก'.repeat(300)); await page.getByLabel('ชื่อผู้รับ').fill('ข'.repeat(60)); await page.getByLabel('เบอร์โทร').fill('1'.repeat(20)); await click(page, 'บันทึก'); }],

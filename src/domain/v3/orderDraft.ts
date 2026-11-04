@@ -153,7 +153,7 @@ export interface Candidate {
   sub: string;
 }
 
-interface Left {
+export interface Left {
   rank: number;
   text: string;
 }
@@ -163,7 +163,7 @@ const UNKNOWN_RANK = 2_000_000;
 const ENOUGH_RANK = 1_000_000;
 
 /** How near to empty one person's stock of a medicine is: lower = sooner. Tubes: out first, then the one in use. */
-function leftOf(a: Assignment, m: Medication, root: Root, today: IsoDate): Left {
+export function leftOf(a: Assignment, m: Medication, root: Root, today: IsoDate): Left {
   const d = daysLeft(a, m, today, root.events);
   switch (d.status) {
     case 'ok':

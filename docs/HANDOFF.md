@@ -2,6 +2,23 @@
 
 Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every session.
 
+## M4 PR 11.3b-2b — "สั่งแล้วใช่ไหม" sheet and saving the order (4 พ.ย. 2569)
+
+Branch `m4-pr11-order` (PR #39, draft). On `#/n/order` with a shop chosen: "บันทึกว่าสั่งแล้ว" (and a successful copy / LINE) opens the sheet "สั่งแล้วใช่ไหม"; "ใช่ สั่งแล้ว" writes one `waiting` order plus any prices typed in the sheet with ONE `saveRoot`; closing writes nothing. Medicines on a `waiting` / `partial` order start unticked with the badge "รอรับของจาก …". **Still no** history, receiving, Home button or stock cut.
+
+### Status
+tsc, build, `npm test` 994 pass (975 before), JS 567.07 kB / gzip 158.52 kB, `check:overflow` 1404 checks, 0 problems. Details and own decisions (unitPrice, shares rebuild, badge rule): DECISIONS "M4 PR 11.3b-2b".
+
+### What is there now
+- `domain/v3/orderActions.ts` (`buildOrder`, `buildShares`, `shortestFirst`), `markOnOrder` in `orderLines.ts`, `leftOf` exported from `orderDraft.ts`.
+- `pages/v3/OrderBook.tsx` (+css): the sheet; reuses `PriceSheet` (now exported from `OrderCompare.tsx`). `OrderView` has a new prop `nowIso`; `OrderPage` passes the real clock (demo: fixed).
+
+### Left for later (do not start before the owner says)
+11.4 history / cancel / reorder (the clock button is still `ComingSoon`), 11.5 receiving + stock, 11.6 Home buttons.
+
+### Waiting for the owner
+A look at the sheet and the badge, and the own decisions in DECISIONS "M4 PR 11.3b-2b" (unitPrice when the price was converted; a medicine added by hand stays ticked even if it is on an open order).
+
 ## M4 PR 11.3b-2a — compare shops, choose a shop, add prices (2 พ.ย. 2569)
 
 Branch `m4-pr11-order` (PR #39, draft). On `#/n/order`: card "เทียบราคา N ร้าน" under the ticked list (switch "รวมค่าส่ง", one card per shop, "ถูกที่สุด", yellow "ไม่รวม N รายการ", "ใส่ราคา" sheet), tapping a card chooses the shop, the message follows the shop type, the TEMP switch is gone. With no shop: big "เพิ่มร้านแรก" (opens the 11.3a form). **Still no order is saved** (no "สั่งแล้วใช่ไหม" sheet, history, receiving, Home button, stock cut). The page now also writes shops and remembered prices, only through `saveRoot`.
