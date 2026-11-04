@@ -47,6 +47,8 @@ export interface OrderViewProps {
   newId?: () => string;
   /** The clock for `createdAt` of a saved order (the page gives the real one; a demo a fixed time). */
   nowIso?: () => string;
+  /** Tests: told every time a new root is taken (after a write worked, or at once in a demo). */
+  onRoot?: (root: Root) => void;
 }
 
 type OpenSheet = { kind: 'add' } | { kind: 'unit'; key: string } | { kind: 'shop' } | { kind: 'book' } | null;
@@ -98,9 +100,9 @@ export function titleOfLine(root: Root, line: DraftLine): string {
   }
 }
 
-export function OrderView({ root: first, today, demo, initial, persist, newId = defaultNewId, nowIso = () => new Date().toISOString() }: OrderViewProps) {
+export function OrderView({ root: first, today, demo, initial, persist, newId = defaultNewId, nowIso = () => new Date().toISOString(), onRoot }: OrderViewProps) {
   const [root, setRoot] = useState(first);
-  const [lines, setLines] = useState<DraftLine[]>(() => markOnOrder(buildOrderLines(root, today), root));
+  const [lines, setLines] = useState<DraftLine[]>(() => markOnOrder(buildOrderLines(root, today), root, true));
   const [sheet, setSheet] = useState<OpenSheet>(() => {
     if (initial?.sheet === 'add') return { kind: 'add' };
     if (initial?.sheet === 'shop') return { kind: 'shop' };
@@ -151,6 +153,7 @@ export function OrderView({ root: first, today, demo, initial, persist, newId = 
       if (!res.ok) return res;
     }
     setRoot(next);
+    onRoot?.(next);
     return { ok: true };
   };
   const saveShop = (input: ShopInput): ShopOutcome => {
@@ -174,12 +177,11 @@ export function OrderView({ root: first, today, demo, initial, persist, newId = 
     showToast('บันทึกราคาแล้ว');
     return { ok: true };
   };
-  /** "ใช่ สั่งแล้ว": the sheet hands over the new root (order + prices typed there); ONE write. The lines that went into the order stay in the list,
-   * unticked, with the "รอรับของ" badge. */
+  /** "สั่งแล้ว": the sheet hands over the new root (order + prices typed there); ONE write. The booked lines leave the list. */
   const confirmOrder = (next: Root): { ok: true } | { ok: false; text: string } => {
     const res = commit(next);
     if (!res.ok) return res;
-    setLines((all) => all.map((l) => (l.ticked ? (markOnOrder([l], next)[0] ?? l) : l)));
+    setLines((all) => all.filter((l) => !(l.ticked && l.qtyOrdered > 0))); // the lines that were booked leave the list; unticked ones stay
     setSheet(null);
     showToast('บันทึกใบสั่งแล้ว');
     return { ok: true };
@@ -297,7 +299,7 @@ export function OrderView({ root: first, today, demo, initial, persist, newId = 
           initialTab={initial?.tab ?? 'meds'}
           {...(initial?.name ? { initialName: initial.name } : {})}
           onAdd={(line) => {
-            setLines((all) => (all.some((l) => l.key === line.key) ? all : [...all, line]));
+            setLines((all) => (all.some((l) => l.key === line.key) ? all : [...all, ...markOnOrder([line], root, false)]));
             showToast(`${titleOfLine(root, line)} เข้ารายการสั่งแล้ว`);
           }}
           onClose={() => setSheet(null)}
@@ -370,7 +372,7 @@ function LineRow({
       {line.onOrder && (
         <span className={`${styles.reason} ${styles.reason_typed}`}>
           <ClockGlyph />
-          รอรับของจาก {line.onOrder.shopName} อีก {line.onOrder.qtyLeft} {line.onOrder.sellUnit}
+          สั่งแล้ว รอรับ
         </span>
       )}
       {q.note && <span className={styles.note}>{q.note}</span>}

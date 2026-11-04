@@ -3,7 +3,8 @@
 import { DEMO_TODAY } from './homeDemo';
 import { blankRootV3 } from './fixtures';
 import { medsDemoRoot } from './medsListDemo';
-import type { Price, Root } from './schema';
+import { buildOrderLines } from './orderLines';
+import type { Order, Price, Root } from './schema';
 
 export const ORDER_DEMO_NAMES = ['normal', 'nolow', 'nomeds'] as const;
 export type OrderDemoName = (typeof ORDER_DEMO_NAMES)[number];
@@ -70,4 +71,22 @@ export function withDemoShops(root: Root): Root {
     ],
     prices,
   };
+}
+
+/** For the test link `&orders=waiting` (demo only): one made-up shop (ร้านทดสอบ ก) and one `waiting` order holding the first suggested
+ * medicine, so that medicine shows the badge "สั่งแล้ว รอรับ" and starts unticked. Nothing is stored. */
+export function withDemoWaitingOrder(root: Root): Root {
+  const line = buildOrderLines(root, DEMO_TODAY).find((l) => l.source.kind === 'med' && l.source.shares.length > 0);
+  if (!line) return root;
+  const order: Order = {
+    id: 'w1',
+    shopId: 's1',
+    shopName: 'ร้านทดสอบ ก',
+    createdAt: `${DEMO_TODAY}T09:00:00+07:00`,
+    status: 'waiting',
+    includeShipping: true,
+    shippingFee: 40,
+    lines: [{ source: line.source, qtyOrdered: line.qtyOrdered, sellUnit: line.sellUnit, perSellUnit: line.perSellUnit, qtyReceived: 0, leftover: null }],
+  };
+  return { ...root, shops: [{ id: 's1', name: 'ร้านทดสอบ ก', phone: '021234567', delivery: { kind: 'deliver', fee: 40 } }], orders: [order] };
 }

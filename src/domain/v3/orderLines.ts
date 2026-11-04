@@ -26,16 +26,8 @@ interface DraftBase {
   qtyOrdered: number;
   reason: DraftReason;
   ticked: boolean;
-  /** Set by `markOnOrder` (M4 PR 11.3b-2b): the medicine is already on an order that is still waiting, so the line starts unticked with a badge. */
-  onOrder?: OnOrderInfo;
-}
-
-/** What is still to come for a medicine from open orders: sell units not yet received, and the newest such order. */
-export interface OnOrderInfo {
-  shopName: string;
-  createdAt: string;
-  qtyLeft: number;
-  sellUnit: string;
+  /** Set by `markOnOrder` (M4 PR 11.3b-2b): the medicine is on an order that is still waiting; the page shows "สั่งแล้ว รอรับ". */
+  onOrder?: true;
 }
 
 /** A regular or house medicine line: the count per sell unit is always known. */
@@ -260,25 +252,24 @@ export function makeFreeLine(
 
 // ---------- medicines already on an open order (M4 PR 11.3b-2b) ----------
 
-/** Lines of the draft whose medicine is still on an order that is `waiting` or `partial` (not all received, and the rest not dropped) start
- * UNTICKED with `onOrder` set. The owner can still tick one by hand. Typed (`free`) lines have no identity to match, so they are left alone.
- * Kept apart from `buildOrderLines` so the suggested list itself does not depend on the orders. */
-export function markOnOrder<T extends DraftLine>(lines: readonly T[], root: Pick<Root, 'orders'>): T[] {
-  return lines.map((l) => {
-    if (l.source.kind === 'free') return l;
-    let info: OnOrderInfo | undefined;
-    let left = 0;
-    for (const o of root.orders) {
-      if (o.status !== 'waiting' && o.status !== 'partial') continue;
-      for (const ol of o.lines) {
-        const same =
-          (l.source.kind === 'med' && ol.source.kind === 'med' && ol.source.medicationId === l.source.medicationId) ||
-          (l.source.kind === 'house' && ol.source.kind === 'house' && ol.source.houseItemId === l.source.houseItemId);
-        if (!same || ol.leftover === 'dropped' || ol.qtyReceived >= ol.qtyOrdered) continue;
-        left += ol.qtyOrdered - ol.qtyReceived;
-        if (info === undefined || o.createdAt >= info.createdAt) info = { shopName: o.shopName, createdAt: o.createdAt, qtyLeft: 0, sellUnit: ol.sellUnit };
-      }
-    }
-    return info === undefined ? l : { ...l, ticked: false, onOrder: { ...info, qtyLeft: clean(left) } };
-  });
+/** True when `order` still waits for this medicine: status `waiting` / `partial`, the line is not fully received and its rest is not dropped. */
+function waitsFor(root: Pick<Root, 'orders'>, source: Exclude<OrderSource, { kind: 'free' }>): boolean {
+  return root.orders.some(
+    (o) =>
+      (o.status === 'waiting' || o.status === 'partial') &&
+      o.lines.some(
+        (ol) =>
+          ol.leftover !== 'dropped' &&
+          ol.qtyReceived < ol.qtyOrdered &&
+          ((source.kind === 'med' && ol.source.kind === 'med' && ol.source.medicationId === source.medicationId) ||
+            (source.kind === 'house' && ol.source.kind === 'house' && ol.source.houseItemId === source.houseItemId)),
+      ),
+  );
+}
+
+/** Lines whose medicine is still on an open order get `onOrder`. `untick` (the suggested list) also starts them UNticked; a medicine the owner
+ * added by hand keeps its tick. Typed (`free`) lines are never matched. Without an open order the lines come back unchanged. Kept apart from
+ * `buildOrderLines` so the suggested list itself does not depend on the orders. */
+export function markOnOrder<T extends DraftLine>(lines: readonly T[], root: Pick<Root, 'orders'>, untick: boolean): T[] {
+  return lines.map((l) => (l.source.kind !== 'free' && waitsFor(root, l.source) ? { ...l, onOrder: true as const, ...(untick ? { ticked: false } : {}) } : l));
 }

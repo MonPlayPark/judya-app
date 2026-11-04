@@ -158,37 +158,9 @@ export function PriceSheet({
   return (
     <Sheet title={`ใส่ราคา · ${row.shopName}`} subtitle="ราคาต่อหน่วยที่สั่ง ไม่ใส่ก็ได้ ใส่เท่าที่รู้" onClose={onClose} closeButton tall>
       <form className={styles.form} onSubmit={submit} noValidate>
-        {missing.map((l) => {
-          const id = `price-${l.key.replace(/[^a-zA-Z0-9]/g, '-')}`;
-          return (
-            <div key={l.key} className={styles.field}>
-              <label className={sheetStyles.label} htmlFor={id}>
-                {titleOf(l)}
-              </label>
-              <div className={styles.priceBox}>
-                <input
-                  id={id}
-                  className={errors[l.key] ? `${sheetStyles.textInput} ${styles.invalid}` : sheetStyles.textInput}
-                  type="text"
-                  inputMode="decimal"
-                  autoComplete="off"
-                  placeholder="0"
-                  aria-label={`ราคาต่อ ${l.sellUnit} ของ ${titleOf(l)} (บาท)`}
-                  value={typed[l.key] ?? ''}
-                  aria-invalid={errors[l.key] !== undefined}
-                  onChange={(e) => set(l.key, e.target.value)}
-                />
-                <span className={styles.unit}>บาท / {l.sellUnit}</span>
-              </div>
-              {errors[l.key] && (
-                <p className={styles.error}>
-                  <WarningIcon />
-                  ใส่ราคาเป็นตัวเลขมากกว่า 0
-                </p>
-              )}
-            </div>
-          );
-        })}
+        {missing.map((l) => (
+          <PriceRow key={l.key} line={l} title={titleOf(l)} value={typed[l.key] ?? ''} invalid={errors[l.key] !== undefined} onChange={(v) => set(l.key, v)} />
+        ))}
         <p className={sheetStyles.hint}>
           <InfoIcon /> ยาที่พิมพ์เองไม่มีที่เก็บราคา จึงไม่ขึ้นในหน้านี้
         </p>
@@ -208,5 +180,39 @@ export function PriceSheet({
         </div>
       </form>
     </Sheet>
+  );
+}
+
+/** One price box row (label, number box with "บาท / <order unit>", and the error under it). Used by the "ใส่ราคา" sheet and by the
+ * "สั่งแล้วใช่ไหม" sheet, so both look and read the same. The text is only the characters of a number; checking is done by the caller. */
+export function PriceRow({ line, title, value, invalid, onChange }: { line: KnownDraftLine; title: string; value: string; invalid: boolean; onChange: (value: string) => void }) {
+  const id = `price-${line.key.replace(/[^a-zA-Z0-9]/g, '-')}`;
+  return (
+    <div className={styles.field}>
+      <label className={sheetStyles.label} htmlFor={id}>
+        {title}
+      </label>
+      <div className={styles.priceBox}>
+        <input
+          id={id}
+          className={invalid ? `${sheetStyles.textInput} ${styles.invalid}` : sheetStyles.textInput}
+          type="text"
+          inputMode="decimal"
+          autoComplete="off"
+          placeholder="0"
+          aria-label={`ราคาต่อ ${line.sellUnit} ของ ${title} (บาท)`}
+          value={value}
+          aria-invalid={invalid}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <span className={styles.unit}>บาท / {line.sellUnit}</span>
+      </div>
+      {invalid && (
+        <p className={styles.error}>
+          <WarningIcon />
+          ใส่ราคาเป็นตัวเลขมากกว่า 0
+        </p>
+      )}
+    </div>
   );
 }

@@ -4,20 +4,20 @@ Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every
 
 ## M4 PR 11.3b-2b — "สั่งแล้วใช่ไหม" sheet and saving the order (4 พ.ย. 2569)
 
-Branch `m4-pr11-order` (PR #39, draft). On `#/n/order` with a shop chosen: "บันทึกว่าสั่งแล้ว" (and a successful copy / LINE) opens the sheet "สั่งแล้วใช่ไหม"; "ใช่ สั่งแล้ว" writes one `waiting` order plus any prices typed in the sheet with ONE `saveRoot`; closing writes nothing. Medicines on a `waiting` / `partial` order start unticked with the badge "รอรับของจาก …". **Still no** history, receiving, Home button or stock cut.
+Branch `m4-pr11-order` (PR #39, draft). On `#/n/order` with a shop chosen: "บันทึกว่าสั่งแล้ว" (and a copy / LINE that worked) opens "สั่งแล้วใช่ไหม"; "สั่งแล้ว" writes one `waiting` order plus the prices typed there with ONE `saveRoot`, the booked lines leave the list, toast "บันทึกใบสั่งแล้ว"; "ยังไม่ได้สั่ง" saves nothing. Medicines on a `waiting` / `partial` order start unticked with the badge "สั่งแล้ว รอรับ". **Still no** history, receiving, Home button or stock cut.
 
 ### Status
-tsc, build, `npm test` 994 pass (975 before), JS 567.07 kB / gzip 158.52 kB, `check:overflow` 1404 checks, 0 problems. Details and own decisions (unitPrice, shares rebuild, badge rule): DECISIONS "M4 PR 11.3b-2b".
+tsc, build, `npm test` 1011 pass (975 before), JS 567.16 kB / gzip 158.44 kB (156.80 before), `check:overflow` 1440 checks, 0 problems. Details: DECISIONS "M4 PR 11.3b-2b" (locked by the owner / decided on my own). Pictures: branch `shots-pr11-3b2b`.
 
 ### What is there now
-- `domain/v3/orderActions.ts` (`buildOrder`, `buildShares`, `shortestFirst`), `markOnOrder` in `orderLines.ts`, `leftOf` exported from `orderDraft.ts`.
-- `pages/v3/OrderBook.tsx` (+css): the sheet; reuses `PriceSheet` (now exported from `OrderCompare.tsx`). `OrderView` has a new prop `nowIso`; `OrderPage` passes the real clock (demo: fixed).
+- `domain/v3/orderPlace.ts` (`placeOrder`, `shortestAssignmentId`), `markOnOrder` in `orderLines.ts`, `withDemoWaitingOrder` in `orderDemo.ts` (link `&orders=waiting`).
+- `pages/v3/OrderBook.tsx` (+css): the sheet; `OrderCompare.tsx` now exports `PriceRow` / `PriceSheet`. `OrderView` props `nowIso`, `onRoot`.
 
 ### Left for later (do not start before the owner says)
 11.4 history / cancel / reorder (the clock button is still `ComingSoon`), 11.5 receiving + stock, 11.6 Home buttons.
 
 ### Waiting for the owner
-A look at the sheet and the badge, and the own decisions in DECISIONS "M4 PR 11.3b-2b" (unitPrice when the price was converted; a medicine added by hand stays ticked even if it is on an open order).
+A look at the pictures and the "decided on my own" list (mainly: no `unitPrice` when the price was converted from another unit).
 
 ## M4 PR 11.3b-2a — compare shops, choose a shop, add prices (2 พ.ย. 2569)
 

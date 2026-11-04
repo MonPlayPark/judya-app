@@ -1,23 +1,25 @@
-// The "สั่งแล้วใช่ไหม" sheet (M4 PR 11.3b-2b): the only place that saves an order. It shows the chosen shop and the total, lets the owner add the
-// prices that are missing, and on "ใช่ สั่งแล้ว" hands ONE new root (order + prices typed here) to the page, which writes it with one saveRoot.
-// Closing without confirming writes nothing: prices typed here are kept in this sheet's own copy of the root until then.
+// The "สั่งแล้วใช่ไหม" sheet (M4 PR 11.3b-2b): the only place that saves an order. It shows the chosen shop, the number of lines and the total
+// (the same figures as the comparison card), and for the lines this shop has no price for it asks for the price the shop charged (optional).
+// "สั่งแล้ว" hands ONE new root (order + prices typed here) to the page, which writes it with one saveRoot. "ยังไม่ได้สั่ง" (or X, or the
+// curtain) closes without saving anything; whatever was typed is dropped.
 import { useState } from 'react';
 import { InfoIcon, WarningIcon } from '../../components/icons';
 import { Sheet } from '../../components/v3/Sheet';
 import { sheetStyles } from '../../components/v3/sheetParts';
 import type { IsoDate } from '../../domain/calc';
-import { buildOrder, type BuildOrderError } from '../../domain/v3/orderActions';
 import { compareShops } from '../../domain/v3/orderCompare';
 import type { DraftLine } from '../../domain/v3/orderLines';
-import { baht, compareLinesOf, feeLine, priceableMissing, saveShopPrices } from '../../domain/v3/orderShops';
+import { placeOrder, type PlaceError } from '../../domain/v3/orderPlace';
+import { baht, compareLinesOf, feeLine, priceableMissing } from '../../domain/v3/orderShops';
 import type { Root, Shop } from '../../domain/v3/schema';
 import styles from './OrderBook.module.css';
-import { PriceSheet, type PriceOutcome } from './OrderCompare';
+import { PriceRow } from './OrderCompare';
 
-export const BOOK_ERROR_TEXT: Record<BuildOrderError, string> = {
+export const PLACE_ERROR_TEXT: Record<PlaceError, string> = {
   no_shop: 'ยังไม่ได้เลือกร้าน',
   no_lines: 'ยังไม่ได้ติ๊กยาที่จะสั่ง',
   no_user: 'ยาบางตัวไม่มีคนใช้แล้ว เอาออกจากรายการก่อน',
+  invalid_price: 'ใส่ราคาเป็นตัวเลขมากกว่า 0 หรือเว้นว่างไว้',
   invalid_root: 'บันทึกไม่ได้ ข้อมูลเดิมยังอยู่ ลองใหม่อีกครั้ง',
 };
 
@@ -36,37 +38,37 @@ export interface OrderBookProps {
 }
 
 export function OrderBook({ root, lines, shop, includeShipping, today, nowIso, newId, titleOf, onConfirm, onClose }: OrderBookProps) {
-  const [work, setWork] = useState<Root>(root); // root + prices typed in this sheet; nothing is written until "ใช่ สั่งแล้ว"
-  const [priceOpen, setPriceOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [typed, setTyped] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, 'invalid_price'>>({});
+  const [message, setMessage] = useState<string | null>(null);
 
   const ticked = lines.filter((l) => l.ticked && l.qtyOrdered > 0);
-  const row = compareShops(compareLinesOf(ticked), [shop], work.prices, includeShipping).rows[0];
+  const row = compareShops(compareLinesOf(ticked), [shop], root.prices, includeShipping).rows[0];
   const missing = row ? priceableMissing(row, ticked) : [];
 
-  const savePrices: Parameters<typeof PriceSheet>[0]['onSave'] = (typed, priceLines): PriceOutcome => {
-    const made = saveShopPrices(work, shop.id, priceLines, typed, today, newId);
-    if (!made.ok) {
-      if (made.error === 'nothing_typed') return { ok: false, message: 'ยังไม่ได้ใส่ราคา ใส่อย่างน้อย 1 ช่อง หรือกดยกเลิก' };
-      if (made.error === 'invalid') return { ok: false, errors: made.errors };
-      return { ok: false, message: 'บันทึกไม่ได้ ข้อมูลเดิมยังอยู่ ลองใหม่อีกครั้ง' };
-    }
-    setWork(made.root);
-    return { ok: true };
+  const set = (key: string, value: string): void => {
+    setTyped((t) => ({ ...t, [key]: value.replace(/[^0-9.,]/g, '') }));
+    setErrors((e) => {
+      const next = { ...e };
+      delete next[key];
+      return next;
+    });
+    setMessage(null);
   };
 
   const confirm = (): void => {
-    const built = buildOrder(work, lines, shop, includeShipping, today, nowIso(), newId);
-    if (!built.ok) return setError(BOOK_ERROR_TEXT[built.error]);
-    const res = onConfirm(built.root);
-    if (!res.ok) setError(res.text);
+    const placed = placeOrder(root, lines, shop, includeShipping, typed, { today, iso: nowIso() }, newId);
+    if (!placed.ok) {
+      setErrors(placed.errors);
+      setMessage(placed.error === 'invalid_price' ? null : PLACE_ERROR_TEXT[placed.error]);
+      return;
+    }
+    const res = onConfirm(placed.root);
+    if (!res.ok) setMessage(res.text);
   };
 
-  if (priceOpen && row) {
-    return <PriceSheet row={row} missing={missing} titleOf={titleOf} onSave={savePrices} onClose={() => setPriceOpen(false)} onSaved={() => setPriceOpen(false)} />;
-  }
   return (
-    <Sheet title="สั่งแล้วใช่ไหม" subtitle="ถ้าสั่งกับร้านแล้ว แอพจะจดไว้เป็นใบสั่งที่รอรับของ" onClose={onClose} closeButton>
+    <Sheet title="สั่งแล้วใช่ไหม" subtitle="ถ้าสั่งกับร้านแล้ว แอพจะจดไว้เป็นใบสั่งที่รอรับของ" onClose={onClose} closeButton tall>
       <div className={styles.box} role="group" aria-label="สรุปใบสั่ง">
         <p className={styles.name}>{shop.name}</p>
         <p className={styles.line}>{ticked.length} รายการ</p>
@@ -79,28 +81,33 @@ export function OrderBook({ root, lines, shop, includeShipping, today, nowIso, n
           </p>
         )}
       </div>
-      {error !== null && (
+
+      {missing.length > 0 && (
+        <section className={styles.prices} aria-labelledby="book-prices-title">
+          <h3 id="book-prices-title" className={styles.pricesTitle}>
+            ใส่ราคาที่ร้านคิด (ไม่บังคับ)
+          </h3>
+          {missing.map((l) => (
+            <PriceRow key={l.key} line={l} title={titleOf(l)} value={typed[l.key] ?? ''} invalid={errors[l.key] !== undefined} onChange={(v) => set(l.key, v)} />
+          ))}
+          <p className={sheetStyles.hint}>
+            <InfoIcon /> ราคาที่ใส่จะถูกจำของร้านนี้ ตรวจให้ถูกก่อนกด
+          </p>
+        </section>
+      )}
+
+      {message !== null && (
         <p className={styles.error} role="alert">
           <WarningIcon />
-          {error}
-        </p>
-      )}
-      {missing.length > 0 && (
-        <p className={sheetStyles.hint}>
-          <InfoIcon /> ใส่ราคาตอนนี้ได้ แอพจะจำไว้ใช้เทียบราคาครั้งหน้า
+          {message}
         </p>
       )}
       <div className={sheetStyles.actions}>
         <button type="button" className={sheetStyles.primary} onClick={confirm}>
-          ใช่ สั่งแล้ว
+          สั่งแล้ว
         </button>
-        {missing.length > 0 && (
-          <button type="button" className={sheetStyles.cancel} onClick={() => setPriceOpen(true)}>
-            ใส่ราคา
-          </button>
-        )}
         <button type="button" className={sheetStyles.cancel} onClick={onClose}>
-          ยังก่อน
+          ยังไม่ได้สั่ง
         </button>
       </div>
     </Sheet>
