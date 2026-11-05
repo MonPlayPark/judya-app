@@ -13,6 +13,9 @@ tsc, build, `npm test` 1011 pass (975 before), JS 567.16 kB / gzip 158.44 kB (15
 - `domain/v3/orderPlace.ts` (`placeOrder`, `shortestAssignmentId`), `markOnOrder` in `orderLines.ts`, `withDemoWaitingOrder` in `orderDemo.ts` (link `&orders=waiting`).
 - `pages/v3/OrderBook.tsx` (+css): the sheet; `OrderCompare.tsx` now exports `PriceRow` / `PriceSheet`. `OrderView` props `nowIso`, `onRoot`.
 
+### Fix 4–5 พ.ย.: buttons overlapping on the order page
+The floating message sat on top of the bottom bar's blue button and the button had the browser's grey border; both fixed (details and causes: DECISIONS "fix ซ้อนทับ 4–5 พ.ย."). "ดูข้อความสั่งยา" is faded and does nothing while 0 lines are ticked. Tests 1014, JS gzip 158.69 kB, `check:overflow` 2040 checks (now also measures overlaps, the floating message and the end of the page), pictures on branch `shots-pr11-3b2b-fix`. Not changed but worth a look: the bar's `bottom: 72px` is 1–5px shorter than the real menu height; "บันทึกว่าสั่งแล้ว" has no faded look when disabled.
+
 ### Left for later (do not start before the owner says)
 11.4 history / cancel / reorder (the clock button is still `ComingSoon`), 11.5 receiving + stock, 11.6 Home buttons.
 

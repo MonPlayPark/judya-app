@@ -332,11 +332,20 @@
   min-width: 150px;
   min-height: 52px;
   padding: 0 16px;
+  border: 0;
   border-radius: var(--radius-md);
   background: var(--color-primary);
   color: #fff;
+  font-family: inherit;
   font-size: calc(16px * var(--fs));
   font-weight: var(--weight-bold);
+  cursor: pointer;
+}
+/* nothing ticked: the same faded look as the message buttons (OrderMessage.module.css .copy / .line) */
+.barButton:disabled {
+  background: var(--color-border);
+  color: var(--color-ink-muted);
+  cursor: not-allowed;
 }
 .barButton > :first-child {
   width: auto;

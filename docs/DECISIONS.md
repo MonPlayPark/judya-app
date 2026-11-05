@@ -981,3 +981,24 @@ Branch `m4-pr11-order` (PR #39, draft, status unchanged). Scope 2b only: no hist
 
 ### Missing tokens (no colour was made)
 None.
+
+### fix ซ้อนทับ 4–5 พ.ย. (after the owner looked at pictures 3 and 4)
+Only CSS, the order page view and one shared component were touched: `Toast.tsx` / `Toast.module.css`, `OrderV3.tsx` / `OrderV3.module.css`, tests and `check-overflow.mjs`. No domain, schema, message text or data version.
+
+**Found for real (all confirmed by measuring the build before the fix, 360px normal / large and 412px):**
+1. The floating message was at `bottom: 84px` (Toast.module.css) and the order page's own bar is at `bottom: 72px` and 73px high, so the message sat at y 650–696 inside the bar (635–708), on top of the blue button. At the large font it was the same.
+2. `.barButton` had no `border`, so the browser's own `2px outset` grey border showed around the blue button (all pictures since 11.2).
+3. Not a fault: scrolled to the very end the last block (message card) ends at 559px (555 at the large font) and the bar starts at 635px, so nothing hides behind the bars. No padding was added.
+
+**Fix**
+- Floating message: `useToastAbove(ref)` in `Toast.tsx` measures the top edge of the page's bar and sets `--toast-bottom` on `<html>`; `Toast.module.css` reads it (`var(--toast-bottom, <old value>)`), the gap is one constant `TOAST_GAP` (12px). It follows the font size and safe area through a `ResizeObserver`, and the variable is removed when the page goes. Other pages do not set it, so they are exactly as before. It covers every floating message of the order page because they all come from the same `<Toast>`.
+- `.barButton` now has `border: 0`, `font-family: inherit`, `cursor: pointer`, like the other main buttons of the page (`.line` in OrderMessage).
+- Item 4 (owner decided 5 พ.ย.): "ดูข้อความสั่งยา" is `disabled` when 0 lines are ticked, with the faded look the message buttons already use (`.copy:disabled`, `.line:disabled`: `--color-border` background, `--color-ink-muted` text, not-allowed). It stays 52px high. The bar text "0 รายการ / ยอดรวม –" is unchanged. From 1 ticked line on it works as before; after saving an order nothing is ticked, so it is faded.
+- A scan for other buttons with the browser's own border (every order-page state of `check-overflow`, including every sheet): none besides `.barButton`.
+
+**Decided on my own — please check**
+1. The owner pointed at the "บันทึกว่าสั่งแล้ว" button as the faded example, but its class (`.call` in `OrderMessage.module.css`) has NO `:disabled` style, so when nothing is ticked it is disabled but looks like an enabled outlined button. I used the faded look of `.copy` / `.line` instead and did NOT change the "บันทึกว่าสั่งแล้ว" button (not asked).
+2. The bottom bar is `bottom: 72px` (a fixed guess of the menu height) but the menu is 73px high at the normal font and about 77px at the large one, so the bar overlaps the menu by 1–5px (the buttons themselves do not touch). Not changed (not asked); worth a look.
+3. The LINE "too long" warning toast was not triggered in the scripted check (it needs a message above 8000 characters); it uses the same `<Toast>` so it follows the same rule.
+4. New permanent checks in `scripts/check-overflow.mjs` (run with `npm run check:overflow`, every order-page state at 360 / 412px x 3 font sizes): no two buttons / links / tick boxes overlap (page content that scrolls under a bar is not counted), no button with the browser's own border, the floating message does not touch any fixed or sticky bar and keeps at least 8px above the one under it, and at the end of the page the last block ends above the bars. Run against the code before the fix it reports 126 problems (border on the main button and 37 floating-message cases), after the fix 0.
+5. Numbers: tests 1014 (1011 before); JS gzip 158.69 kB (158.44 before); `check:overflow` 2040 checks, 0 problems. Pictures: branch `shots-pr11-3b2b-fix`.

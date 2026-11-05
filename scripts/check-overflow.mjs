@@ -114,6 +114,12 @@ const ORDER_SCENARIOS = [
   ['after booking (toast, lines gone)', LONGSHOP, async (page) => { await page.getByRole('button', { name: 'เลือกร้าน ร้านทดสอบ ก' }).click(); await click(page, 'บันทึกว่าสั่งแล้ว'); await page.getByRole('dialog').getByRole('button', { name: 'สั่งแล้ว' }).click(); }],
   ['badge "สั่งแล้ว รอรับ"', `${ORD}&orders=waiting`, async () => {}],
   ['badge, long quantity (+ pressed 40 times)', `${ORD}&orders=waiting`, async (page) => { const plus = page.getByRole('button', { name: /^เพิ่มจำนวน/ }).first(); for (let i = 0; i < 40; i += 1) await plus.click(); }],
+  // layout of the bottom bar and the floating messages (M4 PR 11.3b-2b fix)
+  ['toast, price saved', SH3, async (page) => { await page.getByRole('button', { name: /^ใส่ราคา/ }).click(); await page.getByLabel(/^ราคาต่อ หลอด/).fill('80'); await click(page, 'บันทึกราคา'); }],
+  ['toast, text copied (no shop chosen)', '/n/order?demo=normal&recipient=full&shops=three', async (page) => { await click(page, 'คัดลอกข้อความ'); }],
+  ['toast, long quantity and booking', LONGSHOP, async (page) => { const plus = page.getByRole('button', { name: /^เพิ่มจำนวน/ }).first(); for (let i = 0; i < 40; i += 1) await plus.click(); await page.getByRole('button', { name: 'เลือกร้าน ร้านทดสอบ ก' }).click(); await click(page, 'บันทึกว่าสั่งแล้ว'); await page.getByRole('dialog').getByRole('button', { name: 'สั่งแล้ว' }).click(); }],
+  ['bar, one medicine ticked', ORD, async (page) => { for (const box of await page.getByRole('checkbox').all()) await box.uncheck(); await page.getByRole('checkbox').first().check(); }],
+  ['bar, no waiting order, many lines on the page', `${NOLOW}&sheet=add&tab=meds`, async (page) => { await page.getByRole('button', { name: /^เพิ่ม /  }).first().click(); await page.getByRole('button', { name: 'ปิด', exact: true }).click(); }],
   // order message (M4 PR 11.3b-1)
   ['message, nothing ticked', '/n/order?demo=normal&recipient=full', async (page) => { for (const box of await page.getByRole('checkbox').all()) await box.uncheck(); }],
   ['message, long recipient (300 + 60 + 20 letters)', '/n/order?demo=normal', async (page) => { await click(page, /^ข้อมูลผู้รับ/); await page.getByLabel(/^ที่อยู่/).fill('ก'.repeat(300)); await page.getByLabel('ชื่อผู้รับ').fill('ข'.repeat(60)); await page.getByLabel('เบอร์โทร').fill('1'.repeat(20)); await click(page, 'บันทึก'); }],
@@ -195,6 +201,72 @@ const measureV3 = (minPx) => {
   return out.slice(0, 5).join('; ');
 };
 
+/** Order page layout (M4 PR 11.3b-2b fix): (a) no button / link / tick box whose box overlaps another one (inside the open sheet when one is
+ * open, else on the page; page content that scrolls under a fixed bar is not counted); (b) no button with the browser's own grey border; (c) the floating message does not touch any fixed bar and keeps
+ * 8px above the one under it. A floating message is only there for 3 seconds, so scenarios that show one are measured at once. */
+const measureLayout = () => {
+  const out = [];
+  const shown = (el) => {
+    const r = el.getBoundingClientRect();
+    const cs = getComputedStyle(el);
+    return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none';
+  };
+  const name = (el) => (el.getAttribute('aria-label') ?? el.textContent ?? '').trim().slice(0, 24);
+  const onFixed = (el) => {
+    for (let p = el; p && p !== document.body; p = p.parentElement) if (['fixed', 'sticky'].includes(getComputedStyle(p).position)) return true; // the bottom menu is sticky
+    return false;
+  };
+  const dialog = document.querySelector('[role=dialog]');
+  const items = [...(dialog ?? document).querySelectorAll('button, a[href], input[type=checkbox]')].filter(shown);
+  for (const b of items) {
+    const cs = getComputedStyle(b);
+    if (b.tagName === 'BUTTON' && parseFloat(cs.borderTopWidth) > 0 && ['outset', 'inset', 'ridge', 'groove'].includes(cs.borderTopStyle)) out.push(`browser border on "${name(b)}"`);
+  }
+  for (let i = 0; i < items.length; i += 1) {
+    for (let j = i + 1; j < items.length; j += 1) {
+      const a = items[i];
+      const b = items[j];
+      if (a.contains(b) || b.contains(a)) continue;
+      if (onFixed(a) !== onFixed(b)) continue; // page content scrolling under a fixed bar is normal; the end of the page is checked by measureEnd
+      const ra = a.getBoundingClientRect();
+      const rb = b.getBoundingClientRect();
+      const w = Math.min(ra.right, rb.right) - Math.max(ra.left, rb.left);
+      const h = Math.min(ra.bottom, rb.bottom) - Math.max(ra.top, rb.top);
+      if (w > 2 && h > 2) out.push(`"${name(a)}" overlaps "${name(b)}" (${Math.round(w)}x${Math.round(h)})`);
+    }
+  }
+  const toast = [...document.querySelectorAll('[role=status]')].find((el) => getComputedStyle(el).position === 'fixed');
+  if (toast && !dialog) {
+    const t = toast.getBoundingClientRect();
+    for (const el of document.body.querySelectorAll('*')) {
+      if (el === toast || !['fixed', 'sticky'].includes(getComputedStyle(el).position) || !shown(el)) continue;
+      const r = el.getBoundingClientRect();
+      const across = Math.min(t.right, r.right) - Math.max(t.left, r.left);
+      if (across <= 0) continue;
+      if (Math.min(t.bottom, r.bottom) - Math.max(t.top, r.top) > 0) out.push(`floating message touches a fixed bar (${String(el.className).slice(0, 30)})`);
+      else if (r.top >= t.top && r.top - t.bottom < 7.5) out.push(`floating message only ${Math.round(r.top - t.bottom)}px above a fixed bar`);
+    }
+  }
+  return out.slice(0, 5).join('; ');
+};
+
+/** Scrolled to the very end, the last thing in <main> must end above the highest fixed bar (nothing hides behind it). */
+const measureEnd = () => {
+  if (document.querySelector('[role=dialog]')) return '';
+  window.scrollTo(0, document.documentElement.scrollHeight);
+  const main = document.querySelector('main');
+  const last = main?.lastElementChild;
+  if (!last) return '';
+  const bottom = last.getBoundingClientRect().bottom;
+  let top = Infinity;
+  for (const el of document.body.querySelectorAll('*')) {
+    const cs = getComputedStyle(el);
+    const r = el.getBoundingClientRect();
+    if (['fixed', 'sticky'].includes(cs.position) && r.width > 0 && r.height > 0 && r.height < window.innerHeight * 0.5 && el.tagName !== 'P') top = Math.min(top, r.top);
+  }
+  return bottom > top + 0.5 ? `last block ends at ${Math.round(bottom)}px, behind a bar starting at ${Math.round(top)}px` : '';
+};
+
 await waitForServer();
 const browser = await chromium.launch({ executablePath: chromePath });
 let problems = 0;
@@ -261,6 +333,12 @@ for (const width of WIDTHS) {
       if (bad) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 order(${label}): ${bad}`); }
       const small = await page.evaluate(measureV3, fs === 'n' ? 13.9 : 14.9);
       if (small) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 order(${label}): ${small}`); }
+      const layout = await page.evaluate(measureLayout);
+      checked += 1;
+      if (layout) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 order layout(${label}): ${layout}`); }
+      const end = await page.evaluate(measureEnd);
+      checked += 1;
+      if (end) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 order end(${label}): ${end}`); }
     }
 
     // 1g) v3 shops page after pressing (M4 PR 11.3a)

@@ -106,6 +106,34 @@ describe('the list', () => {
     expect(screen.queryByText('เร็ว ๆ นี้')).toBeNull();
   });
 
+  it('the main button follows the ticks: 0 ticked = faded and does nothing; 1 ticked = works; untick again = faded (M4 PR 11.3b-2b fix)', () => {
+    const scroll = vi.fn();
+    Element.prototype.scrollIntoView = scroll;
+    demo('normal');
+    const main = (): HTMLElement => screen.getByRole('button', { name: 'ดูข้อความสั่งยา' });
+    const ticks = (): HTMLInputElement[] => screen.getAllByRole('checkbox') as HTMLInputElement[];
+    for (const box of ticks().filter((b) => b.checked)) fireEvent.click(box);
+    expect(main()).toBeDisabled();
+    expect(screen.getByText('0 รายการ')).toBeInTheDocument();
+    expect(screen.getByText('ยอดรวม –')).toBeInTheDocument();
+    fireEvent.click(main());
+    expect(scroll).not.toHaveBeenCalled();
+    fireEvent.click(ticks()[0]!);
+    expect(main()).toBeEnabled();
+    expect(screen.getByText('1 รายการ')).toBeInTheDocument();
+    fireEvent.click(main());
+    expect(scroll).toHaveBeenCalledTimes(1);
+    fireEvent.click(ticks()[0]!);
+    expect(main()).toBeDisabled();
+  });
+
+  it('the page publishes the top of its bottom bar for the floating message, and takes it back when it leaves', () => {
+    const { unmount } = demo('normal');
+    expect(document.documentElement.style.getPropertyValue('--toast-bottom')).toMatch(/^\d+(\.\d+)?px$/);
+    unmount();
+    expect(document.documentElement.style.getPropertyValue('--toast-bottom')).toBe('');
+  });
+
   it('is reached from #/n/order in the app, and the route is not tied to any button of Home', () => {
     window.location.hash = '#/n/order?demo=normal';
     render(<App />);

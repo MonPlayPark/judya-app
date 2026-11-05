@@ -154,6 +154,15 @@ describe('the sheet', () => {
     expect(screen.getAllByRole('checkbox')).toHaveLength(unticked);
     expect(unticked).toBeLessThan(total);
   });
+  it('after saving, nothing is ticked, so "ดูข้อความสั่งยา" is faded and the bar says 0 รายการ', () => {
+    const store = memoryStore();
+    live(store, 'shop=s1');
+    expect(screen.getByRole('button', { name: 'ดูข้อความสั่งยา' })).toBeEnabled();
+    press('บันทึกว่าสั่งแล้ว');
+    fireEvent.click(inSheet().getByRole('button', { name: 'สั่งแล้ว' }));
+    expect(screen.getByRole('button', { name: 'ดูข้อความสั่งยา' })).toBeDisabled();
+    expect(screen.getByText('0 รายการ')).toBeInTheDocument();
+  });
   it('"ยังไม่ได้สั่ง" (and X): closes, writes nothing, drops what was typed in the price box', () => {
     const store = memoryStore();
     live(store, 'shop=s3');

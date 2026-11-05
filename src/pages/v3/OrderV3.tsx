@@ -1,10 +1,10 @@
 // The v3 order draft screen (M4 PR 11.2): the list of medicines to order, with the "add an item" bottom sheet.
 // View only: the rules are in src/domain/v3/orderDraft.ts and orderLines.ts, OrderPage owns the data and the clock. The draft lives in this
 // component's state; nothing is saved (step 11.3 saves an order). Places that wait for later steps are <ComingSoon>.
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { BackIcon, CheckCircleIcon, ChevronRightIcon, InfoIcon, MinusIcon, PlusIcon, WarningIcon } from '../../components/icons';
 import { ComingSoon } from '../../components/v3/ComingSoon';
-import { Toast, useToast } from '../../components/v3/Toast';
+import { Toast, useToast, useToastAbove } from '../../components/v3/Toast';
 import { V3Nav } from '../../components/v3/V3Nav';
 import type { IsoDate } from '../../domain/calc';
 import { label } from '../../domain/v3/medsList';
@@ -113,6 +113,8 @@ export function OrderView({ root: first, today, demo, initial, persist, newId = 
     return null;
   });
   const [toast, showToast] = useToast();
+  const barRef = useRef<HTMLDivElement>(null);
+  useToastAbove(barRef); // every floating message of this page floats above the bottom bar
   const [includeShipping, setIncludeShipping] = useState(!initial?.noShipping);
   const [selectedId, setSelectedId] = useState<string | null>(initial?.shop ?? null);
   const [demoRecipient, setDemoRecipient] = useState<Recipient>(() => (demo ? (initial?.recipient ?? {}) : {}));
@@ -280,12 +282,12 @@ export function OrderView({ root: first, today, demo, initial, persist, newId = 
         )}
       </main>
 
-      <div className={styles.bar}>
+      <div className={styles.bar} ref={barRef}>
         <p className={styles.barCount}>
           <span className={styles.barNumber}>{ticked} รายการ</span>
           <span className={styles.barTotal}>ยอดรวม –</span>
         </p>
-        <button type="button" className={styles.barButton} onClick={showMessage}>
+        <button type="button" className={styles.barButton} disabled={ticked === 0} onClick={showMessage}>
           ดูข้อความสั่งยา
         </button>
       </div>
