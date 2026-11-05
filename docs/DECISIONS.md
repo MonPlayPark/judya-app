@@ -1002,3 +1002,35 @@ Only CSS, the order page view and one shared component were touched: `Toast.tsx`
 3. The LINE "too long" warning toast was not triggered in the scripted check (it needs a message above 8000 characters); it uses the same `<Toast>` so it follows the same rule.
 4. New permanent checks in `scripts/check-overflow.mjs` (run with `npm run check:overflow`, every order-page state at 360 / 412px x 3 font sizes): no two buttons / links / tick boxes overlap (page content that scrolls under a bar is not counted), no button with the browser's own border, the floating message does not touch any fixed or sticky bar and keeps at least 8px above the one under it, and at the end of the page the last block ends above the bars. Run against the code before the fix it reports 126 problems (border on the main button and 37 floating-message cases), after the fix 0.
 5. Numbers: tests 1014 (1011 before); JS gzip 158.69 kB (158.44 before); `check:overflow` 2040 checks, 0 problems. Pictures: branch `shots-pr11-3b2b-fix`.
+
+## M4 PR 11.4 — order history, cancel a waiting order, "สั่งซ้ำ" (5 พ.ย. 2569)
+
+Branch `m4-pr11-order` (PR #39, draft, status unchanged). Scope: history, cancel (waiting only), reorder, and the two small fixes from 2b. **Not built:** receiving, stock, changing an order to `partial` / `received` (11.5), Home buttons (11.6), receipt scan. Schema, storage keys and data version (3) unchanged; `?demo` writes nothing. New: `domain/v3/orderHistory.ts` (`filterOrders`, `orderTotal`, `stillWaiting`, `cancelOrder`, `reorderLines`, `reorderMessage`, `bangkokDay`), `clearOnOrder` in `orderLines.ts`, `withDemoHistory` in `orderDemo.ts`, `pages/v3/OrderHistory.tsx` (+ css). Changed: `OrderV3.tsx`, `OrderPage.tsx`, `DraftReason` / `REASON_LABEL` (`repeat` = "สั่งซ้ำ"), `OrderV3.module.css`, `OrderMessage.module.css`, `check-overflow.mjs`.
+
+### Locked by the owner (built as given)
+1. History is a view inside `OrderView` (`#/n/order?screen=history`; the other test-link options are kept), so ticked lines survive going there and back and the phone's back button returns. Opened from the clock button (no longer ComingSoon). Header: back (to the order page), clock icon, "ประวัติการสั่งยา"; main menu, no bottom bar. Test link `#/n/order?demo=normal&screen=history&orders=history` (four made-up orders, one per status).
+2. Three pills (`aria-pressed`): ทั้งหมด / รอรับของ (waiting + partial) / รับแล้ว (received); starts at ทั้งหมด; cancelled only under ทั้งหมด; newest `createdAt` first; empty = card "ยังไม่มีใบสั่งในหมวดนี้".
+3. Card: icon + date ("12 ต.ค. 2569") + `shopName` + "N รายการ"; right: status chip (waiting / partial yellow, received green, cancelled grey; icon + word) and the total (bold 18px navy).
+4. Buttons: waiting = faded "รับของแล้ว" + "เร็ว ๆ นี้" (does nothing) and working "ยกเลิกใบสั่ง"; partial = yellow "ยังรอ N รายการ", faded "รับของที่เหลือ" and "ไม่รอแล้ว" (both "เร็ว ๆ นี้", no cancel); received / cancelled = "สั่งซ้ำ" (light blue, icon).
+5. Cancel sheet "ยกเลิกใบสั่งนี้ไหม": "<shop> · <date> · N รายการ", small line, red "ยกเลิกใบสั่ง", "ไม่ยกเลิก". Confirm = status `cancelled`, `closedAt` = now, nothing else touched, ONE write; failure = old data stays, sheet stays with a message; success = sheet closes, toast "ยกเลิกใบสั่งแล้ว". Only `waiting` (checked in the domain too). The medicines of a cancelled order are normal suggestions again (`markOnOrder` ignores `cancelled`; tested).
+6. "สั่งซ้ำ": back to the order page, lines ADDED to the list that is there (nothing removed; a medicine already in the list keeps its line), all ticked, old `qtyOrdered` / `sellUnit` / `perSellUnit`, reason "สั่งซ้ำ" (grey), chosen shop cleared, no price copied. Deleted / stopped medicines skipped and counted. Typed medicines come back with name, kind, strength. Toast "คัดลอกรายการมาแล้ว ใช้ราคาล่าสุดของแต่ละร้าน" (+ " · ข้าม N รายการที่ไม่มีในรายการยาแล้ว").
+7. Total of an order = sum of `unitPrice x qtyOrdered` of lines with a price + `shippingFee` when `includeShipping`; unpriced lines not counted ("ไม่รวม N รายการที่ยังไม่มีราคา"); no price at all = "ยังไม่มีราคา".
+8. Fixes from 2b: "บันทึกว่าสั่งแล้ว" faded when disabled (`.call:disabled`, like `.copy` / `.line`); the bar sits exactly on the menu (see below).
+
+### Decided on my own — please check (the prompt did not say)
+1. **Card icon** = the illustrated `order` icon (36px round, the one from Home). The spec said only "ไอคอน".
+2. **Total when a fee exists but no line has a price** = "ยังไม่มีราคา" (a bare fee is never shown as a total). The spec decided this case as "no price at all".
+3. **Bottom bar fix (item 8):** the bar and the menu are now one sticky box (`.dock`); the bar is no longer `position: fixed` with a guessed `bottom: 72px`, so it follows the menu's real height at any font size (73px normal, ~77px large) and the 148px padding under the page is gone. `useToastAbove` now measures the dock, so on the history (no bar) the floating message clears the menu too.
+4. **"สั่งซ้ำ" counts as "skipped"**: deleted / stopped medicine, a removed house medicine, a house medicine whose stock is not counted (the message says "ไม่มีในรายการยาแล้ว" for those too). A medicine already in the list is NOT counted (silently kept).
+5. **"สั่งซ้ำ" always goes back to the list**, even when nothing was added (then the toast still says what happened).
+6. **A typed medicine stays typed** even if its name is now a medicine of the app (spec: "as typed"). The first draft of this step swapped it for the app's medicine; that was removed.
+7. **After a cancel** the lines that carried the "สั่งแล้ว รอรับ" badge lose it; a suggested line that is still unticked goes back to what the suggestion says (ticked when low and something is needed); a line the owner ticked by hand, or added by hand, keeps its tick (`clearOnOrder`). A medicine still on another open order keeps its badge.
+8. **Faded buttons** are `aria-disabled="true"` buttons with the chip inside; pressing shows no message (the spec said nothing happens, unlike `ComingSoon`).
+9. **Pills** pressed = `--color-primary-tint` fill, `--color-primary` border (as the kind grid); not pressed = white with a grey border. Card chips use existing tokens (`--color-warning-*`, `--color-success-*`, `--color-border` + `--color-hero-ink-muted`). No new colour.
+10. **Status words:** "รับแล้ว" (spec) on the chip and pill, "ยกเลิก" for cancelled, "รอรับของ" / "รับบางส่วน".
+11. **Dates** are the Thai day of `createdAt` (a phone saves UTC; cutting 10 letters would be a day early between 00:00 and 07:00).
+12. **No cap:** 100 orders are all drawn (tested).
+13. **Board H is not in the repo**, so nothing could be compared pixel by pixel; the build follows the text spec only. Differences from the text spec: none known.
+
+### Numbers
+Tests 1054 (1014 before); JS gzip 161.29 kB (158.69 before); `check:overflow` see HANDOFF. Pictures: branch `shots-pr11-4`.

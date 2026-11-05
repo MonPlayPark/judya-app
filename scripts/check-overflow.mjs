@@ -35,7 +35,7 @@ const V3_ROUTES = ['/', '/n', '/no-such-page', '/old', // M4 PR 7b: an unknown o
   '/n/settings/data?demo=normal&backup=old&error=wrong_version',
   // v3 order draft (M4 PR 11.2): real data (empty), the three demo houses, the add sheet (both tabs, a repeated name, a name that is in the list),
   // the unit sheet, and the add sheet on a house with nothing to suggest / no medicine at all
-  '/n/order', '/n/order?demo=normal', '/n/order?demo=nolow', '/n/order?demo=nomeds',
+  '/n/order', '/n/order?demo=normal&orders=waiting&screen=history', '/n/order?demo=normal&orders=history&screen=history', '/n/order?demo=normal&screen=history', '/n/order?demo=normal', '/n/order?demo=nolow', '/n/order?demo=nomeds',
   '/n/order?demo=normal&sheet=add&tab=meds', '/n/order?demo=normal&sheet=add&tab=new', '/n/order?demo=normal&sheet=add&tab=new&name=Simvastatin',
   '/n/order?demo=normal&sheet=add&tab=new&name=Meto', '/n/order?demo=normal&sheet=unit', '/n/order?demo=normal&sheet=unit&item=med:m8',
   '/n/order?demo=nolow&sheet=add&tab=meds', '/n/order?demo=nomeds&sheet=add&tab=meds', '/n/order?demo=nomeds&sheet=add&tab=new',
@@ -89,6 +89,7 @@ const ADD_SCENARIOS = [
 
 // v3 order draft (M4 PR 11.2): states that need pressing. Same shape as ADD_SCENARIOS.
 const ORD = '/n/order?demo=normal';
+const HIST = '/n/order?demo=normal&orders=history&screen=history';
 const NOLOW = '/n/order?demo=nolow'; // many medicines to pick from: the search box and "see more" show
 const SH3 = '/n/order?demo=normal&shops=three';
 const LONGSHOP = `${SH3}&recipient=full`;
@@ -114,6 +115,13 @@ const ORDER_SCENARIOS = [
   ['after booking (toast, lines gone)', LONGSHOP, async (page) => { await page.getByRole('button', { name: 'เลือกร้าน ร้านทดสอบ ก' }).click(); await click(page, 'บันทึกว่าสั่งแล้ว'); await page.getByRole('dialog').getByRole('button', { name: 'สั่งแล้ว' }).click(); }],
   ['badge "สั่งแล้ว รอรับ"', `${ORD}&orders=waiting`, async () => {}],
   ['badge, long quantity (+ pressed 40 times)', `${ORD}&orders=waiting`, async (page) => { const plus = page.getByRole('button', { name: /^เพิ่มจำนวน/ }).first(); for (let i = 0; i < 40; i += 1) await plus.click(); }],
+  // order history (M4 PR 11.4)
+  ['history, filter "รอรับของ"', HIST, async (page) => { await click(page, 'รอรับของ'); }],
+  ['history, filter "รับแล้ว"', HIST, async (page) => { await click(page, 'รับแล้ว'); }],
+  ['history, empty category', '/n/order?demo=normal&screen=history', async (page) => { await click(page, 'รับแล้ว'); }],
+  ['history, cancel sheet', HIST, async (page) => { await click(page, 'ยกเลิกใบสั่ง'); }],
+  ['history, cancel done (toast above the menu)', HIST, async (page) => { await click(page, 'ยกเลิกใบสั่ง'); await page.getByRole('dialog').getByRole('button', { name: 'ยกเลิกใบสั่ง', exact: true }).click(); }],
+  ['history, reorder (toast on the order page)', HIST, async (page) => { await page.getByRole('button', { name: /^สั่งซ้ำ/ }).first().click(); }],
   // layout of the bottom bar and the floating messages (M4 PR 11.3b-2b fix)
   ['toast, price saved', SH3, async (page) => { await page.getByRole('button', { name: /^ใส่ราคา/ }).click(); await page.getByLabel(/^ราคาต่อ หลอด/).fill('80'); await click(page, 'บันทึกราคา'); }],
   ['toast, text copied (no shop chosen)', '/n/order?demo=normal&recipient=full&shops=three', async (page) => { await click(page, 'คัดลอกข้อความ'); }],

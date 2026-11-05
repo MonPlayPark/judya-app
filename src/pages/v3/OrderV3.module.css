@@ -73,7 +73,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 12px 12px 148px;
+  padding: 12px;
 }
 .card {
   border-radius: var(--radius-card);
@@ -183,7 +183,8 @@
   color: var(--color-warning-ink);
 }
 .reason_unknown,
-.reason_manual {
+.reason_manual,
+.reason_repeat {
   background: var(--color-border);
   color: var(--color-hero-ink-muted);
 }
@@ -294,12 +295,13 @@
 }
 
 /* ---------- bottom bar (above the main menu) ---------- */
-.bar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+.dock {
+  position: sticky;
+  bottom: 0;
   z-index: 2;
+  margin-top: auto;
+}
+.bar {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -350,3 +352,4 @@
 .barButton > :first-child {
   width: auto;
 }
+

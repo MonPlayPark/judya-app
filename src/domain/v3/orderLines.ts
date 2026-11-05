@@ -10,8 +10,8 @@ import { houseStatus, isLowStock, stockNow, targetDoses, tubeLevel } from './sto
 const byName = (a: { name: string }, b: { name: string }): number => a.name.localeCompare(b.name, 'th');
 
 /** Why a line is on the list: 'low' = running low (ticked), 'unknown' = no stock count (shown, not ticked), 'typed' = a new medicine
- * typed by hand, 'manual' = a medicine of the app picked by the owner (M4 PR 11.2). */
-export type DraftReason = 'low' | 'unknown' | 'typed' | 'manual';
+ * typed by hand, 'manual' = a medicine of the app picked by the owner (M4 PR 11.2), 'repeat' = put in again from an old order (M4 PR 11.4). */
+export type DraftReason = 'low' | 'unknown' | 'typed' | 'manual' | 'repeat';
 
 interface DraftBase {
   /** 'med:<medicationId>' / 'house:<houseItemId>' / 'free:<name without spaces, lower case>' */
@@ -272,4 +272,18 @@ function waitsFor(root: Pick<Root, 'orders'>, source: Exclude<OrderSource, { kin
  * `buildOrderLines` so the suggested list itself does not depend on the orders. */
 export function markOnOrder<T extends DraftLine>(lines: readonly T[], root: Pick<Root, 'orders'>, untick: boolean): T[] {
   return lines.map((l) => (l.source.kind !== 'free' && waitsFor(root, l.source) ? { ...l, onOrder: true as const, ...(untick ? { ticked: false } : {}) } : l));
+}
+
+/** After an order was cancelled (M4 PR 11.4): a line that carried `onOrder` but whose medicine no longer waits on an open order loses the badge and
+ * goes back to what the suggestion says (ticked when the fresh suggestion is ticked). A line the owner ticked by hand, or one added by hand, keeps
+ * its tick. Lines still on another open order are left as they are. */
+export function clearOnOrder(lines: readonly DraftLine[], root: Root, today: IsoDate): DraftLine[] {
+  const fresh = new Map(buildOrderLines(root, today).map((l) => [l.key, l] as const));
+  return lines.map((l) => {
+    if (!l.onOrder || (l.source.kind !== 'free' && waitsFor(root, l.source))) return l;
+    const { onOrder: _badge, ...rest } = l;
+    const suggested = fresh.get(l.key);
+    const back = suggested !== undefined && (l.reason === 'low' || l.reason === 'unknown') && !l.ticked ? { ticked: suggested.ticked } : {};
+    return { ...rest, ...back } as DraftLine;
+  });
 }

@@ -2,14 +2,13 @@
 // View only: the rules are in src/domain/v3/orderDraft.ts and orderLines.ts, OrderPage owns the data and the clock. The draft lives in this
 // component's state; nothing is saved (step 11.3 saves an order). Places that wait for later steps are <ComingSoon>.
 import { useMemo, useRef, useState } from 'react';
-import { BackIcon, CheckCircleIcon, ChevronRightIcon, InfoIcon, MinusIcon, PlusIcon, WarningIcon } from '../../components/icons';
-import { ComingSoon } from '../../components/v3/ComingSoon';
+import { BackIcon, CheckCircleIcon, ClockIcon, ChevronRightIcon, InfoIcon, MinusIcon, PlusIcon, WarningIcon } from '../../components/icons';
 import { Toast, useToast, useToastAbove } from '../../components/v3/Toast';
 import { V3Nav } from '../../components/v3/V3Nav';
 import type { IsoDate } from '../../domain/calc';
 import { label } from '../../domain/v3/medsList';
 import { REASON_LABEL, qtyText, stepLine } from '../../domain/v3/orderDraft';
-import { buildOrderLines, markOnOrder, type DraftLine, type DraftReason } from '../../domain/v3/orderLines';
+import { buildOrderLines, clearOnOrder, markOnOrder, type DraftLine, type DraftReason } from '../../domain/v3/orderLines';
 import { compareShops } from '../../domain/v3/orderCompare';
 import { messageItems, type Recipient } from '../../domain/v3/orderMessage';
 import { baht, compareLinesOf, feeLine, modeOfShop, saveShopPrices } from '../../domain/v3/orderShops';
@@ -19,7 +18,10 @@ import { ShopForm, type ShopOutcome } from '../../components/v3/ShopForm';
 import type { ShopInput } from '../../domain/shop';
 import { recipientOf, withRecipient } from '../../domain/v3/recipient';
 import type { MedKind, Root } from '../../domain/v3/schema';
+import { useRoute } from '../../router';
+import { cancelOrder, reorderLines, reorderMessage } from '../../domain/v3/orderHistory';
 import { OrderBook } from './OrderBook';
+import { OrderHistory, type CancelOutcome } from './OrderHistory';
 import { OrderCompare, type PriceOutcome } from './OrderCompare';
 import { OrderMessage, type PickedShop, type SaveOutcome } from './OrderMessage';
 import { AddItemSheet, UnitSheet, type AddTab } from './OrderSheets';
@@ -60,14 +62,17 @@ const CartGlyph = () => (
     <circle cx="17" cy="19" r="1.4" />
   </svg>
 );
-const ClockGlyph = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <circle cx="12" cy="12" r="8.5" />
-    <path d="M12 7.5V12l3 2" />
-  </svg>
-);
+const REASON_ICON: Record<DraftReason, () => JSX.Element> = { low: WarningIcon, unknown: InfoIcon, typed: PlusIcon, manual: CheckCircleIcon, repeat: ClockIcon };
 
-const REASON_ICON: Record<DraftReason, () => JSX.Element> = { low: WarningIcon, unknown: InfoIcon, typed: PlusIcon, manual: CheckCircleIcon };
+/** The hash of the order page with the same test-link options (?demo=…) and `screen` set (history) or removed (the order list). The history is the
+ * same route with `?screen=history`, so the page stays mounted: the ticked lines are kept, and the phone's back button comes back from it. */
+function orderHash(query: URLSearchParams, view: 'order' | 'history'): string {
+  const q = new URLSearchParams(query);
+  if (view === 'history') q.set('screen', 'history');
+  else q.delete('screen');
+  const text = q.toString();
+  return `#/n/order${text ? `?${text}` : ''}`;
+}
 
 /** Kind of the medicine a line is for (decides how the quantity reads). null = not known. */
 export function kindOfLine(root: Root, line: DraftLine): MedKind | null {
@@ -113,8 +118,10 @@ export function OrderView({ root: first, today, demo, initial, persist, newId = 
     return null;
   });
   const [toast, showToast] = useToast();
-  const barRef = useRef<HTMLDivElement>(null);
-  useToastAbove(barRef); // every floating message of this page floats above the bottom bar
+  const { query } = useRoute();
+  const view = query.get('screen') === 'history' ? 'history' : 'order';
+  const dockRef = useRef<HTMLDivElement>(null);
+  useToastAbove(dockRef); // every floating message floats above the dock: the bar and the menu on the list, the menu alone on the history
   const [includeShipping, setIncludeShipping] = useState(!initial?.noShipping);
   const [selectedId, setSelectedId] = useState<string | null>(initial?.shop ?? null);
   const [demoRecipient, setDemoRecipient] = useState<Recipient>(() => (demo ? (initial?.recipient ?? {}) : {}));
@@ -191,6 +198,28 @@ export function OrderView({ root: first, today, demo, initial, persist, newId = 
   const bookProps = pickedShop ? { onSent: () => setSheet({ kind: 'book' }), onBook: () => setSheet({ kind: 'book' }) } : {};
   const showMessage = (): void => document.getElementById('order-message')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
 
+  /** "สั่งซ้ำ": adds the lines of an old order to the list that is there (nothing is removed, a medicine already in the list stays as it is),
+   * clears the chosen shop (the price is the remembered one of the shop chosen next), saves nothing, and goes back to the list. */
+  const again = (orderId: string): void => {
+    const o = root.orders.find((x) => x.id === orderId);
+    if (!o) return;
+    const made = reorderLines(root, o, today, lines.map((l) => l.key));
+    setLines((all) => [...all, ...markOnOrder(made.lines, root, false)]);
+    setSelectedId(null);
+    showToast(reorderMessage(made));
+    window.location.hash = orderHash(query, 'order');
+  };
+  /** "ยกเลิกใบสั่ง" (waiting only): ONE write; the medicines of the order come back as normal suggestions. */
+  const cancel = (orderId: string): CancelOutcome => {
+    const made = cancelOrder(root, orderId, nowIso());
+    if (!made.ok) return { ok: false, text: made.error === 'invalid_root' ? 'บันทึกไม่ได้ ข้อมูลเดิมยังอยู่ ลองใหม่อีกครั้ง' : 'ยกเลิกได้เฉพาะใบที่ยังรอรับของ' };
+    const res = commit(made.root);
+    if (!res.ok) return res;
+    setLines((all) => clearOnOrder(all, made.root, today));
+    showToast('ยกเลิกใบสั่งแล้ว');
+    return { ok: true };
+  };
+
   const update = (key: string, fn: (l: DraftLine) => DraftLine): void => setLines((all) => all.map((l) => (l.key === key ? fn(l) : l)));
   const unitLine = sheet?.kind === 'unit' ? lines.find((l) => l.key === sheet.key) : undefined;
 
@@ -204,19 +233,25 @@ export function OrderView({ root: first, today, demo, initial, persist, newId = 
       )}
 
       <header className={styles.head}>
-        <a className={styles.round} href="#/n" aria-label="กลับหน้าหลัก">
+        <a className={styles.round} href={view === 'history' ? orderHash(query, 'order') : '#/n'} aria-label={view === 'history' ? 'กลับหน้าสั่งซื้อยา' : 'กลับหน้าหลัก'}>
           <BackIcon />
         </a>
-        <span className={styles.cart}>
-          <CartGlyph />
-        </span>
-        <h1 className={styles.title}>สั่งซื้อยา</h1>
-        <ComingSoon className={`${styles.round} ${styles.historyButton}`} aria-label="ประวัติการสั่งซื้อ">
-          <ClockGlyph />
-        </ComingSoon>
+        <span className={styles.cart}>{view === 'history' ? <ClockIcon /> : <CartGlyph />}</span>
+        <h1 className={styles.title}>{view === 'history' ? 'ประวัติการสั่งยา' : 'สั่งซื้อยา'}</h1>
+        {view === 'order' && (
+          <a className={`${styles.round} ${styles.historyButton}`} href={orderHash(query, 'history')} aria-label="ประวัติการสั่งซื้อ">
+            <ClockIcon />
+          </a>
+        )}
       </header>
 
-      <main className={styles.body}>
+      {view === 'history' && (
+        <main className={styles.body}>
+          <OrderHistory root={root} onAgain={again} onCancel={cancel} />
+        </main>
+      )}
+
+      {view === 'order' && <main className={styles.body}>
         <section className={styles.card} aria-labelledby="order-list-title">
           <h2 id="order-list-title" className={styles.cardTitle}>
             รายการที่จะสั่ง
@@ -280,9 +315,11 @@ export function OrderView({ root: first, today, demo, initial, persist, newId = 
             ติ๊กยาที่ต้องการสั่งก่อน แล้วแอพจะเทียบราคาร้านให้
           </p>
         )}
-      </main>
+      </main>}
 
-      <div className={styles.bar} ref={barRef}>
+      <div className={styles.dock} ref={dockRef}>
+      {view === 'order' && (
+      <div className={styles.bar}>
         <p className={styles.barCount}>
           <span className={styles.barNumber}>{ticked} รายการ</span>
           <span className={styles.barTotal}>ยอดรวม –</span>
@@ -291,9 +328,11 @@ export function OrderView({ root: first, today, demo, initial, persist, newId = 
           ดูข้อความสั่งยา
         </button>
       </div>
+      )}
       <V3Nav current="home" />
+      </div>
 
-      {sheet?.kind === 'add' && (
+      {view === 'order' && sheet?.kind === 'add' && (
         <AddItemSheet
           root={root}
           today={today}
@@ -307,7 +346,7 @@ export function OrderView({ root: first, today, demo, initial, persist, newId = 
           onClose={() => setSheet(null)}
         />
       )}
-      {sheet?.kind === 'unit' && unitLine && (
+      {view === 'order' && sheet?.kind === 'unit' && unitLine && (
         <UnitSheet
           root={root}
           line={unitLine}
@@ -318,7 +357,7 @@ export function OrderView({ root: first, today, demo, initial, persist, newId = 
           onClose={() => setSheet(null)}
         />
       )}
-      {sheet?.kind === 'book' && pickedShop && (
+      {view === 'order' && sheet?.kind === 'book' && pickedShop && (
         <OrderBook
           root={root}
           lines={lines}
@@ -332,7 +371,7 @@ export function OrderView({ root: first, today, demo, initial, persist, newId = 
           onClose={() => setSheet(null)}
         />
       )}
-      {sheet?.kind === 'shop' && <ShopForm onSave={saveShop} onCancel={() => setSheet(null)} />}
+      {view === 'order' && sheet?.kind === 'shop' && <ShopForm onSave={saveShop} onCancel={() => setSheet(null)} />}
       <Toast text={toast} />
     </div>
   );
@@ -373,7 +412,7 @@ function LineRow({
       </span>
       {line.onOrder && (
         <span className={`${styles.reason} ${styles.reason_typed}`}>
-          <ClockGlyph />
+          <ClockIcon />
           สั่งแล้ว รอรับ
         </span>
       )}

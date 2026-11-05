@@ -4,14 +4,14 @@
 import { useState } from 'react';
 import { useRoute } from '../../router';
 import { DEMO_TODAY } from '../../domain/v3/homeDemo';
-import { DEMO_RECIPIENT, isOrderDemoName, orderDemoRoot, withDemoShops, withDemoWaitingOrder, type OrderDemoName } from '../../domain/v3/orderDemo';
+import { DEMO_RECIPIENT, isOrderDemoName, orderDemoRoot, withDemoHistory, withDemoShops, withDemoWaitingOrder, type OrderDemoName } from '../../domain/v3/orderDemo';
 import { loadRoot, saveRoot } from '../../domain/v3/storage';
 import { openRoot, saveErrorText, useBangkokToday, type HomePageProps, type Loaded } from './HomeV3Page';
 import { OrderView, type OrderViewProps } from './OrderV3';
 import { ProblemV3 } from './ProblemV3';
 
 /** Test links: `&sheet=add&tab=meds|new[&name=<typed name>]` opens the add sheet, `&sheet=unit[&item=<line key>]` the unit sheet,
- * `&shops=three` (demo) gives three made-up shops, `&orders=waiting` (demo) one shop and a medicine on a waiting order, `&shop=<id>` starts with that shop chosen, `&sheet=prices&shop=<id>` opens its price sheet,
+ * `&shops=three` (demo) gives three made-up shops, `&orders=waiting` (demo) one shop and a medicine on a waiting order, `&orders=history` (demo) four orders (one of each status), `&screen=history` opens the history, `&shop=<id>` starts with that shop chosen, `&sheet=prices&shop=<id>` opens its price sheet,
  * `&sheet=shop` the new-shop form, `&shipping=off` the switch off. */
 function initialFrom(query: URLSearchParams): OrderViewProps['initial'] {
   const sheet = query.get('sheet');
@@ -32,12 +32,12 @@ export function OrderV3Route(props: HomePageProps) {
   const { query } = useRoute();
   const demo = query.get('demo');
   const initial = initialFrom(query);
-  return isOrderDemoName(demo) ? <DemoOrder key={demo} name={demo} initial={initial} withRecipient={query.get('recipient') === 'full'} withShops={query.get('shops') === 'three'} withWaiting={query.get('orders') === 'waiting'} /> : <LiveOrder key="live" initial={initial} {...props} />;
+  return isOrderDemoName(demo) ? <DemoOrder key={demo} name={demo} initial={initial} withRecipient={query.get('recipient') === 'full'} withShops={query.get('shops') === 'three'} withWaiting={query.get('orders') === 'waiting'} withHistory={query.get('orders') === 'history'} /> : <LiveOrder key="live" initial={initial} {...props} />;
 }
 
-function DemoOrder({ name, initial, withRecipient, withShops, withWaiting }: { name: OrderDemoName; initial: OrderViewProps['initial']; withRecipient: boolean; withShops: boolean; withWaiting: boolean }) {
+function DemoOrder({ name, initial, withRecipient, withShops, withWaiting, withHistory }: { name: OrderDemoName; initial: OrderViewProps['initial']; withRecipient: boolean; withShops: boolean; withWaiting: boolean; withHistory: boolean }) {
   const [root] = useState(() => {
-    const base = withWaiting ? withDemoWaitingOrder(orderDemoRoot(name)) : orderDemoRoot(name);
+    const base = withHistory ? withDemoHistory(orderDemoRoot(name)) : withWaiting ? withDemoWaitingOrder(orderDemoRoot(name)) : orderDemoRoot(name);
     return withShops ? { ...withDemoShops(base), orders: base.orders } : base;
   });
   return <OrderView root={root} today={DEMO_TODAY} demo nowIso={() => `${DEMO_TODAY}T09:00:00+07:00`} initial={{ ...initial, ...(withRecipient ? { recipient: DEMO_RECIPIENT } : {}) }} />; // no persist: a demo saves nothing

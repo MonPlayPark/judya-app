@@ -2,6 +2,19 @@
 
 Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every session.
 
+## M4 PR 11.4 — order history, cancel, "สั่งซ้ำ" (5 พ.ย. 2569)
+
+Branch `m4-pr11-order` (PR #39, draft). The clock button on `#/n/order` opens the history in the same page (`?screen=history`, ticked lines kept): pills ทั้งหมด / รอรับของ / รับแล้ว, one card per order (date, shop, N รายการ, status chip, total), "ยกเลิกใบสั่ง" for `waiting` only (one write, `closedAt`, stock untouched), "สั่งซ้ำ" for received / cancelled (adds to the list, nothing removed, reason "สั่งซ้ำ", shop cleared). Faded "เร็ว ๆ นี้" buttons: รับของแล้ว, รับของที่เหลือ, ไม่รอแล้ว (11.5). Fixes: faded "บันทึกว่าสั่งแล้ว"; bar + menu in one sticky box. Test link: `#/n/order?demo=normal&screen=history&orders=history`. Details and own decisions: DECISIONS "M4 PR 11.4".
+
+### Status
+tsc, `npm test` 1054 pass (1014 before), build pass, JS gzip 161.29 kB (158.69 before). `check:overflow`: see the PR comment. Pictures: branch `shots-pr11-4`.
+
+### Left for later (do not start before the owner says)
+11.5 receiving + stock (changes an order to `partial` / `received`), 11.6 Home buttons.
+
+### Waiting for the owner
+A look at the pictures and the "decided on my own" list (card icon, total with only a fee, "สั่งซ้ำ" counting).
+
 ## M4 PR 11.3b-2b — "สั่งแล้วใช่ไหม" sheet and saving the order (4 พ.ย. 2569)
 
 Branch `m4-pr11-order` (PR #39, draft). On `#/n/order` with a shop chosen: "บันทึกว่าสั่งแล้ว" (and a copy / LINE that worked) opens "สั่งแล้วใช่ไหม"; "สั่งแล้ว" writes one `waiting` order plus the prices typed there with ONE `saveRoot`, the booked lines leave the list, toast "บันทึกใบสั่งแล้ว"; "ยังไม่ได้สั่ง" saves nothing. Medicines on a `waiting` / `partial` order start unticked with the badge "สั่งแล้ว รอรับ". **Still no** history, receiving, Home button or stock cut.

@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('virtual:pwa-register', () => ({ registerSW: () => async () => {} }));
@@ -8,10 +8,14 @@ vi.mock('virtual:pwa-register', () => ({ registerSW: () => async () => {} }));
 import { App } from '../../App';
 import { sampleRootV3 } from '../../domain/v3/fixtures';
 import { DEMO_TODAY } from '../../domain/v3/homeDemo';
-import { ORDER_DEMO_NAMES, orderDemoRoot, type OrderDemoName } from '../../domain/v3/orderDemo';
+import { ORDER_DEMO_NAMES, orderDemoRoot, withDemoHistory, type OrderDemoName } from '../../domain/v3/orderDemo';
 import * as storage from '../../domain/v3/storage';
 import { STORAGE_KEY, type KeyValueStore } from '../../domain/v3/storage';
 import { OrderV3Route } from './OrderPage';
+import { OrderView } from './OrderV3';
+import type { Root } from '../../domain/v3/schema';
+import { orderCandidates } from '../../domain/v3/orderDraft';
+import { buildOrderLines } from '../../domain/v3/orderLines';
 
 const memoryStore = (initial: Record<string, string> = {}): KeyValueStore & { data: Record<string, string> } => {
   const data = { ...initial };
@@ -22,6 +26,13 @@ const demo = (name: OrderDemoName, extra = '') => {
   return render(<OrderV3Route />);
 };
 /** The floating message is drawn in <body> after the page, so it is the last element with role status (the demo banner has the role too). */
+/** Moves to another hash and lets the page see it (jsdom sends hashchange later, so it is sent here). */
+const go = (hash: string): void => {
+  act(() => {
+    window.location.hash = hash;
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+  });
+};
 const toastOf = (): HTMLElement => screen.getAllByRole('status').at(-1)!;
 const row = (name: RegExp | string) => screen.getByRole('checkbox', { name: new RegExp(`เลือกสั่ง ${typeof name === 'string' ? name : name.source}`) }).closest('li') as HTMLElement;
 
@@ -88,14 +99,6 @@ describe('the list', () => {
       expect(screen.getByText('0 รายการ')).toBeInTheDocument();
       unmount();
     }
-  });
-
-  it('the history button is "coming soon": faded, it only shows the floating message', () => {
-    demo('normal');
-    const b = screen.getByRole('button', { name: 'ประวัติการสั่งซื้อ' });
-    expect(b).toHaveAttribute('aria-disabled', 'true');
-    fireEvent.click(b);
-    expect(toastOf()).toHaveTextContent('เร็ว ๆ นี้');
   });
 
   it('the main button "ดูข้อความสั่งยา" is a real button now (it scrolls to the message card), not coming soon (M4 PR 11.3b-1)', () => {
@@ -442,5 +445,274 @@ describe('F. this page writes storage in one way only', () => {
     for (const call of get.mock.calls) expect(call[0]).toBe(STORAGE_KEY);
     expect(window.localStorage.getItem(STORAGE_KEY)).toBe(real);
     window.localStorage.clear();
+  });
+});
+
+describe('history (M4 PR 11.4)', () => {
+  const HIST = '&orders=history&screen=history';
+  const card = (date: string): HTMLElement => screen.getByText(date).closest('li') as HTMLElement;
+  const liveStore = () => {
+    const store = memoryStore();
+    expect(storage.saveRoot(withDemoHistory(orderDemoRoot('normal')), store)).toEqual({ ok: true });
+    return store;
+  };
+  const live = (store: ReturnType<typeof memoryStore>) => {
+    window.location.hash = `#/n/order?screen=history`;
+    return render(<OrderV3Route getToday={() => DEMO_TODAY} store={store} />);
+  };
+  const saved = (store: ReturnType<typeof memoryStore>): Root => {
+    const res = storage.loadRoot(store);
+    if (res.status !== 'ok') throw new Error('store not readable');
+    return res.root;
+  };
+
+  it('header: back, clock icon, title "ประวัติการสั่งยา"; the main menu is there and the bottom bar is not', () => {
+    demo('normal', HIST);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('ประวัติการสั่งยา');
+    expect(screen.getByRole('link', { name: 'กลับหน้าสั่งซื้อยา' })).toHaveAttribute('href', '#/n/order?demo=normal&orders=history');
+    expect(screen.getByRole('navigation', { name: 'เมนูหลัก' })).toBeInTheDocument();
+    expect(screen.queryByText('ดูข้อความสั่งยา')).not.toBeInTheDocument();
+  });
+
+  it('the clock button on the order page is a link to the history (not coming soon) and keeps the demo options', () => {
+    demo('normal', '&orders=history');
+    expect(screen.getByRole('link', { name: 'ประวัติการสั่งซื้อ' })).toHaveAttribute('href', '#/n/order?demo=normal&orders=history&screen=history');
+  });
+
+  it('the ticked lines survive going to the history and back', () => {
+    demo('normal', '&orders=history');
+    fireEvent.click(screen.getByRole('checkbox', { name: 'เลือกสั่ง Amlodipine 5 mg' }));
+    go('#/n/order?demo=normal&orders=history&screen=history');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('ประวัติการสั่งยา');
+    go('#/n/order?demo=normal&orders=history');
+    expect(screen.getByRole('checkbox', { name: 'เลือกสั่ง Amlodipine 5 mg' })).toBeChecked();
+  });
+
+  it('filter: starts at all (4 cards, newest first, with the cancelled one); waiting = waiting + partial; received; pills say which is pressed', () => {
+    demo('normal', HIST);
+    const names = () => screen.getAllByRole('heading', { level: 2 }).map((h) => h.closest('li')?.textContent ?? '');
+    expect(screen.getByRole('button', { name: 'ทั้งหมด' })).toHaveAttribute('aria-pressed', 'true');
+    expect(names()).toHaveLength(4);
+    const dates = ['28 ต.ค. 2569', '20 ต.ค. 2569', '12 ต.ค. 2569', '5 ต.ค. 2569'];
+    const text = names();
+    dates.forEach((d, i) => expect(text[i]).toContain(d));
+    fireEvent.click(screen.getByRole('button', { name: 'รอรับของ' }));
+    expect(screen.getByRole('button', { name: 'รอรับของ' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'ทั้งหมด' })).toHaveAttribute('aria-pressed', 'false');
+    expect(names()).toHaveLength(2);
+    expect(screen.queryByText('5 ต.ค. 2569')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'รับแล้ว' }));
+    expect(names()).toHaveLength(1);
+    expect(screen.getByText('12 ต.ค. 2569')).toBeInTheDocument();
+  });
+
+  it('an empty category says so', () => {
+    demo('normal', '&screen=history');
+    expect(screen.getByText('ยังไม่มีใบสั่งในหมวดนี้')).toBeInTheDocument();
+    cleanup();
+    demo('normal', HIST.replace('orders=history', 'orders=waiting'));
+    fireEvent.click(screen.getByRole('button', { name: 'รับแล้ว' }));
+    expect(screen.getByText('ยังไม่มีใบสั่งในหมวดนี้')).toBeInTheDocument();
+  });
+
+  it('card: shop name, date, N รายการ, a status chip with a word, and the total (18px navy is in the css)', () => {
+    demo('normal', HIST);
+    const c = within(card('28 ต.ค. 2569'));
+    expect(c.getByText('ร้านทดสอบ ก')).toBeInTheDocument();
+    expect(c.getByText('2 รายการ')).toBeInTheDocument();
+    expect(c.getByText('รอรับของ')).toBeInTheDocument();
+    expect(within(card('20 ต.ค. 2569')).getByText('รับบางส่วน')).toBeInTheDocument();
+    expect(within(card('12 ต.ค. 2569')).getByText('รับแล้ว')).toBeInTheDocument();
+    expect(within(card('5 ต.ค. 2569')).getByText('ยกเลิก', { selector: 'span' })).toBeInTheDocument();
+    const css = readFileSync(resolve(__dirname, 'OrderHistory.module.css'), 'utf8');
+    expect(css).toMatch(/\.total\s*\{[^}]*18px[^}]*navy/);
+  });
+
+  it('total: with the fee when it was included, a note for lines without a price, "ยังไม่มีราคา" when none has one', () => {
+    demo('normal', HIST);
+    expect(within(card('28 ต.ค. 2569')).getByText('฿100')).toBeInTheDocument(); // 30 x 2 + fee 40
+    expect(within(card('28 ต.ค. 2569')).getByText('ไม่รวม 1 รายการที่ยังไม่มีราคา')).toBeInTheDocument();
+    expect(within(card('20 ต.ค. 2569')).getByText('฿50')).toBeInTheDocument(); // no fee: shipping was off
+    expect(within(card('12 ต.ค. 2569')).getByText('฿190')).toBeInTheDocument();
+    expect(within(card('12 ต.ค. 2569')).queryByText(/ไม่รวม/)).not.toBeInTheDocument();
+    expect(within(card('5 ต.ค. 2569')).getByText('ยังไม่มีราคา')).toBeInTheDocument();
+  });
+
+  it('buttons by status: waiting = faded "รับของแล้ว" + working "ยกเลิกใบสั่ง"; partial = chip "ยังรอ N รายการ" + two faded, no cancel; received / cancelled = "สั่งซ้ำ"', () => {
+    demo('normal', HIST);
+    const w = within(card('28 ต.ค. 2569'));
+    expect(w.getByRole('button', { name: /รับของแล้ว/ })).toHaveAttribute('aria-disabled', 'true');
+    expect(w.getByRole('button', { name: 'ยกเลิกใบสั่ง' })).not.toHaveAttribute('aria-disabled');
+    expect(w.queryByRole('button', { name: /สั่งซ้ำ/ })).not.toBeInTheDocument();
+    const p = within(card('20 ต.ค. 2569'));
+    expect(p.getByText('ยังรอ 2 รายการ')).toBeInTheDocument();
+    expect(p.getByRole('button', { name: /รับของที่เหลือ/ })).toHaveAttribute('aria-disabled', 'true');
+    expect(p.getByRole('button', { name: /ไม่รอแล้ว/ })).toHaveAttribute('aria-disabled', 'true');
+    expect(p.queryByRole('button', { name: 'ยกเลิกใบสั่ง' })).not.toBeInTheDocument();
+    expect(p.queryByRole('button', { name: /สั่งซ้ำ/ })).not.toBeInTheDocument();
+    for (const d of ['12 ต.ค. 2569', '5 ต.ค. 2569']) {
+      expect(within(card(d)).getByRole('button', { name: /สั่งซ้ำ/ })).not.toHaveAttribute('aria-disabled');
+      expect(within(card(d)).queryByRole('button', { name: 'ยกเลิกใบสั่ง' })).not.toBeInTheDocument();
+    }
+    expect(within(card('28 ต.ค. 2569')).getByRole('button', { name: /รับของแล้ว/ })).toHaveTextContent('เร็ว ๆ นี้');
+  });
+
+  it('the three faded buttons do nothing when pressed: no message, no sheet, no write', () => {
+    const setItem = vi.spyOn(Storage.prototype, 'setItem');
+    demo('normal', HIST);
+    const pressed = [
+      within(card('28 ต.ค. 2569')).getByRole('button', { name: /รับของแล้ว/ }),
+      within(card('20 ต.ค. 2569')).getByRole('button', { name: /รับของที่เหลือ/ }),
+      within(card('20 ต.ค. 2569')).getByRole('button', { name: /ไม่รอแล้ว/ }),
+    ];
+    for (const b of pressed) fireEvent.click(b);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('status')).toHaveLength(1); // only the demo banner: no floating message
+    expect(setItem).not.toHaveBeenCalled();
+  });
+
+  it('cancel sheet: the title, the line "<shop> · <date> · N รายการ", the small line; "ไม่ยกเลิก" closes it and writes nothing', () => {
+    const store = liveStore();
+    const setItem = vi.spyOn(store, 'setItem');
+    live(store);
+    fireEvent.click(within(card('28 ต.ค. 2569')).getByRole('button', { name: 'ยกเลิกใบสั่ง' }));
+    const sheet = screen.getByRole('dialog', { name: 'ยกเลิกใบสั่งนี้ไหม' });
+    expect(within(sheet).getByText('ร้านทดสอบ ก · 28 ต.ค. 2569 · 2 รายการ')).toBeInTheDocument();
+    expect(within(sheet).getByText('ใบสั่งจะเป็นสถานะ "ยกเลิก" สต็อกยาไม่เปลี่ยน')).toBeInTheDocument();
+    fireEvent.click(within(sheet).getByRole('button', { name: 'ไม่ยกเลิก' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(setItem).not.toHaveBeenCalled();
+    expect(saved(store).orders.find((o) => o.id === 'o1')?.status).toBe('waiting');
+  });
+
+  it('cancel works: ONE write, status cancelled + closedAt, nothing else changed; the sheet closes, the message shows, the card becomes cancelled', () => {
+    const store = liveStore();
+    const before = saved(store);
+    const save = vi.spyOn(storage, 'saveRoot');
+    live(store);
+    fireEvent.click(within(card('28 ต.ค. 2569')).getByRole('button', { name: 'ยกเลิกใบสั่ง' }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'ยกเลิกใบสั่ง' }));
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(toastOf()).toHaveTextContent('ยกเลิกใบสั่งแล้ว');
+    const after = saved(store);
+    const o = after.orders.find((x) => x.id === 'o1')!;
+    expect(o.status).toBe('cancelled');
+    expect(typeof o.closedAt).toBe('string');
+    expect({ ...after, orders: [] }).toEqual({ ...before, orders: [] });
+    expect(after.orders.filter((x) => x.id !== 'o1')).toEqual(before.orders.filter((x) => x.id !== 'o1'));
+    expect(within(card('28 ต.ค. 2569')).getByText('ยกเลิก', { selector: 'span' })).toBeInTheDocument();
+    expect(within(card('28 ต.ค. 2569')).getByRole('button', { name: /สั่งซ้ำ/ })).toBeInTheDocument();
+  });
+
+  it('a failed write: the data stays as it was, the sheet stays with a message, pressing again works', () => {
+    const store = liveStore();
+    const before = JSON.stringify(saved(store));
+    const save = vi.spyOn(storage, 'saveRoot').mockReturnValueOnce({ ok: false, reason: 'quota' });
+    live(store);
+    fireEvent.click(within(card('28 ต.ค. 2569')).getByRole('button', { name: 'ยกเลิกใบสั่ง' }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'ยกเลิกใบสั่ง' }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(within(screen.getByRole('dialog')).getByRole('alert')).toHaveTextContent('บันทึกไม่ได้');
+    expect(JSON.stringify(saved(store))).toBe(before);
+    expect(within(card('28 ต.ค. 2569')).getByText('รอรับของ')).toBeInTheDocument();
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'ยกเลิกใบสั่ง' }));
+    expect(save).toHaveBeenCalledTimes(2);
+    expect(saved(store).orders.find((o) => o.id === 'o1')?.status).toBe('cancelled');
+  });
+
+  it('demo: a cancelled order lives in memory, nothing is written; its medicine is a normal suggestion again on the list', () => {
+    const setItem = vi.spyOn(Storage.prototype, 'setItem');
+    const removeItem = vi.spyOn(Storage.prototype, 'removeItem');
+    demo('normal', '&orders=history');
+    expect(within(row('Simvastatin')).getByText('สั่งแล้ว รอรับ')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'เลือกสั่ง Simvastatin 20 mg' })).not.toBeChecked();
+    go('#/n/order?demo=normal&orders=history&screen=history');
+    fireEvent.click(within(card('28 ต.ค. 2569')).getByRole('button', { name: 'ยกเลิกใบสั่ง' }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'ยกเลิกใบสั่ง' }));
+    expect(within(card('28 ต.ค. 2569')).getByText('ยกเลิก', { selector: 'span' })).toBeInTheDocument();
+    go('#/n/order?demo=normal&orders=history');
+    expect(within(row('Simvastatin')).queryByText('สั่งแล้ว รอรับ')).not.toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'เลือกสั่ง Simvastatin 20 mg' })).toBeChecked();
+    expect(setItem).not.toHaveBeenCalled();
+    expect(removeItem).not.toHaveBeenCalled();
+  });
+
+  it('"สั่งซ้ำ" from a received order: adds to the list that is there (nothing removed, no double), all ticked, label "สั่งซ้ำ", the chosen shop is cleared, floating message', () => {
+    demo('normal', '&orders=history&shops=three&shop=s1');
+    // the list now: suggested lines; tick one by hand to prove it stays
+    fireEvent.click(screen.getByRole('checkbox', { name: 'เลือกสั่ง Amlodipine 5 mg' }));
+    const rowsBefore = screen.getAllByRole('checkbox').length;
+    expect(screen.getByText('เลือกแล้ว')).toBeInTheDocument(); // shop s1 is chosen
+    go('#/n/order?demo=normal&orders=history&shops=three&shop=s1&screen=history');
+    fireEvent.click(within(card('12 ต.ค. 2569')).getByRole('button', { name: /สั่งซ้ำ/ }));
+    expect(window.location.hash).not.toContain('screen=history');
+    go('#/n/order?demo=normal&orders=history&shops=three&shop=s1');
+    expect(toastOf()).toHaveTextContent('คัดลอกรายการมาแล้ว ใช้ราคาล่าสุดของแต่ละร้าน');
+    expect(screen.getByRole('checkbox', { name: 'เลือกสั่ง Amlodipine 5 mg' })).toBeChecked(); // still there, untouched
+    expect(screen.getAllByRole('checkbox').length).toBeGreaterThanOrEqual(rowsBefore); // nothing removed
+    expect(screen.queryByText('เลือกแล้ว')).not.toBeInTheDocument(); // the shop is cleared
+    // Simvastatin was on the list already (suggested): not doubled; Losartan was not on it: added, ticked, labelled "สั่งซ้ำ", old quantity
+    expect(screen.getAllByRole('checkbox', { name: 'เลือกสั่ง Simvastatin 20 mg' })).toHaveLength(1);
+    expect(screen.getByRole('checkbox', { name: 'เลือกสั่ง Losartan 50 mg' })).toBeChecked();
+    expect(within(row('Losartan')).getByText('สั่งซ้ำ')).toBeInTheDocument();
+    expect(within(row('Losartan')).getByText('30')).toBeInTheDocument();
+  });
+
+  it('"สั่งซ้ำ" from a cancelled order works too, and a medicine that is gone is skipped and counted in the message', () => {
+    const r = withDemoHistory(orderDemoRoot('normal'));
+    const draftKeys = new Set(buildOrderLines(r, DEMO_TODAY).map((l) => l.key));
+    const other = orderCandidates(r, DEMO_TODAY, draftKeys).find((c) => c.ref.kind === 'med')!;
+    const medId = other.ref.kind === 'med' ? other.ref.medicationId : '';
+    const a = r.assignments.find((x) => x.medicationId === medId)!;
+    const o4 = r.orders.find((o) => o.id === 'o4')!;
+    const lines = [
+      { ...o4.lines[0]!, source: { kind: 'med' as const, medicationId: medId, shares: [{ assignmentId: a.id, qty: 1 }] }, qtyOrdered: 2 },
+      { ...o4.lines[0]!, source: { kind: 'med' as const, medicationId: 'gone', shares: [{ assignmentId: 'gone', qty: 1 }] } },
+    ];
+    // the order refers to a medicine that no longer exists: the schema would refuse it in storage, so this is a view-level check with a memory root
+    const root = { ...r, orders: r.orders.map((o) => (o.id === 'o4' ? { ...o, lines } : o)) };
+    window.location.hash = '#/n/order?demo=normal&screen=history';
+    render(<OrderView root={root} today={DEMO_TODAY} demo />);
+    fireEvent.click(within(card('5 ต.ค. 2569')).getByRole('button', { name: /สั่งซ้ำ/ }));
+    expect(toastOf()).toHaveTextContent('ข้าม 1 รายการที่ไม่มีในรายการยาแล้ว');
+    go('#/n/order?demo=normal');
+    const added = within(row(other.name.split(' ')[0]!));
+    expect(added.getByText('สั่งซ้ำ')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: new RegExp(`เลือกสั่ง ${other.name.split(' ')[0]}`) })).toBeChecked();
+  });
+
+  it('"สั่งซ้ำ" brings a typed medicine back with its name, kind and strength', () => {
+    const r = withDemoHistory(orderDemoRoot('normal'));
+    const o3 = r.orders.find((o) => o.id === 'o3')!;
+    const typed = { source: { kind: 'free' as const, name: 'ยาพิมพ์เองตัวอย่าง', medKind: 'tablet' as const, strength: { value: 5, unit: 'mg' as const } }, qtyOrdered: 2, sellUnit: 'กล่อง', qtyReceived: 2, leftover: null };
+    const root = { ...r, orders: r.orders.map((o) => (o.id === 'o3' ? { ...o3, lines: [typed] } : o)) };
+    window.location.hash = '#/n/order?demo=normal&screen=history';
+    render(<OrderView root={root} today={DEMO_TODAY} demo />);
+    fireEvent.click(within(card('12 ต.ค. 2569')).getByRole('button', { name: /สั่งซ้ำ/ }));
+    go('#/n/order?demo=normal');
+    expect(screen.getByRole('checkbox', { name: 'เลือกสั่ง ยาพิมพ์เองตัวอย่าง 5 mg' })).toBeChecked();
+    expect(within(row('ยาพิมพ์เองตัวอย่าง')).getByText('สั่งซ้ำ')).toBeInTheDocument();
+  });
+
+  it('"สั่งซ้ำ" in a demo and in live saves nothing', () => {
+    const store = liveStore();
+    const save = vi.spyOn(storage, 'saveRoot');
+    live(store);
+    fireEvent.click(within(card('12 ต.ค. 2569')).getByRole('button', { name: /สั่งซ้ำ/ }));
+    expect(save).not.toHaveBeenCalled();
+  });
+
+  it('the floating message in the history stays above the main menu (the lift is measured from the menu on top of the page, not from a bar)', () => {
+    demo('normal', HIST);
+    expect(document.documentElement.style.getPropertyValue('--toast-bottom')).not.toBe(''); // set from the dock, there is no bar
+  });
+
+  it('the disabled "บันทึกว่าสั่งแล้ว" button is faded like .copy / .line, and the bar sits in one box with the menu', () => {
+    const css = readFileSync(resolve(__dirname, 'OrderMessage.module.css'), 'utf8');
+    expect(css).toMatch(/\.call:disabled\s*\{[^}]*color-ink-muted/);
+    const page = readFileSync(resolve(__dirname, 'OrderV3.module.css'), 'utf8');
+    expect(page).toMatch(/\.dock\s*\{[^}]*position:\s*sticky/);
+    expect(page).not.toMatch(/bottom:\s*calc\(72px/);
   });
 });

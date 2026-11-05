@@ -93,7 +93,7 @@ describe('+ / - and reason labels', () => {
     expect(stepLine({ ...l, qtyOrdered: 5, ticked: true }, -1)).toMatchObject({ qtyOrdered: 4, ticked: true });
   });
   it('has a word for every reason', () => {
-    expect(REASON_LABEL).toEqual({ low: 'ใกล้หมด', unknown: 'ไม่ทราบสต็อก', typed: 'ยาใหม่ ยังไม่อยู่ในรายการยา', manual: 'เลือกเพิ่มเอง' });
+    expect(REASON_LABEL).toEqual({ low: 'ใกล้หมด', unknown: 'ไม่ทราบสต็อก', typed: 'ยาใหม่ ยังไม่อยู่ในรายการยา', manual: 'เลือกเพิ่มเอง', repeat: 'สั่งซ้ำ' });
   });
 });
 

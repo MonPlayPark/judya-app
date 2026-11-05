@@ -90,3 +90,35 @@ export function withDemoWaitingOrder(root: Root): Root {
   };
   return { ...root, shops: [{ id: 's1', name: 'ร้านทดสอบ ก', phone: '021234567', delivery: { kind: 'deliver', fee: 40 } }], orders: [order] };
 }
+
+/** For the test link `&orders=history` (demo only): two made-up shops and four orders - one of each status (waiting, partial, received, cancelled),
+ * with and without prices, a typed medicine (the received one holds a medicine that is not on the suggested list, so "สั่งซ้ำ" adds it), a delivery fee and a pick-up. Nothing is stored. */
+export function withDemoHistory(root: Root): Root {
+  const med = (medicationId: string, qty: number, got: number, extra: Partial<Order['lines'][number]> = {}): Order['lines'][number] => {
+    const a = root.assignments.find((x) => x.medicationId === medicationId);
+    return { source: { kind: 'med', medicationId, shares: [{ assignmentId: a?.id ?? '', qty }] }, qtyOrdered: qty, sellUnit: 'เม็ด', perSellUnit: 1, qtyReceived: got, leftover: null, ...extra };
+  };
+  const at = (day: string): string => `${day}T09:00:00+07:00`;
+  const orders: Order[] = [
+    { id: 'o1', shopId: 's1', shopName: 'ร้านทดสอบ ก', createdAt: at('2026-10-28'), status: 'waiting', includeShipping: true, shippingFee: 40, lines: [med('m1', 30, 0, { unitPrice: 2 }), med('m2', 10, 0)] },
+    {
+      id: 'o2',
+      shopId: 's2',
+      shopName: 'ร้านทดสอบ ข',
+      createdAt: at('2026-10-20'),
+      status: 'partial',
+      includeShipping: false,
+      lines: [med('m1', 10, 10, { unitPrice: 2.5 }), med('m2', 20, 5, { unitPrice: 1.25 }), { source: { kind: 'free', name: 'ยาพิมพ์เองตัวอย่าง', medKind: 'tablet' }, qtyOrdered: 2, sellUnit: 'กล่อง', qtyReceived: 0, leftover: null }],
+    },
+    { id: 'o3', shopId: 's1', shopName: 'ร้านทดสอบ ก', createdAt: at('2026-10-12'), status: 'received', closedAt: at('2026-10-14'), includeShipping: true, shippingFee: 40, lines: [med('m1', 30, 30, { unitPrice: 2 }), med('m5', 30, 30, { unitPrice: 3 })] },
+    { id: 'o4', shopId: 's2', shopName: 'ร้านทดสอบ ข', createdAt: at('2026-10-05'), status: 'cancelled', closedAt: at('2026-10-06'), includeShipping: false, lines: [med('m2', 10, 0)] },
+  ];
+  return {
+    ...root,
+    shops: [
+      { id: 's1', name: 'ร้านทดสอบ ก', phone: '021234567', delivery: { kind: 'deliver', fee: 40 } },
+      { id: 's2', name: 'ร้านทดสอบ ข', phone: '021234568', delivery: { kind: 'pickup' } },
+    ],
+    orders,
+  };
+}
