@@ -44,3 +44,27 @@
   line-height: calc(20px * var(--fs));
   color: var(--color-ink-muted);
 }
+
+/* M4 PR 11.2: taller sheet (92%) and a round close button, only where asked for */
+.tall {
+  max-height: 92%;
+}
+.close {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+  cursor: pointer;
+}
+.titleClosable {
+  padding-right: 52px;
+}

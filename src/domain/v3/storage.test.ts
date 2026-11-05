@@ -187,3 +187,60 @@ describe('storage v3 touches only judya.v3 and judya.v3.prev', () => {
     localStorage.clear();
   });
 });
+
+describe('orders in the new shape (M4 PR 11.1)', () => {
+  it('backup -> start fresh -> restore keeps every order, its shares, shopName, shippingFee and closedAt', () => {
+    const root = sampleRootV3();
+    const s = new FakeStore();
+    expect(saveRoot(root, s)).toEqual({ ok: true });
+    const backup = JSON.stringify(root);
+    expect(startFresh(NOW, s)).toEqual({ ok: true });
+    const fresh = loadRoot(s);
+    expect(fresh.status === 'ok' && fresh.root.orders).toEqual([]);
+
+    const checked = rootSchema.parse(JSON.parse(backup));
+    expect(restoreRoot(checked, s)).toEqual({ ok: true });
+    const back = loadRoot(s);
+    expect(back.status).toBe('ok');
+    const orders = back.status === 'ok' ? back.root.orders : [];
+    expect(orders).toEqual(root.orders);
+    expect(orders[0]?.lines[0]?.source).toEqual({ kind: 'med', medicationId: 'm1', shares: [{ assignmentId: 'a1', qty: 20 }] });
+    expect(orders[1]).toMatchObject({ shopName: 'ร้านตัวอย่าง 2', shippingFee: 40 });
+    expect(orders[3]?.closedAt).toBe(NOW);
+  });
+
+  it('a shop deleted after the order: the order is kept with its shop name', () => {
+    const root = sampleRootV3();
+    root.shops = root.shops.filter((x) => x.id !== 's1');
+    root.prices = root.prices.filter((p) => p.shopId !== 's1');
+    const s = new FakeStore();
+    expect(saveRoot(root, s)).toEqual({ ok: true });
+    const back = loadRoot(s);
+    expect(back.status === 'ok' && back.root.orders[0]?.shopName).toBe('ร้านตัวอย่าง 1');
+  });
+
+  // The older order shape (one person per line: source.kind 'assignment', no shopName) must be refused, not read as something else.
+  const oldShape = () => {
+    const root = JSON.parse(JSON.stringify(sampleRootV3())) as { orders: Record<string, unknown>[] };
+    const o = root.orders[0] as { shopName?: string; lines: { source: unknown }[] };
+    delete o.shopName;
+    o.lines[0]!.source = { kind: 'assignment', assignmentId: 'a1' };
+    return root;
+  };
+
+  it('a file with the older order shape is refused with a message that names the problem', () => {
+    const s = new FakeStore();
+    s.setItem(STORAGE_KEY, JSON.stringify(oldShape()));
+    const r = loadRoot(s);
+    expect(r.status).toBe('corrupt');
+    const reason = r.status === 'corrupt' ? r.reason : '';
+    expect(reason).toContain("the older 'assignment' order format is not supported");
+    expect(reason).toContain('shopName');
+    expect(s.getItem(STORAGE_KEY)).toContain('"assignment"'); // not overwritten
+  });
+
+  it('saveRoot refuses the older shape too', () => {
+    const r = saveRoot(oldShape() as never, new FakeStore());
+    expect(r).toMatchObject({ ok: false, reason: 'invalid' });
+  });
+});

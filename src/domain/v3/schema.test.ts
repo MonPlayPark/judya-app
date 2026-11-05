@@ -27,7 +27,7 @@ describe('v3 fixtures', () => {
       new Set(['government', 'social', 'civil_servant', 'private', 'self_pay', 'other']),
     );
     expect(new Set(r.orders.map((o) => o.status))).toEqual(new Set(['waiting', 'partial', 'received', 'cancelled']));
-    expect(new Set(r.orders.flatMap((o) => o.lines.map((l) => l.source.kind)))).toEqual(new Set(['assignment', 'house', 'free']));
+    expect(new Set(r.orders.flatMap((o) => o.lines.map((l) => l.source.kind)))).toEqual(new Set(['med', 'house', 'free']));
     expect(new Set(r.events.map((e) => e.type))).toEqual(new Set(['start', 'adjust', 'stop', 'resume']));
   });
 });
@@ -250,7 +250,10 @@ describe('v3 price and orders', () => {
     const many = Array.from({ length: 60 }, () => structuredClone(o.lines[0]!));
     ok(orderSchema, { ...o, lines: many });
     bad(orderSchema, { ...o, lines: [{ ...o.lines[0]!, source: { kind: 'free', name: '' } }] });
-    bad(orderSchema, { ...o, lines: [{ ...o.lines[0]!, source: { kind: 'assignment', medicationId: 'm1' } }] });
+    bad(orderSchema, { ...o, lines: [{ ...o.lines[0]!, source: { kind: 'med', medicationId: 'm1' } }] }); // shares missing
+    bad(orderSchema, { ...o, lines: [{ ...o.lines[0]!, source: { kind: 'med', medicationId: 'm1', shares: [] } }] });
+    bad(orderSchema, { ...o, lines: [{ ...o.lines[0]!, source: { kind: 'med', medicationId: 'm1', shares: [{ assignmentId: 'a1', qty: 0 }] } }] });
+    bad(orderSchema, { ...o, lines: [{ ...o.lines[0]!, source: { kind: 'med', medicationId: 'm1', shares: [{ assignmentId: 'a1', qty: 1 }, { assignmentId: 'a1', qty: 2 }] } }] });
   });
 });
 

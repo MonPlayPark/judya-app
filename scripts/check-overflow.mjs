@@ -32,7 +32,35 @@ const V3_ROUTES = ['/', '/n', '/no-such-page', '/old', // M4 PR 7b: an unknown o
   '/n/settings/data', '/n/settings/data?demo=normal', '/n/settings/data?demo=backup', '/n/settings/data?demo=normal&backup=old', '/n/settings/data?demo=nomeds',
   '/n/settings/data?demo=normal&error=not_json', '/n/settings/data?demo=normal&error=wrong_version', '/n/settings/data?demo=normal&error=invalid',
   '/n/settings/data?demo=normal&error=too_big', '/n/settings/data?demo=normal&error=save_failed', '/n/settings/data?demo=normal&sheet=confirm',
-  '/n/settings/data?demo=normal&backup=old&error=wrong_version'];
+  '/n/settings/data?demo=normal&backup=old&error=wrong_version',
+  // v3 order draft (M4 PR 11.2): real data (empty), the three demo houses, the add sheet (both tabs, a repeated name, a name that is in the list),
+  // the unit sheet, and the add sheet on a house with nothing to suggest / no medicine at all
+  '/n/order', '/n/order?demo=normal&orders=waiting&screen=history', '/n/order?demo=normal&orders=history&screen=history', '/n/order?demo=normal&screen=history', '/n/order?demo=normal', '/n/order?demo=nolow', '/n/order?demo=nomeds',
+  '/n/order?demo=normal&sheet=add&tab=meds', '/n/order?demo=normal&sheet=add&tab=new', '/n/order?demo=normal&sheet=add&tab=new&name=Simvastatin',
+  '/n/order?demo=normal&sheet=add&tab=new&name=Meto', '/n/order?demo=normal&sheet=unit', '/n/order?demo=normal&sheet=unit&item=med:m8',
+  '/n/order?demo=nolow&sheet=add&tab=meds', '/n/order?demo=nomeds&sheet=add&tab=meds', '/n/order?demo=nomeds&sheet=add&tab=new',
+  // order message (M4 PR 11.3b-1): the card with an empty / filled recipient, delivery and pick-up, the recipient sheet, the "not complete" sheet
+  // shop choice (M4 PR 11.3b-2a): no shop yet, three shops, switch off, a shop that misses prices with its price sheet, delivery and pick-up chosen, the shop form
+  '/n/order?demo=normal&shops=three', '/n/order?demo=normal&shops=three&shipping=off', '/n/order?demo=normal&shops=three&sheet=prices&shop=s3',
+  '/n/order?demo=normal&shops=three&recipient=full&shop=s1', '/n/order?demo=normal&shops=three&recipient=full&shop=s3', '/n/order?demo=normal&sheet=shop',
+  '/n/order?demo=normal&recipient=full', '/n/order?demo=normal&recipient=full&shops=three&shop=s2', '/n/order?demo=normal&sheet=recipient',
+  '/n/order?demo=normal&sheet=incomplete', '/n/order?demo=normal&recipient=full&sheet=recipient', '/n/order?demo=nolow&recipient=full',
+  // v3 shops page (M4 PR 11.3a): real data (empty), an empty house, three shops, a 40-letter name, the add form (delivery), the edit form
+  '/n/shops', '/n/shops?demo=empty', '/n/shops?demo=normal', '/n/shops?demo=long', '/n/shops?demo=normal&sheet=add', '/n/shops?demo=long&sheet=edit&item=s1',
+  '/n/shops?demo=normal&sheet=edit&item=s3'];
+
+// v3 shops page (M4 PR 11.3a): states that need pressing (pick-up form, wrong values, long values, the delete question).
+const SHOPS_ADD = '/n/shops?demo=normal&sheet=add';
+const fill = (page, label, value) => page.getByLabel(label, { exact: true }).fill(value);
+const SHOPS_SCENARIOS = [
+  ['add, pick-up', SHOPS_ADD, async (page) => { await click(page, 'ไปรับเอง'); }],
+  ['add, wrong values', SHOPS_ADD, async (page) => { await fill(page, 'ชื่อร้าน', 'ก'); await fill(page, 'เบอร์โทร (ไม่บังคับ)', 'abc'); await click(page, 'บันทึก'); }],
+  ['add, same name', SHOPS_ADD, async (page) => { await fill(page, 'ชื่อร้าน', 'ร้านทดสอบ ก'); await fill(page, 'ค่าส่ง', '40'); await click(page, 'บันทึก'); }],
+  ['add, long values', SHOPS_ADD, async (page) => { await fill(page, 'ชื่อร้าน', 'ก'.repeat(40)); await fill(page, 'เบอร์โทร (ไม่บังคับ)', '+66 2 123 4567 000 00'); await fill(page, 'ค่าส่ง', '1234567.89'); }],
+  ['edit, delete question', '/n/shops?demo=normal&sheet=edit&item=s1', async (page) => { await click(page, 'ลบร้านนี้'); }],
+  ['edit long, delete question', '/n/shops?demo=long&sheet=edit&item=s1', async (page) => { await click(page, 'ลบร้านนี้'); }],
+  ['saved toast', SHOPS_ADD, async (page) => { await fill(page, 'ชื่อร้าน', 'ร้านทดสอบ ง'); await fill(page, 'ค่าส่ง', '20'); await click(page, 'บันทึก'); }],
+];
 
 // v3 add medicine (M4 PR 6b): states that need pressing. Each one opens `route`, runs the clicks, then is measured like the rest.
 const ADD = '/n/meds/new?demo=normal&person=p2&name=ยาใหม่ทดสอบ';
@@ -57,6 +85,71 @@ const ADD_SCENARIOS = [
   ['step 3, house', '/n/meds/new?demo=normal&type=house&name=ยาสามัญใหม่&step=2', async (page) => { await click(page, 'แผง'); }],
   ['step 3, existing medicine', '/n/meds/new?demo=normal&name=VitaminD', async (page) => { await page.getByRole('button', { name: /คุณแม่/ }).click(); await page.getByRole('button', { name: 'เพิ่มให้คุณแม่ด้วย' }).click(); await page.getByRole('button', { name: 'ถัดไป' }).click(); }],
   ['dose confirm sheet', `${ADD}&step=2&kind=liquid`, async (page) => { for (let i = 0; i < 11; i += 1) await click(page, 'เพิ่ม เช้า'); await click(page, 'ถัดไป'); await click(page, 'ไม่นับสต็อก'); await click(page, 'บันทึกยา'); }],
+];
+
+// v3 order draft (M4 PR 11.2): states that need pressing. Same shape as ADD_SCENARIOS.
+const ORD = '/n/order?demo=normal';
+const HIST = '/n/order?demo=normal&orders=history&screen=history';
+const NOLOW = '/n/order?demo=nolow'; // many medicines to pick from: the search box and "see more" show
+const SH3 = '/n/order?demo=normal&shops=three';
+const LONGSHOP = `${SH3}&recipient=full`;
+const ORDER_SCENARIOS = [
+  // shop choice (M4 PR 11.3b-2a)
+  ['shops, none yet (big button)', ORD, async () => {}],
+  ['shops, none yet, form opened', ORD, async (page) => { await click(page, 'เพิ่มร้านแรก'); }],
+  ['shops, form with a long name', ORD, async (page) => { await click(page, 'เพิ่มร้านแรก'); await page.getByLabel(/ชื่อร้าน/).fill('ร้านทดสอบ' + 'ก'.repeat(31)); await click(page, 'บันทึก'); }],
+  ['shops, three compared', SH3, async () => {}],
+  ['shops, fee switch off', SH3, async (page) => { await page.getByRole('switch').click(); }],
+  ['shops, price sheet', SH3, async (page) => { await page.getByRole('button', { name: /^ใส่ราคา/ }).click(); }],
+  ['shops, price sheet, wrong value', SH3, async (page) => { await page.getByRole('button', { name: /^ใส่ราคา/ }).click(); await page.getByLabel(/^ราคาต่อ หลอด/).fill('0'); await click(page, 'บันทึกราคา'); }],
+  ['shops, price sheet, long value', SH3, async (page) => { await page.getByRole('button', { name: /^ใส่ราคา/ }).click(); await page.getByLabel(/^ราคาต่อ หลอด/).fill('9'.repeat(30)); }],
+  ['shops, delivery shop chosen', LONGSHOP, async (page) => { await page.getByRole('button', { name: 'เลือกร้าน ร้านทดสอบ ก' }).click(); }],
+  ['shops, pick-up shop chosen', LONGSHOP, async (page) => { await page.getByRole('button', { name: 'เลือกร้าน ร้านทดสอบ ข' }).click(); }],
+  ['shops, shop that misses prices chosen', LONGSHOP, async (page) => { await page.getByRole('button', { name: 'เลือกร้าน ร้านทดสอบ ค' }).click(); }],
+  ['shops, many lines (+ pressed 40 times) with a shop chosen', LONGSHOP, async (page) => { await page.getByRole('button', { name: 'เลือกร้าน ร้านทดสอบ ก' }).click(); const plus = page.getByRole('button', { name: /^เพิ่มจำนวน/ }).first(); for (let i = 0; i < 40; i += 1) await plus.click(); }],
+  // order saved (M4 PR 11.3b-2b)
+  ['book sheet, shop with every price', LONGSHOP, async (page) => { await page.getByRole('button', { name: 'เลือกร้าน ร้านทดสอบ ก' }).click(); await click(page, 'บันทึกว่าสั่งแล้ว'); }],
+  ['book sheet, shop that misses prices (boxes)', LONGSHOP, async (page) => { await page.getByRole('button', { name: 'เลือกร้าน ร้านทดสอบ ค' }).click(); await click(page, 'บันทึกว่าสั่งแล้ว'); }],
+  ['book sheet, wrong price', LONGSHOP, async (page) => { await page.getByRole('button', { name: 'เลือกร้าน ร้านทดสอบ ค' }).click(); await click(page, 'บันทึกว่าสั่งแล้ว'); await page.getByRole('dialog').getByLabel(/^ราคาต่อ หลอด/).fill('0'); await page.getByRole('dialog').getByRole('button', { name: 'สั่งแล้ว' }).click(); }],
+  ['book sheet, long price typed', LONGSHOP, async (page) => { await page.getByRole('button', { name: 'เลือกร้าน ร้านทดสอบ ค' }).click(); await click(page, 'บันทึกว่าสั่งแล้ว'); await page.getByRole('dialog').getByLabel(/^ราคาต่อ หลอด/).fill('9'.repeat(30)); }],
+  ['after booking (toast, lines gone)', LONGSHOP, async (page) => { await page.getByRole('button', { name: 'เลือกร้าน ร้านทดสอบ ก' }).click(); await click(page, 'บันทึกว่าสั่งแล้ว'); await page.getByRole('dialog').getByRole('button', { name: 'สั่งแล้ว' }).click(); }],
+  ['badge "สั่งแล้ว รอรับ"', `${ORD}&orders=waiting`, async () => {}],
+  ['badge, long quantity (+ pressed 40 times)', `${ORD}&orders=waiting`, async (page) => { const plus = page.getByRole('button', { name: /^เพิ่มจำนวน/ }).first(); for (let i = 0; i < 40; i += 1) await plus.click(); }],
+  // order history (M4 PR 11.4)
+  ['history, filter "รอรับของ"', HIST, async (page) => { await click(page, 'รอรับของ'); }],
+  ['history, filter "รับแล้ว"', HIST, async (page) => { await click(page, 'รับแล้ว'); }],
+  ['history, empty category', '/n/order?demo=normal&screen=history', async (page) => { await click(page, 'รับแล้ว'); }],
+  ['history, cancel sheet', HIST, async (page) => { await click(page, 'ยกเลิกใบสั่ง'); }],
+  ['history, cancel done (toast above the menu)', HIST, async (page) => { await click(page, 'ยกเลิกใบสั่ง'); await page.getByRole('dialog').getByRole('button', { name: 'ยกเลิกใบสั่ง', exact: true }).click(); }],
+  ['history, reorder (toast on the order page)', HIST, async (page) => { await page.getByRole('button', { name: /^สั่งซ้ำ/ }).first().click(); }],
+  // layout of the bottom bar and the floating messages (M4 PR 11.3b-2b fix)
+  ['toast, price saved', SH3, async (page) => { await page.getByRole('button', { name: /^ใส่ราคา/ }).click(); await page.getByLabel(/^ราคาต่อ หลอด/).fill('80'); await click(page, 'บันทึกราคา'); }],
+  ['toast, text copied (no shop chosen)', '/n/order?demo=normal&recipient=full&shops=three', async (page) => { await click(page, 'คัดลอกข้อความ'); }],
+  ['toast, long quantity and booking', LONGSHOP, async (page) => { const plus = page.getByRole('button', { name: /^เพิ่มจำนวน/ }).first(); for (let i = 0; i < 40; i += 1) await plus.click(); await page.getByRole('button', { name: 'เลือกร้าน ร้านทดสอบ ก' }).click(); await click(page, 'บันทึกว่าสั่งแล้ว'); await page.getByRole('dialog').getByRole('button', { name: 'สั่งแล้ว' }).click(); }],
+  ['bar, one medicine ticked', ORD, async (page) => { for (const box of await page.getByRole('checkbox').all()) await box.uncheck(); await page.getByRole('checkbox').first().check(); }],
+  ['bar, no waiting order, many lines on the page', `${NOLOW}&sheet=add&tab=meds`, async (page) => { await page.getByRole('button', { name: /^เพิ่ม /  }).first().click(); await page.getByRole('button', { name: 'ปิด', exact: true }).click(); }],
+  // order message (M4 PR 11.3b-1)
+  ['message, nothing ticked', '/n/order?demo=normal&recipient=full', async (page) => { for (const box of await page.getByRole('checkbox').all()) await box.uncheck(); }],
+  ['message, long recipient (300 + 60 + 20 letters)', '/n/order?demo=normal', async (page) => { await click(page, /^ข้อมูลผู้รับ/); await page.getByLabel(/^ที่อยู่/).fill('ก'.repeat(300)); await page.getByLabel('ชื่อผู้รับ').fill('ข'.repeat(60)); await page.getByLabel('เบอร์โทร').fill('1'.repeat(20)); await click(page, 'บันทึก'); }],
+  ['message, long recipient, pick-up', '/n/order?demo=normal&recipient=full&shops=three&shop=s2', async (page) => { await click(page, /^ข้อมูลผู้รับ/); await page.getByLabel('ชื่อผู้รับ').fill('ข'.repeat(60)); await page.getByLabel('เบอร์โทร').fill('1'.repeat(20)); await click(page, 'บันทึก'); }],
+  ['message, wrong values in the sheet', '/n/order?demo=normal&sheet=recipient', async (page) => { await page.getByLabel(/^ที่อยู่/).fill('ก'.repeat(301)); await page.getByLabel('เบอร์โทร').fill('abc'); await click(page, 'บันทึก'); }],
+  ['message, copy with no recipient (sheet)', '/n/order?demo=normal', async (page) => { await click(page, 'คัดลอกข้อความ'); }],
+  ['message, many lines (+ pressed 40 times)', '/n/order?demo=normal&recipient=full', async (page) => { const plus = page.getByRole('button', { name: /^เพิ่มจำนวน/ }).first(); for (let i = 0; i < 40; i += 1) await plus.click(); }],
+  ['nothing ticked', ORD, async (page) => { for (const box of await page.getByRole('checkbox').all()) await box.uncheck(); }],
+  ['long quantity (+ pressed 40 times)', ORD, async (page) => { const plus = page.getByRole('button', { name: /^เพิ่มจำนวน/ }).first(); for (let i = 0; i < 40; i += 1) await plus.click(); }],
+  ['add sheet, see all', `${NOLOW}&sheet=add&tab=meds`, async (page) => { await page.getByRole('button', { name: /^ดูเพิ่ม/ }).click(); }],
+  ['add sheet, search finds nothing', `${NOLOW}&sheet=add&tab=meds`, async (page) => { await page.getByLabel('ค้นหาชื่อยา').fill('zzzz'); }],
+  ['add sheet, one added (toast)', `${ORD}&sheet=add&tab=meds`, async (page) => { await page.getByRole('button', { name: /^เพิ่ม Losartan/ }).click(); }],
+  ['new medicine, box with count', `${ORD}&sheet=add&tab=new&name=ยาใหม่ทดสอบ`, async (page) => { await click(page, 'กล่อง'); await page.getByLabel(/ต่อกล่อง/).fill('30'); }],
+  ['new medicine, other kind (typed unit)', `${ORD}&sheet=add&tab=new&name=ยาใหม่ทดสอบ`, async (page) => { await click(page, 'อื่นๆ'); }],
+  ['new medicine, liquid', `${ORD}&sheet=add&tab=new&name=ยาใหม่ทดสอบ`, async (page) => { await click(page, 'ยาน้ำ'); }],
+  ['new medicine, cream', `${ORD}&sheet=add&tab=new&name=ยาใหม่ทดสอบ`, async (page) => { await click(page, 'ครีม'); }],
+  ['new medicine, wrong strength', `${ORD}&sheet=add&tab=new&name=ยาใหม่ทดสอบ`, async (page) => { await page.getByPlaceholder('เช่น 500').fill('abc'); }],
+  ['new medicine, long name', `${ORD}&sheet=add&tab=new&name=${'ยาที่มีชื่อยาวมากๆ'.repeat(5)}`, async () => {}],
+  ['new medicine, same name, kept as new', `${ORD}&sheet=add&tab=new&name=Simvastatin`, async (page) => { await click(page, 'เพิ่มเป็นยาใหม่'); }],
+  ['unit sheet, box chosen', `${ORD}&sheet=unit`, async (page) => { await click(page, 'กล่อง'); }],
+  ['unit sheet, house medicine', `${ORD}&sheet=unit&item=house:h1`, async () => {}],
+  ['unit sheet, other kind', `${ORD}&sheet=unit&item=med:m3`, async () => {}],
 ];
 
 const chromePath = process.env.CHROMIUM_PATH
@@ -116,6 +209,72 @@ const measureV3 = (minPx) => {
   return out.slice(0, 5).join('; ');
 };
 
+/** Order page layout (M4 PR 11.3b-2b fix): (a) no button / link / tick box whose box overlaps another one (inside the open sheet when one is
+ * open, else on the page; page content that scrolls under a fixed bar is not counted); (b) no button with the browser's own grey border; (c) the floating message does not touch any fixed bar and keeps
+ * 8px above the one under it. A floating message is only there for 3 seconds, so scenarios that show one are measured at once. */
+const measureLayout = () => {
+  const out = [];
+  const shown = (el) => {
+    const r = el.getBoundingClientRect();
+    const cs = getComputedStyle(el);
+    return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none';
+  };
+  const name = (el) => (el.getAttribute('aria-label') ?? el.textContent ?? '').trim().slice(0, 24);
+  const onFixed = (el) => {
+    for (let p = el; p && p !== document.body; p = p.parentElement) if (['fixed', 'sticky'].includes(getComputedStyle(p).position)) return true; // the bottom menu is sticky
+    return false;
+  };
+  const dialog = document.querySelector('[role=dialog]');
+  const items = [...(dialog ?? document).querySelectorAll('button, a[href], input[type=checkbox]')].filter(shown);
+  for (const b of items) {
+    const cs = getComputedStyle(b);
+    if (b.tagName === 'BUTTON' && parseFloat(cs.borderTopWidth) > 0 && ['outset', 'inset', 'ridge', 'groove'].includes(cs.borderTopStyle)) out.push(`browser border on "${name(b)}"`);
+  }
+  for (let i = 0; i < items.length; i += 1) {
+    for (let j = i + 1; j < items.length; j += 1) {
+      const a = items[i];
+      const b = items[j];
+      if (a.contains(b) || b.contains(a)) continue;
+      if (onFixed(a) !== onFixed(b)) continue; // page content scrolling under a fixed bar is normal; the end of the page is checked by measureEnd
+      const ra = a.getBoundingClientRect();
+      const rb = b.getBoundingClientRect();
+      const w = Math.min(ra.right, rb.right) - Math.max(ra.left, rb.left);
+      const h = Math.min(ra.bottom, rb.bottom) - Math.max(ra.top, rb.top);
+      if (w > 2 && h > 2) out.push(`"${name(a)}" overlaps "${name(b)}" (${Math.round(w)}x${Math.round(h)})`);
+    }
+  }
+  const toast = [...document.querySelectorAll('[role=status]')].find((el) => getComputedStyle(el).position === 'fixed');
+  if (toast && !dialog) {
+    const t = toast.getBoundingClientRect();
+    for (const el of document.body.querySelectorAll('*')) {
+      if (el === toast || !['fixed', 'sticky'].includes(getComputedStyle(el).position) || !shown(el)) continue;
+      const r = el.getBoundingClientRect();
+      const across = Math.min(t.right, r.right) - Math.max(t.left, r.left);
+      if (across <= 0) continue;
+      if (Math.min(t.bottom, r.bottom) - Math.max(t.top, r.top) > 0) out.push(`floating message touches a fixed bar (${String(el.className).slice(0, 30)})`);
+      else if (r.top >= t.top && r.top - t.bottom < 7.5) out.push(`floating message only ${Math.round(r.top - t.bottom)}px above a fixed bar`);
+    }
+  }
+  return out.slice(0, 5).join('; ');
+};
+
+/** Scrolled to the very end, the last thing in <main> must end above the highest fixed bar (nothing hides behind it). */
+const measureEnd = () => {
+  if (document.querySelector('[role=dialog]')) return '';
+  window.scrollTo(0, document.documentElement.scrollHeight);
+  const main = document.querySelector('main');
+  const last = main?.lastElementChild;
+  if (!last) return '';
+  const bottom = last.getBoundingClientRect().bottom;
+  let top = Infinity;
+  for (const el of document.body.querySelectorAll('*')) {
+    const cs = getComputedStyle(el);
+    const r = el.getBoundingClientRect();
+    if (['fixed', 'sticky'].includes(cs.position) && r.width > 0 && r.height > 0 && r.height < window.innerHeight * 0.5 && el.tagName !== 'P') top = Math.min(top, r.top);
+  }
+  return bottom > top + 0.5 ? `last block ends at ${Math.round(bottom)}px, behind a bar starting at ${Math.round(top)}px` : '';
+};
+
 await waitForServer();
 const browser = await chromium.launch({ executablePath: chromePath });
 let problems = 0;
@@ -171,6 +330,34 @@ for (const width of WIDTHS) {
       if (bad) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 add-med(${label}): ${bad}`); }
       const small = await page.evaluate(measureV3, fs === 'n' ? 13.9 : 14.9);
       if (small) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 add-med(${label}): ${small}`); }
+    }
+
+    // 1f) v3 order draft after pressing (M4 PR 11.2)
+    for (const [label, route, act] of ORDER_SCENARIOS) {
+      await visit(route, 'v3');
+      await act(page);
+      const bad = await page.evaluate(measure);
+      checked += 1;
+      if (bad) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 order(${label}): ${bad}`); }
+      const small = await page.evaluate(measureV3, fs === 'n' ? 13.9 : 14.9);
+      if (small) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 order(${label}): ${small}`); }
+      const layout = await page.evaluate(measureLayout);
+      checked += 1;
+      if (layout) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 order layout(${label}): ${layout}`); }
+      const end = await page.evaluate(measureEnd);
+      checked += 1;
+      if (end) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 order end(${label}): ${end}`); }
+    }
+
+    // 1g) v3 shops page after pressing (M4 PR 11.3a)
+    for (const [label, route, act] of SHOPS_SCENARIOS) {
+      await visit(route, 'v3');
+      await act(page);
+      const bad = await page.evaluate(measure);
+      checked += 1;
+      if (bad) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 shops(${label}): ${bad}`); }
+      const small = await page.evaluate(measureV3, fs === 'n' ? 13.9 : 14.9);
+      if (small) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 shops(${label}): ${small}`); }
     }
 
     // 1e) v3 "can't read the data" screen (M4 PR 7): corrupt judya.v3 on Home and on two other pages, then the start-over sheets

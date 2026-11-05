@@ -7,6 +7,8 @@ import { RecoveryContext } from './components/v3/recovery';
 import { MedDetailV3Route } from './pages/v3/MedDetailPage';
 import { MedsListV3Route } from './pages/v3/MedsListPage';
 import { MemberFormV3Route } from './pages/v3/MemberFormPage';
+import { OrderV3Route } from './pages/v3/OrderPage';
+import { ShopsV3Route } from './pages/v3/ShopsPage';
 import type { IsoDate } from './domain/calc';
 import { useRoute } from './router';
 import { requestPersistence } from './state/persist';
@@ -21,6 +23,8 @@ export function App({ getToday }: { getToday?: () => IsoDate }) {
  * An unknown route (an old bookmark, a typo) opens Home. */
 function screen(path: string, getToday: (() => IsoDate) | undefined): ReactNode {
   if (path === '/n/meds') return <MedsListV3Route getToday={getToday} />;
+  if (path === '/n/order') return <OrderV3Route getToday={getToday} />; // test links only until step 11.6 puts a button on Home
+  if (path === '/n/shops') return <ShopsV3Route getToday={getToday} />; // reached by link only until PR 14 puts it in settings
   if (path === '/n/members/new') return <MemberFormV3Route getToday={getToday} />;
   if (path === '/n/settings/data') return <DataV3Route getToday={getToday} />;
   if (path === '/n/meds/new') return <AddMedV3Route getToday={getToday} />;

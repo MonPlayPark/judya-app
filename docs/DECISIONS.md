@@ -770,3 +770,267 @@ What was built: `#/` (and the empty app) opens v3 Home; v2 Home moved to `#/old`
 - Ask again, same rule as `DataContext.addMedicine` (BRIEF 3.2): in `LiveAdd` (`AddMedPage.tsx`), after `saveRoot` succeeds and the house had no medicine before, `requestPersistence(undefined, { again: true })`. "No medicine" here = no assignment **and** no house medicine (v2 counted only assignments; v3 has house medicines on the same page, so a first house medicine counts too).
 - Failure is silent: `requestPersistence` catches everything and only sets its status; no message was added. The v2 keys are not read or written (tested).
 - Tests: `PersistV3.test.tsx` (asks once on `#/`, `#/n`, `#/n/meds`, demo; not again when moving between pages; not when already promised; refused / failing / missing `navigator.storage` = page opens, no alert; first medicine asks again, second does not; a house that already has medicines does not; no `judya.v2*` call).
+
+## M4 PR 11.1 — order data and rules, domain only (1 พ.ย. 2569)
+
+Branch `m4-pr11-order`. No screen is touched (`pages/`, `components/`, `App.tsx`, `HomeV3.tsx` unchanged). New: `src/domain/v3/prices.ts`, `orderLines.ts`, `orderCompare.ts` (+ tests). Changed: `orderSchema` / `orderLineSchema` and the reference check in `schema.ts`, the order rows in `fixtures.ts`, and the tests that used the old order shape. `prices` / `shops` schemas, `isLowStock` and storage keys are not changed. Data version stays 3.
+
+### Rules locked by the owner (built as given)
+1. One order = one shop (compare, then pick one).
+2. A medicine typed by hand (`free`) never has a price remembered; only regular and house medicines are (`prices.ts` takes no `free` item).
+3. A shop with orders can be deleted; the order keeps `shopName` (name when the order was made).
+4. Cancelling an order that was partly received keeps the stock already added.
+5. The draft order lives in the page only; nothing is written to the root until "สั่งแล้ว".
+6. Same medicine for several people: split by the `shares` that were ordered; the odd rest goes to the person short the most. Tubes / drop bottles fewer than people: one at a time to the person short the most; people who get none are named on the receiving sheet. *(Built in the receiving step, not in 11.1.)*
+7. Medicine "อื่น ๆ" (kind `other`): stock is not updated automatically when received.
+8. House medicine: the order unit must be the unit its stock is counted in.
+9. A medicine never counted: counting starts from what is received, with a warning that it does not include what was there before.
+10. Tubes: counted in tubes / bottles, received = `spare += qty`; ticked automatically when `tubeLevel` is `low` or `out`. This rule lives only in `orderLines.ts`; `isLowStock` is unchanged because Home and the list use it.
+11. Old orders have no cap. A file with the older order shape is refused with a clear message (see below).
+12. `qtyOrdered` / `qtyReceived` count **sell units** (e.g. 2 boxes); medicine units = `qty x perSellUnit`. `source.shares[].qty` is in **medicine units**.
+
+### Schema (11.1)
+- `source` is now `med { medicationId, shares[{ assignmentId, qty }] }` | `house` | `free`. `shares` has at least 1 entry, `qty` > 0, no assignment twice.
+- Added to the order: `shopName` (required, 1–40), `shippingFee?` (>= 0; the fee at order time, so editing the shop later does not change history), `closedAt?`.
+- Reference check: `medicationId` -> medications; every share's `assignmentId` -> assignments **and** that assignment must belong to the line's medication (an assignment whose own medicine is missing is reported once, by the assignment rule).
+- The older shape (`source.kind = 'assignment'`) is refused; the error text says "the older 'assignment' order format is not supported". Nothing in the owner's phone uses it (orders were always `[]`).
+
+### Compare rule (`orderCompare.ts`)
+- A shop is compared on the lines it has a usable price for; the others are not counted and the row says **"ไม่รวม N รายการที่ยังไม่มีราคา"**. A typed (`free`) line is therefore "not counted" in every shop.
+- Delivery: pick-up 0; delivery shop: fee, or 0 when items total >= `freeOver` (exactly equal = free). **"ซื้อเพิ่มอีก ฿N ส่งฟรี"** where N = `freeOver` - items total while that is positive (only for a shop with a fee > 0). The switch "รวม / ไม่รวมค่าส่ง" only changes `total`; `shipping` is always reported. Money is rounded to the satang.
+- Units: a price in the same sell unit (same name, and the same `perSellUnit` when both are known) is used as it is, the newest first. Otherwise the newest price that can be converted: medicine units = `qtyOrdered x line.perSellUnit`, shop sell units = that / shop `perSellUnit`, **rounded up**, at least 1. If either count is unknown, no price. This matches v2 (`ceil(qty / perSellUnit)`); v2 had only one price per shop and medicine, so choosing between units is new.
+
+### Decided on my own — please check
+1. **Order's `shopId` is no longer checked against `shops`.** The owner allows deleting a shop that has orders; with the old check the whole file would be refused. `shopName` is the kept name. (The old test "order -> shop" was turned into "a deleted shop is fine".)
+2. **House medicine and units:** its count per unit is always 1, so a price in another unit *cannot be converted* and counts as no price. v2 took any price of the shop whatever its unit; this is stricter, following rule "if it cannot be converted, no price".
+3. **Order of shops with partly missing prices** (the owner did not say): shops with every line priced (cheapest total first), then shops missing some (fewer missing first, then cheaper), then shops with no price at all. Without this a shop with one cheap item would look cheapest.
+4. **A shop with no price at all** is still a row (total 0, no delivery fee, "ไม่รวม N รายการ…") and sorts last, so the screen can say so.
+5. **Upsert key** is (shop, item, trimmed sell unit) as asked; `perSellUnit` is not part of the key, so a second price with the same unit name but another count replaces the first (newest wins).
+6. **Draft line start:** sell unit = unit of the newest remembered price of that medicine in any shop (`perSellUnit` from it), else the medicine's own unit (เม็ด, มล., หลอด …) with 1 per unit. `qtyOrdered` = need / `perSellUnit` rounded up.
+7. **Unknown stock:** need = the whole target over `orderDays` (as v2). Tubes never counted: 1 tube, shown, not ticked. A line that is low but needs nothing (`orderDays` short) stays listed, unticked, with `shares: []` — the receiving / save step must rebuild shares before saving (the schema needs at least 1).
+8. **Line quantity** = sum of all users' needs, not only the low ones (as v2); ticked only if some user is low.
+9. **Name clash for typed medicines** compares with every medicine in the app and house medicines that are not removed, ignoring case and all spaces; the line is still made and `clash` tells the screen to offer the app's medicine.
+10. Tests: 759 now (684 before).
+11. **Free line: `perSellUnit` is optional and never filled in by the app** (`makeFreeLine` takes it as an option; given it must be a number > 0, else `invalid_per_sell_unit`; left out the line has none). `DraftLine.perSellUnit` is optional only for free lines; regular and house lines keep a number. Tests: 762.
+
+### Still open for the owner
+- Is the shop order in item 3 right, or should shops with missing prices be left out of the ranking?
+- The compare screen needs an order for `free` lines when no shop is chosen yet — not decided here (11.2).
+
+## M4 PR 11.2 — order draft page and the "add an item" sheet (1 พ.ย. 2569)
+
+Branch `m4-pr11-order` (PR #39). First step with a screen: route `#/n/order` (test links only, not tied to any Home button — that is 11.6). New: `src/domain/v3/orderDraft.ts`, `orderDemo.ts`, `src/pages/v3/OrderPage.tsx`, `OrderV3.tsx`, `OrderSheets.tsx` (+ css, tests). Changed: `orderLines.ts` (manual line, typed kind / strength, tube start unit), `schema.ts` (free source), `Sheet.tsx` (two optional props), `App.tsx`, `scripts/check-overflow.mjs`. Data version stays 3; storage keys unchanged. **The page never writes storage** (it does not import `saveRoot`; tests spy on it, on `Storage.prototype.setItem/removeItem`, and scan the three source files). Normal mode only reads `judya.v3`; demo mode does not even read.
+
+### Rules locked by the owner (built as given)
+1. A medicine of the app: "สั่งเป็น" and "เม็ดต่อหน่วย" can be changed on the line, this order only (starts from the unit the app remembers, else the medicine's own unit). House medicine is locked to its stock unit.
+2. Typed name that equals a medicine of the app: warning under the name + "ใช้ยาในระบบ" / "เพิ่มเป็นยาใหม่".
+3. Reached only by the test link `#/n/order` (`?demo=normal|nolow|nomeds`); no Home button.
+4. A typed (free) line keeps its kind and strength: optional fields of the free order source, so older data still passes. The kind field is called **`medKind`** (`kind` is already the tag of the source union).
+5. "สั่งเป็น" by kind: tablet / capsule = กล่อง แผง ขวด + the pill; liquid = ขวด; cream = หลอด; sachet = กล่อง ซอง; drops = ขวด; other = typed.
+6. Nothing is written; the draft lives in the page. 7. 11.3 parts are not drawn; the history (clock) button and "ดูข้อความสั่งยา" are `ComingSoon`.
+
+### Domain added (all with tests)
+- `makeManualLine` (reason `manual`, 1 sell unit, same unit / tube / house rules as 11.1); `orderCandidates` (the pick list: "เหลือ N วัน · name", "ไม่ทราบสต็อก · name", tubes "สำรอง N หลอด/ขวด", nearest to empty first, search with `normalizeName`); `sellUnitChoices`; `makeFreeLine` takes `medKind` / `strength` / `addToList`; `changeSellUnit` (new line, root untouched, house refused); `qtyText`, `stepLine`, `defaultPerSellUnit`, `asksPerSellUnit`.
+- Tests: 828 now (762 before).
+
+### Different from the board / decided on my own — please check
+1. **Unit sheet "แก้หน่วยสั่ง" is my own small design** (the board has none): the pills of the kind, the count box when the unit is not the smallest one, the line "แก้เฉพาะใบนี้ ไม่เปลี่ยนข้อมูลยาในรายการยา", ตกลง / ยกเลิก. It opens by pressing the name of a medicine of the app (a small ">" shows it can be pressed). House and typed lines have no way into it.
+2. **Empty states are mine** (not on the board): nothing running low = "ยังไม่มียาที่ใกล้หมด" + the add button; no medicine in the house at all, the pick tab says "ยังไม่มียาในรายการยา ถ้าจะสั่งยาที่ยังไม่มี ให้เลือกแท็บ "ยาใหม่"" (the board only has "all already in the list").
+3. **Missing tokens** (no new colour was made): the low chip uses `--color-warning-tint` / `-ink` (board: #FDEFC8 / #6B4400); the grey chips use `--color-border` + `--color-hero-ink-muted` (board: #EEF1F5 / #3C4043 — the text colour exists, the background does not). The sheet curtain stays at the existing `.48` (board `.5`); no token for either.
+4. **Sheet**: two optional props were added to the shared `Sheet` — `closeButton` (round 44px X) and `tall` (92% high instead of 88%). The sheets of PR 5b are unchanged.
+5. **House medicines in the pick list**: only those whose stock is counted (the unit is the stock unit); a house medicine that is not counted is left out, because its unit is not known (open question below). Row text: "ยาสามัญ · เหลือ 2 แผง".
+6. **Several people, one medicine**: one row; the days shown are the person who runs out first, and every member's name is listed ("เหลือ 2 วัน · A, B"). Tubes: the lowest spare.
+7. **Search box** shows when the list has more than 6 medicines (the short list is 6, then "ดูเพิ่ม (N)").
+8. **Unit words**: capsule's smallest unit is "แคปซูล" (the owner's list says "เม็ด" for tablet and capsule together); the count box reads "{small unit}ต่อ{unit}" (tablet เม็ด, capsule แคปซูล, liquid มล., sachet ซอง, other ชิ้น) and is hidden when the unit is the smallest one and for cream / drops. The kind grid uses the labels of the add-medicine page ("ผงชงดื่ม", not "ซอง"; "ยาเม็ด").
+9. **Quantity text**: tablet / capsule / sachet / other show the count in the small unit as the big number when `perSellUnit` is known (and the unit is not the small one), with "= 2 กล่อง (60 เม็ด)"; liquid, cream, drops and house medicine show their own unit, no note.
+10. **Unit change keeps the amount of medicine** (27 pills → box of 30 = 1 box); in the sheet the count box starts from the pack (strip, box, bottle, sachet box, liquid bottle) or is empty; a typed new medicine's count is never filled in.
+11. **Fix in 11.1's start unit** (`startingUnitOf`): cream / drops started in the dose word "ครั้ง"; now หลอด / ขวด. A liquid with a ml pack starts as 1 bottle of that many ml (was: ml, 1 each). A remembered price still wins.
+12. **Manual line shares** are what the people really need (empty when stock is enough); the save step (11.3) rebuilds them as for every line.
+13. **Ask-later box** ("หลังได้ยามา ถามว่าจะเพิ่มเข้ารายการยาไหม") starts **ticked**, and is stored on the typed draft line (`addToList`). The quantity of a typed line must be a whole number ≥ 1; the add button stays off while the name is empty, the quantity is below 1, the name is a clash not yet answered, or the same typed name is already in the draft.
+14. **Clash buttons**: "ใช้ยาในระบบ" adds the medicine of the app; "เพิ่มเป็นยาใหม่" keeps the typed name and unlocks the add button. When the medicine of the app is already in the draft, only "เพิ่มเป็นยาใหม่" is shown; for a house medicine that is not counted the text says it cannot be picked.
+15. **Details**: − is disabled at 1; the bottom menu highlights Home (the order page is not a tab); strength unit text is the schema's `mg/5 ml`; the first view of a typed medicine has kind "ยาเม็ด" chosen (the kind is required, so one is always set).
+16. The work was done on `m4-pr11-order` as the owner asked (the session's default branch was not used).
+
+### Still open for the owner
+- House medicines that are **not counted** cannot be ordered from the list (no unit). Should the page ask for a unit, or leave them out as now?
+- Is "ผงชงดื่ม" / "ยาเม็ด" fine on the kind grid, or should it read "ซอง" / "เม็ด" as in your message?
+- Is the ask-later box ticked at the start right?
+
+
+## M4 PR 11.3a — shop form and the "ร้านค้า" page (2 พ.ย. 2569)
+
+Branch `m4-pr11-order` (PR #39). First step that writes data: shops are added / edited / deleted in `judya.v3` through `saveRoot`. Route `#/n/shops` (link only; no button on Home or the order page; `?demo=normal|empty|long`, `&sheet=add`, `&sheet=edit&item=<id>`). New: `src/domain/v3/shops.ts`, `shopsDemo.ts`, `src/components/v3/ShopForm.tsx` (+css), `src/pages/v3/ShopsPage.tsx`, `ShopsV3.tsx` (+css) and tests. Changed: `App.tsx` (route), `scripts/check-overflow.mjs`. Schema, `shop.ts`, storage keys and the data version (3) are **not** changed, so older backup files still open.
+
+### Rules locked by the owner (built as given)
+1. No "free over N baht" on any screen (no box, no text, no "buy N more"). The `freeOver` field stays in schema and domain; editing a shop that has one keeps it (not shown, not lost).
+2. Every shop charges a fee except "ไปรับเอง"; fee 0 is allowed (the shop always delivers free).
+3. A shop can be deleted; old orders keep the name they were made under (`shopName`, 11.1).
+4. No board for this form: designed on the style of the 11.2 sheets (tall sheet, round 44px X, 48px boxes, full-width blue main button, light-blue "ยกเลิก", the pressed tile like the kind grid).
+
+### Decided on my own — please check
+1. **Same name** (trimmed, upper/lower case ignored; spaces inside the name count) is refused with "มีร้านชื่อนี้แล้ว" under the name box; the shop being edited is skipped. A same name in another script or with different inner spacing is allowed.
+2. **Delete = shop + its remembered prices in one new root.** Orders are not touched. The sheet says so before: "ใบสั่งเก่ายังเห็นชื่อร้าน แต่ราคาที่จำไว้ของร้านนี้จะถูกลบ". The test saves, wipes and restores the result from a backup file.
+3. **Fee has at most 2 decimals** (satang); more is "invalid_fee". `shop.ts` allowed any decimals. The box takes only digits and one dot.
+4. **Form layout:** opens as "ส่งถึงบ้าน" (as you asked), name box first, phone (`type=tel`), two tiles, fee box with "บาท" and the hint "ถ้าร้านส่งฟรีเสมอ ให้ใส่ 0". Save is grey only while the name is empty (the sentence "พิมพ์ชื่อร้านก่อน" says why); every other wrong value is shown under its box after pressing บันทึก (warning icon + words), and typing in a box clears that box's message. Name box has no `maxLength`, so a too-long name shows the message instead of being cut quietly.
+5. **A failed save** (storage full, etc.): the page root and the form stay as they were, the red line "บันทึกไม่ได้ ข้อมูลเดิมยังอยู่ …" shows above the buttons, pressing again works.
+6. **Switching "ส่งถึงบ้าน" → "ไปรับเอง" → back** inside one open form keeps the fee typed; saving as pick-up drops fee and `freeOver` for good (a pick-up shop keeps no fee).
+7. **List line:** "เบอร์ · ส่งถึงบ้าน ค่าส่ง ฿40" / "ไปรับเอง"; a shop without a phone shows only the delivery words (v2 printed "ยังไม่ใส่เบอร์โทร"). Fee 0 prints "ค่าส่ง ฿0" so the list never says "free". Order is the order of adding.
+8. **The form is one component** (`ShopForm`) that draws its own sheet and the delete question; the page decides what saving means (`onSave` / `onDelete` answer ok or the reason), so PR 14 can reuse it with its own page.
+9. **Third demo `?demo=long`** (40-letter name, long phone, fee with satang) for the overflow check, beside `normal` and `empty`. The `normal` demo has one shop with a `freeOver` to prove it is never shown.
+10. **Back button** goes to the page before, else Home (same as the add-member page). The history length is the only thing it looks at.
+11. Tests: 877 now (828 before). JS 534.20 kB, gzip 149.62 kB (was 520.56 / 146.25).
+
+### Missing tokens (no colour was made)
+None. The delivery tiles use `--color-primary-tint` / `-ink` / `--color-primary` (the same as the kind grid of 11.2), errors use `--color-error-ink`, the delete button uses the existing `sheetStyles.danger` (`--color-error-ink` fill, white text).
+
+### Still open for the owner
+- Should the page be reachable from somewhere before PR 14 (settings)? Now it is a link only.
+- A delete is allowed with no extra warning when orders still wait for that shop. Is the plain question enough, or should it say "มีใบสั่งที่ยังรอของจากร้านนี้"?
+
+
+## M4 PR 11.3b-1 — order message, recipient, copy and LINE (2 พ.ย. 2569)
+
+Branch `m4-pr11-order` (PR #39, draft). The message to the shop, the recipient (typed by the owner), and the "copy" / "LINE" buttons on `#/n/order`. **No order is saved**, no shop comparison and no "สั่งแล้วใช่ไหม" sheet (that is 11.3b-2). The only thing the page writes is the recipient (a setting) through `saveRoot`.
+
+### Rules locked by the owner (built as given)
+1. The message is a fixed shape kept in the code (`domain/v3/orderMessage.ts`). It does **not** read `settings.orderTemplate`. That field stays in the schema untouched (still `''` by default, data version still 3). The line "replace the default of orderTemplate" in the first brief was cancelled by the owner's later answer (ก), so nothing about `orderTemplate` changed.
+2. Shape: `สั่งยาค่ะ`, blank line, `N) name strength qty unit pack size` per ticked line, blank line, then `ส่ง <address>` (delivery, only when there is an address) or `มารับเองค่ะ` (pick-up), blank line, then `<recipient name> <phone>` (only when there is a name or a phone). Empty parts are left out whole; no double space, no extra blank line. No member name, price or shop name.
+3. Strength is the text the app keeps (`strengthText`, the same text as the lists: `500 mg`, `1%`, `1,000 IU`). Typed medicines follow the same rule as the others.
+4. Delivery/pick-up comes from a switch; the mode adds the last block automatically (no placeholder). The switch is **TEMP** (marked in the code): 11.3b-2 replaces it with the choice of a shop.
+5. LINE link is `https://line.me/R/msg/text/?` + `encodeURIComponent(text)` (line breaks are `%0A`). A long link only shows a warning, "ข้อความยาว LINE อาจตัดท้าย แนะนำใช้คัดลอกข้อความ"; the LINE button stays on and still opens LINE (owner's rule). The limit is the constant `LINE_LINK_WARN_LENGTH = 8000` (length of the finished, encoded link) — **a guess, not a number published by LINE; it must be tried on a real phone.**
+6. The recipient is three optional settings, `recipientAddress` (≤300), `recipientName` (≤60), `recipientPhone` (≤20, digits, `+`, `-`, spaces), trimmed before saving; an empty one is not stored. Not tied to any member. Data version stays 3 (settings is not strict and the fields are optional, so old data and old backup files load as before).
+7. **The recipient is not in the backup file** (rule of PR 6c: settings are not in a backup file and a restore keeps the settings of the device). So a new device needs the recipient typed again. There is **no** note about it on the data page (the owner cancelled that line) and the "round-trip in the backup file" idea was cancelled. Tests: (a) the file the app hands over has none of the three fields; (b) restoring from a file never changes the recipient of the device, even if a hand-made file carries other values; (c) an old backup file restores as before.
+
+### Decided on my own — please check
+1. **`buildOrderMessage(items, mode, recipient)` takes ready items**, not draft lines. `messageItems(root, lines)` makes the items from the ticked lines (quantity above 0). It reads only medicines and house medicines — never `persons` — so a member's name cannot come in. (This answers the "shares" question: no `shares` are needed, the order source is not changed.)
+2. **Pack size** = the count in one sell unit + the small unit, e.g. `2 กล่อง 30 ซอง`, `1 ขวด 60 มล.`. It is left out when: the count is not known (typed medicine without it), the sell unit is already the small unit (`10 เม็ด`), cream / drops (counted by the tube), and house medicines (ordered in the unit of their stock). For a medicine of the app the small unit is the medicine's own unit word; for a typed one it is the unit of the kind chosen.
+3. **Cream example:** the brief wrote `ยาครีมตัวอย่าง 25g 1 หลอด`. The strength text is built like everywhere else in the app, with a space: `25 g`. I did not special-case "g".
+4. **Skip button in the "ข้อมูลผู้รับยังไม่ครบ" sheet (owner's rule):** all boxes empty → "ส่งโดยไม่ใส่ผู้รับ"; something typed → "ส่งเท่าที่กรอกไว้". It sends what is typed in the boxes now (missing parts are left out by the message rules; pick-up still says `มารับเองค่ะ`). A wrong value (too long, bad phone) stays in the sheet with its message. What is typed is **not saved** unless "บันทึกแล้วส่ง" is pressed.
+5. **Incomplete means:** delivery lacks address, name or phone; pick-up lacks name or phone. Pressing copy / LINE then opens the sheet "ข้อมูลผู้รับยังไม่ครบ" with what is missing. "บันทึกแล้วส่ง" saves what is typed and sends even if something is still missing (it does not ask twice). If saving fails (storage), the sheet stays with a red line and nothing is sent.
+6. **Long-link warning** at more than 8000 characters of the finished link (Thai letters become 9 characters each); a normal 20-line message is about 6,000. Over it, a warning line shows under the preview (icon + words) and a toast repeats it when LINE is pressed; LINE still opens.
+7. **Copy** uses `navigator.clipboard.writeText`; when the browser refuses a toast says "คัดลอกไม่ได้ ลองกดค้างที่ข้อความแล้วเลือกคัดลอก". LINE opens in a new tab with `noopener,noreferrer`.
+8. **Card on the page:** "ข้อความสั่งยา" is always there (even with nothing ticked: the box says to tick a medicine, both buttons are off). The bottom-bar button "ดูข้อความสั่งยา" is a real button now: it scrolls to the card (it was "coming soon").
+9. **Demo (`?demo=…`)** keeps the recipient in memory only. Test links: `&recipient=full` (made-up recipient), `&mode=pickup`, `&sheet=recipient`, `&sheet=incomplete`.
+10. **Whitespace:** every part is squeezed to single spaces, so a line break typed in the address becomes a space and the message never has a broken line.
+11. **Part F (11.3a notes):** the shop name label has a red star (`*`; the box has `aria-label="ชื่อร้าน"` and `aria-required`), and the fee label is "ค่าส่ง" so "บาท" shows once (in the box). Own commit.
+12. The test that said the order page "never writes" now says: no file mentions `restoreRoot`, `startFresh`, `setItem`, `removeItem`, `localStorage` …, and only `OrderPage.tsx` names `saveRoot`.
+
+13. Tests: 938 (877 before). JS 546.26 kB, gzip 152.90 kB (was 534.20 / 149.62). `check:overflow` 1176 checks, 0 problems. `check:overflow`: 1176 page checks, 0 problems (new routes and 6 pressed scenarios for the message card added to the script; the shop scenarios there now use the label "ค่าส่ง").
+
+### Missing tokens (no colour was made)
+None. The card uses the same tokens as 11.2 / 11.3a (`--color-primary*`, `--color-border*`, `--color-warning-ink`, `--color-error-ink`).
+
+### Still open for the owner
+- Try a long order on a real phone: is 8000 the right warning length for the LINE link?
+- The recipient has to be typed again on a new device (not in the backup file). Fine?
+
+## M4 PR 11.3b-2a — compare shops, choose a shop, add prices (2 พ.ย. 2569)
+
+Branch `m4-pr11-order` (PR #39, draft). Scope 2a only: no "สั่งแล้วใช่ไหม" sheet, no saved order, history, receiving, Home button or stock cut. `prices.ts`, schema, storage keys and data version (3) are not changed. New: `domain/v3/orderShops.ts`, `pages/v3/OrderCompare.tsx` (+css). The only price writer is `upsertPrice` (called by `saveShopPrices`), saved with `saveRoot`; a demo keeps everything in memory.
+
+### Rules locked by the owner (built as given)
+1. Shop order: every price (cheapest first) → missing some (fewer missing first, then cheaper) → no price. Switch "รวมค่าส่ง": on = delivery shops add their fee, pick-up adds 0; off = no fee.
+2. No "ซื้อเพิ่มอีก … ส่งฟรี" line. A shop that misses prices can be chosen (no warning sheet) and has "ใส่ราคา".
+3. Price sheet: only the lines this shop has no price for; typed (free) medicines get no box; price per order unit, optional.
+4. The TEMP switch is removed. Delivery shop → "ส่ง <address>", pick-up shop → "มารับเองค่ะ", then name and phone. No shop → neither line. No shop at all → "เพิ่มร้านแรก".
+5. "บันทึกว่าสั่งแล้ว" is faded with the chip "เร็ว ๆ นี้" and does nothing.
+
+### Decided on my own — please check
+1. **Switch "รวมค่าส่ง" starts ON.**
+2. **"ถูกที่สุด"** goes to every shop with all prices whose total equals the lowest among such shops, and only when there are at least 2 shops (one shop alone is not "cheapest"). Total follows the switch.
+3. **Hidden `freeOver`:** the data still keeps it (11.3a; an edit that does not touch it keeps the old value). It is no longer counted anywhere: `orderCompare` charges the shop's fee whenever a delivery shop has at least one priced line, and `shopSub` / `deliveryText` no longer print "ซื้อครบ ฿X ส่งฟรี" (fixed 3 พ.ย., see below). A shop with fee 0 still shows "ส่งฟรี" in the list and "ค่าส่ง ฿0" in the chosen-shop part.
+4. Compare card shows only when something is ticked. With nothing ticked only the old hint shows (also when there is no shop).
+5. A shop with no price for any line shows "ยังไม่มีราคา" instead of a total, and the chosen-shop part says "ร้านนี้ยังไม่มีราคายาที่สั่ง".
+6. Chosen-shop part: name, phone (or "ยังไม่ใส่เบอร์โทร"), "ยอดรวม ฿X", fee line ("ค่าส่ง ฿40", "ค่าส่ง ฿40 (ไม่รวมในยอด)" when the switch is off, "มารับเอง ไม่มีค่าส่ง"), yellow "ไม่รวม N รายการ". "โทรหาร้าน" is a `tel:` link only when the shop has a phone. A chosen shop is marked "เลือกแล้ว" (icon + word).
+7. The old "ส่งทาง LINE" button is now "เปิด LINE" (one set of buttons, inside the message card, used with or without a shop). Incomplete-recipient rule with no shop: name and phone needed (as pick-up).
+8. Price sheet: saving with nothing typed stays open with "ยังไม่ได้ใส่ราคา"; 0 / text shows "ใส่ราคาเป็นตัวเลขมากกว่า 0" under that box and saves nothing; typing the same unit again replaces the row. A regular medicine's price saves with the line's count per unit; a house medicine's with 1. Date = today.
+9. First shop added from this page uses the same form and `addShop` as 11.3a; the page then shows it in the comparison (not chosen automatically).
+10. Demo: `orderDemoRoot` unchanged (no shops); `&shops=three` adds three made-up shops (ก delivery ฿40, ข pick-up, ค delivery ฿30 missing 2 prices).
+11. Tests 975 (938 before). JS 561.07 kB, gzip 156.97 kB (was 546.26 / 152.90). `check:overflow` 1356 checks, 0 problems (new routes and 11 pressed scenarios).
+
+### Missing tokens (no colour was made)
+None.
+
+### ตัดสินแล้ว 3 พ.ย. 2569
+- **`freeOver` = เลิกนับ ข้อมูลยังเก็บไว้.** `orderCompare` no longer reads `delivery.freeOver`; `ShopRow` lost `freeShipping`, `buyMore`, `buyMoreText` (and `buyMoreText()` is gone). Old data with `freeOver` 500 and items 600 still pays the fee 40 (total 640 with the switch on). `shops.ts` is unchanged, so `updateShop` keeps the stored value.
+- **ร้านราคาไม่ครบ = ไม่ขึ้นอันดับเหนือร้านที่ครบ** — kept as built, no change.
+
+Own choices in the 3 พ.ย. fix: (1) `feeLine` lost its `row` argument (nothing left to read from it); a fee-0 delivery shop now reads "ค่าส่ง ฿0" (the function's normal text) instead of "ค่าส่ง ฿0 (ส่งฟรี)". (2) `deliveryText` for fee 0 plus `freeOver` says "ให้ร้านส่ง ส่งฟรี". (3) Older sections of this file that describe the "buy N more" rule (11.1) are history and were left as written.
+
+## M4 PR 11.3b-2b — "สั่งแล้วใช่ไหม" sheet and saving the order (4 พ.ย. 2569)
+
+Branch `m4-pr11-order` (PR #39, draft, status unchanged). Scope 2b only: no history (11.4), receiving / stock (11.5), Home buttons (11.6), receipt scan. Schema, `prices.ts`, storage keys and data version (3) are not changed. New: `domain/v3/orderPlace.ts` (`placeOrder`, `shortestAssignmentId`), `markOnOrder` in `orderLines.ts`, `pages/v3/OrderBook.tsx` (+css), `withDemoWaitingOrder` in `orderDemo.ts`. Changed: `leftOf` exported from `orderDraft.ts`; `OrderCompare.tsx` exports `PriceRow` (the price box row, now used by both the 2a "ใส่ราคา" sheet and the new sheet) and `PriceSheet`; `OrderView` has `nowIso` and `onRoot` (tests) props. An earlier attempt of this step (`orderActions.ts`, commit d68e465) was replaced by this one.
+
+### Locked by the owner (built as given)
+1. `placeOrder(root, lines, shop, includeShipping, typedPrices, now, newId)` is pure and returns a new root with ONE more order; only ticked lines with `qtyOrdered > 0`, none = refused. Status `waiting`; `shopId`; `shopName` = the shop's name now; `includeShipping` = the switch now; `shippingFee` = the shop's fee for a delivery shop even when the switch is off, none for a pick-up shop.
+2. Each line: `source`, `qtyOrdered`, `sellUnit`, `perSellUnit` (a typed medicine only when it was typed, never filled in), `unitPrice` (the shop's latest price the comparison used, or the price just typed; none when there is none), `qtyReceived` 0, `leftover` null, `addToList` of a typed medicine as ticked.
+3. A medicine line with empty `shares` gets ONE share = `qtyOrdered x perSellUnit` for the member whose stock runs out first (`leftOf`); the same stock: the member who comes first in the app's list. A line that already has shares keeps them as they are.
+4. The sheet "สั่งแล้วใช่ไหม" opens after a copy that worked or after "เปิด LINE" when a shop is chosen, and from "บันทึกว่าสั่งแล้ว" (no longer faded, no "เร็ว ๆ นี้"). No shop = no sheet (the button is not shown; copy / LINE work as before). It shows shop · N รายการ · total (same number as the comparison card); for lines the shop has no price for: "ใส่ราคาที่ร้านคิด (ไม่บังคับ)" with the 2a price row, none for typed medicines, and the small line "ราคาที่ใส่จะถูกจำของร้านนี้ ตรวจให้ถูกก่อนกด". Buttons "สั่งแล้ว" (main) and "ยังไม่ได้สั่ง".
+5. "สั่งแล้ว": blank box = skipped; 0 or not a number = the sheet stays, message under the box (as 2a), nothing is saved. Otherwise order + typed prices in ONE `saveRoot` (prices only through `upsertPrice` via `saveShopPrices`). A failed write: old data unchanged, sheet stays with the message. Success: sheet closes, the booked lines leave the list (unticked lines stay), toast "บันทึกใบสั่งแล้ว", same page. "ยังไม่ได้สั่ง" (also X, curtain): closes, nothing saved, the typed text is dropped.
+6. A medicine / house medicine on a `waiting` or `partial` order, with that line not fully received and not `dropped`: a suggested line starts unticked with the badge "สั่งแล้ว รอรับ" (icon + words); can be ticked by hand. A medicine added by hand stays ticked and shows the badge too. Typed medicines are never matched. With no open order the lines are exactly as before (`buildOrderLines` is not changed; the page applies `markOnOrder`).
+7. `?demo` writes and reads no storage; the saved order lives in memory (`onRoot` lets a test see it). New demo link `&orders=waiting`: one shop (ร้านทดสอบ ก) and one waiting order for the first suggested medicine.
+
+### Decided on my own — please check
+1. **`unitPrice` when the shop's price was converted from another unit** (the line is ordered in boxes, the shop's price is per strip): left out, because a price for a different unit written as the line's unit would be wrong. Only a price for the line's own order unit is kept.
+2. **A price typed in the sheet** is for one unit of the line's order unit (as in 2a); for a regular medicine it is saved with the line's count per unit, for a house medicine with 1. A different unit than the remembered one adds a row (the old row stays).
+3. **The total in the sheet** is the comparison card's number before anything is typed; it does not change while typing.
+4. **Typed prices are checked on "สั่งแล้ว" only** (the box accepts only digits, comma and dot); the sheet's own message for a wrong value is the 2a text "ใส่ราคาเป็นตัวเลขมากกว่า 0".
+5. **After saving, the chosen shop stays chosen**; the comparison card disappears when nothing is ticked (as before).
+6. Nobody uses a medicine any more (all stopped): the save is refused with "ยาบางตัวไม่มีคนใช้แล้ว เอาออกจากรายการก่อน".
+7. Numbers: tests 1011 (975 before); JS 567.16 kB, gzip 158.44 kB (156.80 before); `check:overflow` 1440 checks, 0 problems (7 new pressed scenarios at 360 / 412px and 3 font sizes). Pictures: branch `shots-pr11-3b2b`.
+
+### Missing tokens (no colour was made)
+None.
+
+### fix ซ้อนทับ 4–5 พ.ย. (after the owner looked at pictures 3 and 4)
+Only CSS, the order page view and one shared component were touched: `Toast.tsx` / `Toast.module.css`, `OrderV3.tsx` / `OrderV3.module.css`, tests and `check-overflow.mjs`. No domain, schema, message text or data version.
+
+**Found for real (all confirmed by measuring the build before the fix, 360px normal / large and 412px):**
+1. The floating message was at `bottom: 84px` (Toast.module.css) and the order page's own bar is at `bottom: 72px` and 73px high, so the message sat at y 650–696 inside the bar (635–708), on top of the blue button. At the large font it was the same.
+2. `.barButton` had no `border`, so the browser's own `2px outset` grey border showed around the blue button (all pictures since 11.2).
+3. Not a fault: scrolled to the very end the last block (message card) ends at 559px (555 at the large font) and the bar starts at 635px, so nothing hides behind the bars. No padding was added.
+
+**Fix**
+- Floating message: `useToastAbove(ref)` in `Toast.tsx` measures the top edge of the page's bar and sets `--toast-bottom` on `<html>`; `Toast.module.css` reads it (`var(--toast-bottom, <old value>)`), the gap is one constant `TOAST_GAP` (12px). It follows the font size and safe area through a `ResizeObserver`, and the variable is removed when the page goes. Other pages do not set it, so they are exactly as before. It covers every floating message of the order page because they all come from the same `<Toast>`.
+- `.barButton` now has `border: 0`, `font-family: inherit`, `cursor: pointer`, like the other main buttons of the page (`.line` in OrderMessage).
+- Item 4 (owner decided 5 พ.ย.): "ดูข้อความสั่งยา" is `disabled` when 0 lines are ticked, with the faded look the message buttons already use (`.copy:disabled`, `.line:disabled`: `--color-border` background, `--color-ink-muted` text, not-allowed). It stays 52px high. The bar text "0 รายการ / ยอดรวม –" is unchanged. From 1 ticked line on it works as before; after saving an order nothing is ticked, so it is faded.
+- A scan for other buttons with the browser's own border (every order-page state of `check-overflow`, including every sheet): none besides `.barButton`.
+
+**Decided on my own — please check**
+1. The owner pointed at the "บันทึกว่าสั่งแล้ว" button as the faded example, but its class (`.call` in `OrderMessage.module.css`) has NO `:disabled` style, so when nothing is ticked it is disabled but looks like an enabled outlined button. I used the faded look of `.copy` / `.line` instead and did NOT change the "บันทึกว่าสั่งแล้ว" button (not asked).
+2. The bottom bar is `bottom: 72px` (a fixed guess of the menu height) but the menu is 73px high at the normal font and about 77px at the large one, so the bar overlaps the menu by 1–5px (the buttons themselves do not touch). Not changed (not asked); worth a look.
+3. The LINE "too long" warning toast was not triggered in the scripted check (it needs a message above 8000 characters); it uses the same `<Toast>` so it follows the same rule.
+4. New permanent checks in `scripts/check-overflow.mjs` (run with `npm run check:overflow`, every order-page state at 360 / 412px x 3 font sizes): no two buttons / links / tick boxes overlap (page content that scrolls under a bar is not counted), no button with the browser's own border, the floating message does not touch any fixed or sticky bar and keeps at least 8px above the one under it, and at the end of the page the last block ends above the bars. Run against the code before the fix it reports 126 problems (border on the main button and 37 floating-message cases), after the fix 0.
+5. Numbers: tests 1014 (1011 before); JS gzip 158.69 kB (158.44 before); `check:overflow` 2040 checks, 0 problems. Pictures: branch `shots-pr11-3b2b-fix`.
+
+## M4 PR 11.4 — order history, cancel a waiting order, "สั่งซ้ำ" (5 พ.ย. 2569)
+
+Branch `m4-pr11-order` (PR #39, draft, status unchanged). Scope: history, cancel (waiting only), reorder, and the two small fixes from 2b. **Not built:** receiving, stock, changing an order to `partial` / `received` (11.5), Home buttons (11.6), receipt scan. Schema, storage keys and data version (3) unchanged; `?demo` writes nothing. New: `domain/v3/orderHistory.ts` (`filterOrders`, `orderTotal`, `stillWaiting`, `cancelOrder`, `reorderLines`, `reorderMessage`, `bangkokDay`), `clearOnOrder` in `orderLines.ts`, `withDemoHistory` in `orderDemo.ts`, `pages/v3/OrderHistory.tsx` (+ css). Changed: `OrderV3.tsx`, `OrderPage.tsx`, `DraftReason` / `REASON_LABEL` (`repeat` = "สั่งซ้ำ"), `OrderV3.module.css`, `OrderMessage.module.css`, `check-overflow.mjs`.
+
+### Locked by the owner (built as given)
+1. History is a view inside `OrderView` (`#/n/order?screen=history`; the other test-link options are kept), so ticked lines survive going there and back and the phone's back button returns. Opened from the clock button (no longer ComingSoon). Header: back (to the order page), clock icon, "ประวัติการสั่งยา"; main menu, no bottom bar. Test link `#/n/order?demo=normal&screen=history&orders=history` (four made-up orders, one per status).
+2. Three pills (`aria-pressed`): ทั้งหมด / รอรับของ (waiting + partial) / รับแล้ว (received); starts at ทั้งหมด; cancelled only under ทั้งหมด; newest `createdAt` first; empty = card "ยังไม่มีใบสั่งในหมวดนี้".
+3. Card: icon + date ("12 ต.ค. 2569") + `shopName` + "N รายการ"; right: status chip (waiting / partial yellow, received green, cancelled grey; icon + word) and the total (bold 18px navy).
+4. Buttons: waiting = faded "รับของแล้ว" + "เร็ว ๆ นี้" (does nothing) and working "ยกเลิกใบสั่ง"; partial = yellow "ยังรอ N รายการ", faded "รับของที่เหลือ" and "ไม่รอแล้ว" (both "เร็ว ๆ นี้", no cancel); received / cancelled = "สั่งซ้ำ" (light blue, icon).
+5. Cancel sheet "ยกเลิกใบสั่งนี้ไหม": "<shop> · <date> · N รายการ", small line, red "ยกเลิกใบสั่ง", "ไม่ยกเลิก". Confirm = status `cancelled`, `closedAt` = now, nothing else touched, ONE write; failure = old data stays, sheet stays with a message; success = sheet closes, toast "ยกเลิกใบสั่งแล้ว". Only `waiting` (checked in the domain too). The medicines of a cancelled order are normal suggestions again (`markOnOrder` ignores `cancelled`; tested).
+6. "สั่งซ้ำ": back to the order page, lines ADDED to the list that is there (nothing removed; a medicine already in the list keeps its line), all ticked, old `qtyOrdered` / `sellUnit` / `perSellUnit`, reason "สั่งซ้ำ" (grey), chosen shop cleared, no price copied. Deleted / stopped medicines skipped and counted. Typed medicines come back with name, kind, strength. Toast "คัดลอกรายการมาแล้ว ใช้ราคาล่าสุดของแต่ละร้าน" (+ " · ข้าม N รายการที่ไม่มีในรายการยาแล้ว").
+7. Total of an order = sum of `unitPrice x qtyOrdered` of lines with a price + `shippingFee` when `includeShipping`; unpriced lines not counted ("ไม่รวม N รายการที่ยังไม่มีราคา"); no price at all = "ยังไม่มีราคา".
+8. Fixes from 2b: "บันทึกว่าสั่งแล้ว" faded when disabled (`.call:disabled`, like `.copy` / `.line`); the bar sits exactly on the menu (see below).
+
+### Decided on my own — please check (the prompt did not say)
+1. **Card icon** = the illustrated `order` icon (36px round, the one from Home). The spec said only "ไอคอน".
+2. **Total when a fee exists but no line has a price** = "ยังไม่มีราคา" (a bare fee is never shown as a total). The spec decided this case as "no price at all".
+3. **Bottom bar fix (item 8):** the bar and the menu are now one sticky box (`.dock`); the bar is no longer `position: fixed` with a guessed `bottom: 72px`, so it follows the menu's real height at any font size (73px normal, ~77px large) and the 148px padding under the page is gone. `useToastAbove` now measures the dock, so on the history (no bar) the floating message clears the menu too.
+4. **"สั่งซ้ำ" counts as "skipped"**: deleted / stopped medicine, a removed house medicine, a house medicine whose stock is not counted (the message says "ไม่มีในรายการยาแล้ว" for those too). A medicine already in the list is NOT counted (silently kept).
+5. **"สั่งซ้ำ" always goes back to the list**, even when nothing was added (then the toast still says what happened).
+6. **A typed medicine stays typed** even if its name is now a medicine of the app (spec: "as typed"). The first draft of this step swapped it for the app's medicine; that was removed.
+7. **After a cancel** the lines that carried the "สั่งแล้ว รอรับ" badge lose it; a suggested line that is still unticked goes back to what the suggestion says (ticked when low and something is needed); a line the owner ticked by hand, or added by hand, keeps its tick (`clearOnOrder`). A medicine still on another open order keeps its badge.
+8. **Faded buttons** are `aria-disabled="true"` buttons with the chip inside; pressing shows no message (the spec said nothing happens, unlike `ComingSoon`).
+9. **Pills** pressed = `--color-primary-tint` fill, `--color-primary` border (as the kind grid); not pressed = white with a grey border. Card chips use existing tokens (`--color-warning-*`, `--color-success-*`, `--color-border` + `--color-hero-ink-muted`). No new colour.
+10. **Status words:** "รับแล้ว" (spec) on the chip and pill, "ยกเลิก" for cancelled, "รอรับของ" / "รับบางส่วน".
+11. **Dates** are the Thai day of `createdAt` (a phone saves UTC; cutting 10 letters would be a day early between 00:00 and 07:00).
+12. **No cap:** 100 orders are all drawn (tested).
+13. **Board H is not in the repo**, so nothing could be compared pixel by pixel; the build follows the text spec only. Differences from the text spec: none known.
+
+### Numbers
+Tests 1054 (1014 before); JS gzip 161.29 kB (158.69 before); `check:overflow` see HANDOFF. Pictures: branch `shots-pr11-4`.

@@ -83,12 +83,15 @@ export function shortThaiDate(iso: string): string {
   return `${d} ${MONTHS[m - 1] ?? ''} ${String(y + 543).slice(-2)}`;
 }
 
+/** The strength as the app keeps it: '500 mg', '1%', '1,000 IU' (thousands get a comma). */
+export function strengthText(strength: NonNullable<Medication['strength']>): string {
+  const { value, unit } = strength;
+  return `${value.toLocaleString('en-US')}${unit === '%' ? '%' : ` ${unit}`}`;
+}
+
 /** Name with the strength next to it; thousands get a comma ('VitaminD 1,000 IU'). */
 export function label(m: Pick<Medication, 'name' | 'strength'>): string {
-  if (!m.strength) return m.name;
-  const { value, unit } = m.strength;
-  const v = value.toLocaleString('en-US');
-  return `${m.name} ${v}${unit === '%' ? '%' : ` ${unit}`}`;
+  return m.strength ? `${m.name} ${strengthText(m.strength)}` : m.name;
 }
 
 const CHIP_OK: StatusChip = { tone: 'ok', label: 'ปกติ' };
