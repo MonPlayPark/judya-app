@@ -35,7 +35,7 @@ const V3_ROUTES = ['/', '/n', '/no-such-page', '/old', // M4 PR 7b: an unknown o
   '/n/settings/data?demo=normal&backup=old&error=wrong_version',
   // v3 order draft (M4 PR 11.2): real data (empty), the three demo houses, the add sheet (both tabs, a repeated name, a name that is in the list),
   // the unit sheet, and the add sheet on a house with nothing to suggest / no medicine at all
-  '/n/order', '/n/order?demo=normal', '/n/order?demo=nolow', '/n/order?demo=nomeds',
+  '/n/order', '/n/order?demo=normal&orders=waiting&view=history', '/n/order?demo=normal&view=history', '/n/order?demo=normal', '/n/order?demo=nolow', '/n/order?demo=nomeds',
   '/n/order?demo=normal&sheet=add&tab=meds', '/n/order?demo=normal&sheet=add&tab=new', '/n/order?demo=normal&sheet=add&tab=new&name=Simvastatin',
   '/n/order?demo=normal&sheet=add&tab=new&name=Meto', '/n/order?demo=normal&sheet=unit', '/n/order?demo=normal&sheet=unit&item=med:m8',
   '/n/order?demo=nolow&sheet=add&tab=meds', '/n/order?demo=nomeds&sheet=add&tab=meds', '/n/order?demo=nomeds&sheet=add&tab=new',

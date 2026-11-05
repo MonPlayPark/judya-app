@@ -73,7 +73,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 12px 12px 148px;
+  padding: 12px;
 }
 .card {
   border-radius: var(--radius-card);
@@ -187,7 +187,8 @@
   background: var(--color-border);
   color: var(--color-hero-ink-muted);
 }
-.reason_typed {
+.reason_typed,
+.reason_repeat {
   background: var(--color-primary-tint);
   color: var(--color-primary-ink);
 }
@@ -294,12 +295,13 @@
 }
 
 /* ---------- bottom bar (above the main menu) ---------- */
-.bar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+.dock {
+  position: sticky;
+  bottom: 0;
   z-index: 2;
+  margin-top: auto;
+}
+.bar {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -350,3 +352,17 @@
 .barButton > :first-child {
   width: auto;
 }
+
+/* ---------- history (M4 PR 11.4) ---------- */
+.histList { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.histCard { padding: 14px 16px; border-radius: var(--radius-card); background: var(--color-surface); box-shadow: var(--elevation-1); }
+.histTop { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.histShop { min-width: 0; margin: 0; font-size: calc(16px * var(--fs)); line-height: calc(24px * var(--fs)); font-weight: var(--weight-semibold); color: var(--color-navy); overflow-wrap: anywhere; }
+.histDate { margin: 0; font-size: calc(14px * var(--fs)); line-height: calc(20px * var(--fs)); color: var(--color-ink-muted); }
+.histStatus { flex: none; display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; background: var(--color-border); color: var(--color-hero-ink-muted); font-size: calc(14px * var(--fs)); line-height: calc(20px * var(--fs)); font-weight: var(--weight-semibold); }
+.histStatus svg { flex: none; width: 16px; height: 16px; }
+.histSum { margin: 6px 0 0; font-size: calc(14px * var(--fs)); line-height: calc(20px * var(--fs)); color: var(--color-ink-muted); }
+.histItems { margin: 8px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--color-border); }
+.histItem { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; font-size: calc(14px * var(--fs)); line-height: calc(20px * var(--fs)); color: var(--color-ink); overflow-wrap: anywhere; }
+.histQty { flex: none; color: var(--color-ink-muted); }
+.again { box-sizing: border-box; display: flex; align-items: center; justify-content: center; width: 100%; min-height: 48px; margin-top: 8px; border: 1.5px solid var(--color-primary); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-primary-ink); font-family: inherit; font-size: calc(15px * var(--fs)); font-weight: var(--weight-bold); cursor: pointer; }

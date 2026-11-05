@@ -8,10 +8,13 @@ vi.mock('virtual:pwa-register', () => ({ registerSW: () => async () => {} }));
 import { App } from '../../App';
 import { sampleRootV3 } from '../../domain/v3/fixtures';
 import { DEMO_TODAY } from '../../domain/v3/homeDemo';
-import { ORDER_DEMO_NAMES, orderDemoRoot, type OrderDemoName } from '../../domain/v3/orderDemo';
+import { ORDER_DEMO_NAMES, orderDemoRoot, withDemoWaitingOrder, type OrderDemoName } from '../../domain/v3/orderDemo';
 import * as storage from '../../domain/v3/storage';
 import { STORAGE_KEY, type KeyValueStore } from '../../domain/v3/storage';
 import { OrderV3Route } from './OrderPage';
+import { OrderView } from './OrderV3';
+import { orderCandidates } from '../../domain/v3/orderDraft';
+import { buildOrderLines } from '../../domain/v3/orderLines';
 
 const memoryStore = (initial: Record<string, string> = {}): KeyValueStore & { data: Record<string, string> } => {
   const data = { ...initial };
@@ -22,6 +25,13 @@ const demo = (name: OrderDemoName, extra = '') => {
   return render(<OrderV3Route />);
 };
 /** The floating message is drawn in <body> after the page, so it is the last element with role status (the demo banner has the role too). */
+/** Moves to another hash and lets the page see it (jsdom sends hashchange later, so it is sent here). */
+const go = (hash: string): void => {
+  act(() => {
+    window.location.hash = hash;
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+  });
+};
 const toastOf = (): HTMLElement => screen.getAllByRole('status').at(-1)!;
 const row = (name: RegExp | string) => screen.getByRole('checkbox', { name: new RegExp(`เลือกสั่ง ${typeof name === 'string' ? name : name.source}`) }).closest('li') as HTMLElement;
 
@@ -88,14 +98,6 @@ describe('the list', () => {
       expect(screen.getByText('0 รายการ')).toBeInTheDocument();
       unmount();
     }
-  });
-
-  it('the history button is "coming soon": faded, it only shows the floating message', () => {
-    demo('normal');
-    const b = screen.getByRole('button', { name: 'ประวัติการสั่งซื้อ' });
-    expect(b).toHaveAttribute('aria-disabled', 'true');
-    fireEvent.click(b);
-    expect(toastOf()).toHaveTextContent('เร็ว ๆ นี้');
   });
 
   it('the main button "ดูข้อความสั่งยา" is a real button now (it scrolls to the message card), not coming soon (M4 PR 11.3b-1)', () => {
@@ -442,5 +444,65 @@ describe('F. this page writes storage in one way only', () => {
     for (const call of get.mock.calls) expect(call[0]).toBe(STORAGE_KEY);
     expect(window.localStorage.getItem(STORAGE_KEY)).toBe(real);
     window.localStorage.clear();
+  });
+});
+
+describe('history (M4 PR 11.4)', () => {
+  it('the clock button is a link to the history of the same page; the ticked lines survive going there and back', () => {
+    demo('normal', '&orders=waiting');
+    const link = screen.getByRole('link', { name: 'ประวัติการสั่งซื้อ' });
+    expect(link).toHaveAttribute('href', '#/n/order?demo=normal&orders=waiting&view=history');
+    fireEvent.click(screen.getByRole('checkbox', { name: 'เลือกสั่ง Amlodipine 5 mg' })); // tick one by hand
+    go('#/n/order?demo=normal&orders=waiting&view=history');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('ประวัติการสั่งซื้อ');
+    expect(screen.getByText('ร้านทดสอบ ก')).toBeInTheDocument();
+    expect(screen.getByText('รอรับของ')).toBeInTheDocument();
+    expect(screen.queryByText('ดูข้อความสั่งยา')).not.toBeInTheDocument();
+    const back = screen.getByRole('link', { name: 'กลับหน้าสั่งซื้อยา' });
+    expect(back).toHaveAttribute('href', '#/n/order?demo=normal&orders=waiting');
+    go('#/n/order?demo=normal&orders=waiting');
+    expect(screen.getByRole('checkbox', { name: 'เลือกสั่ง Amlodipine 5 mg' })).toBeChecked();
+  });
+
+  it('empty history says so', () => {
+    demo('normal', '&view=history');
+    expect(screen.getByText('ยังไม่มีใบสั่งซื้อ')).toBeInTheDocument();
+  });
+
+  it('"สั่งซ้ำ" puts the old lines in the list as "สั่งซ้ำ", saves nothing, and goes back to the list', () => {
+    const setItem = vi.spyOn(Storage.prototype, 'setItem');
+    const r = withDemoWaitingOrder(orderDemoRoot('normal'));
+    const draft = new Set(buildOrderLines(r, DEMO_TODAY).map((l) => l.key));
+    const other = orderCandidates(r, DEMO_TODAY, draft).find((c) => c.ref.kind === 'med')!;
+    const o = r.orders[0]!;
+    const root = { ...r, orders: [{ ...o, lines: [{ ...o.lines[0]!, source: { kind: 'med' as const, medicationId: other.ref.kind === 'med' ? other.ref.medicationId : '', shares: [{ assignmentId: r.assignments.find((a) => a.medicationId === (other.ref.kind === 'med' ? other.ref.medicationId : ''))!.id, qty: 1 }] }, qtyOrdered: 2 }] }] };
+    window.location.hash = '#/n/order?demo=normal&view=history';
+    render(<OrderView root={root} today={DEMO_TODAY} demo />);
+    fireEvent.click(screen.getByRole('button', { name: /^สั่งซ้ำ ร้านทดสอบ ก/ }));
+    expect(window.location.hash).toBe('#/n/order?demo=normal');
+    go('#/n/order?demo=normal');
+    expect(within(row(other.name.split(' ')[0]!)).getByText('สั่งซ้ำ')).toBeInTheDocument();
+    expect(toastOf()).toHaveTextContent('ใส่ 1 รายการในรายการสั่งแล้ว');
+    expect(setItem).not.toHaveBeenCalled();
+  });
+
+  it('a reorder of a medicine that is already in the list adds nothing, says so, and stays on the history', () => {
+    window.location.hash = '#/n/order?demo=normal&orders=waiting&view=history';
+    render(<OrderV3Route />);
+    fireEvent.click(screen.getByRole('button', { name: /^สั่งซ้ำ ร้านทดสอบ ก/ }));
+    expect(window.location.hash).toContain('view=history');
+    expect(toastOf()).toHaveTextContent('ไม่มีรายการที่สั่งซ้ำได้');
+  });
+
+  it('the floating message is lifted above the bar on the list only; the history has no bar, so the lift is removed', () => {
+    demo('normal', '&orders=waiting');
+    expect(document.documentElement.style.getPropertyValue('--toast-bottom')).not.toBe('');
+    go('#/n/order?demo=normal&orders=waiting&view=history');
+    expect(document.documentElement.style.getPropertyValue('--toast-bottom')).toBe('');
+  });
+
+  it('the main button of the message card looks faded when it is disabled', () => {
+    const css = readFileSync(resolve(__dirname, 'OrderMessage.module.css'), 'utf8');
+    expect(css).toMatch(/\.call:disabled\s*\{[^}]*color-ink-muted/);
   });
 });

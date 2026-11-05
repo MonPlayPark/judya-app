@@ -1002,3 +1002,20 @@ Only CSS, the order page view and one shared component were touched: `Toast.tsx`
 3. The LINE "too long" warning toast was not triggered in the scripted check (it needs a message above 8000 characters); it uses the same `<Toast>` so it follows the same rule.
 4. New permanent checks in `scripts/check-overflow.mjs` (run with `npm run check:overflow`, every order-page state at 360 / 412px x 3 font sizes): no two buttons / links / tick boxes overlap (page content that scrolls under a bar is not counted), no button with the browser's own border, the floating message does not touch any fixed or sticky bar and keeps at least 8px above the one under it, and at the end of the page the last block ends above the bars. Run against the code before the fix it reports 126 problems (border on the main button and 37 floating-message cases), after the fix 0.
 5. Numbers: tests 1014 (1011 before); JS gzip 158.69 kB (158.44 before); `check:overflow` 2040 checks, 0 problems. Pictures: branch `shots-pr11-3b2b-fix`.
+
+## M4 PR 11.4 — order history and "สั่งซ้ำ" (5 พ.ย. 2569)
+
+Branch `m4-pr11-order` (PR #39, draft, status unchanged). Scope: see the history and put an old order's lines into the draft again. **Not in this step:** cancelling an order, receiving / stock (11.5), Home buttons (11.6). Schema, storage keys, data version (3) not changed; the history view writes nothing. New: `domain/v3/orderHistory.ts` (`historyRows`, `reorderLines`, `reorderMessage`, `bangkokDay`) and `pages/v3/OrderHistory.tsx` (+ tests). Changed: `OrderV3.tsx` (view), `DraftReason` + `REASON_LABEL` (`repeat` = "สั่งซ้ำ"), `Toast.tsx`, `OrderV3.module.css`, `OrderMessage.module.css`, `check-overflow.mjs`.
+
+### Decided on my own (the owner said "ลงมือ" without answering the questions, so the recommended answers were used) — please check
+1. **History = the same route with `?view=history`** (`#/n/order?view=history`, other test-link options like `?demo=` are kept). The page stays mounted, so the ticked lines are not lost, and the phone's back button comes back from the history. The back arrow on the history goes to the list.
+2. **`useToastAbove(bar, active)`**: with no bar on screen (history) the lift is removed, so a floating message does not fly off screen.
+3. **Date = the Thai day** of `createdAt` (UTC+7). A phone saves the time in UTC, so cutting the first 10 letters would show the day before between 00:00 and 07:00.
+4. **Row:** shop name (kept in the order), date, status (icon + word: รอรับของ / รับบางส่วน / รับครบแล้ว / ยกเลิก), N รายการ, "ยอดรวม ฿X" **only when every line has a price** (else no total, never a smaller wrong one), and every line with name + quantity. A medicine that was deleted reads "ยาที่ถูกลบแล้ว".
+5. **"สั่งซ้ำ"** (`reorderLines`): ticked lines, reason `repeat`, old quantity / sell unit / count per unit; `shares` are what people need NOW (old shares are never reused). Left out, and counted in the floating message: deleted or stopped medicine (nobody uses it), house medicine removed or not counted, a medicine already in the list or twice in the order. A house medicine keeps the old quantity in the unit of its stock now. A typed medicine is made again (kind, strength, ask-later); if its name is now a medicine of the app, that medicine is used (as "ใช้ยาในระบบ"). If nothing could be put in, the page stays on the history and says why; otherwise it goes back to the list.
+6. **Fix 5 of the last notes:** (a) `.call:disabled` is faded (`--color-border`, `--color-ink-muted`, not-allowed) like `.copy` / `.line`; (b) the bottom bar and the menu are now in one sticky box (`.dock`), so the bar sits exactly on the menu at any font size; the old `bottom: 72px` guess and the `148px` padding under the page are gone (the bar is in the page's flow now).
+7. The ComingSoon on the clock button is gone (it is a link); `ClockGlyph` is the shared `ClockIcon`.
+
+### Still open for the owner
+- Should the history also cancel an order (11.4 in the first plan said "cancel")? Not built.
+- A typed medicine whose name is now in the app is replaced by the app's medicine; is that what you want?

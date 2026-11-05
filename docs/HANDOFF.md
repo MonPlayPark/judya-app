@@ -2,6 +2,14 @@
 
 Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every session.
 
+## M4 PR 11.4 — order history and "สั่งซ้ำ" (5 พ.ย. 2569)
+
+Branch `m4-pr11-order` (PR #39, draft). The clock button on `#/n/order` opens the history (`?view=history`, same page, ticked lines kept): orders newest first with date, status, lines; "สั่งซ้ำ" puts the old lines in the draft (label "สั่งซ้ำ"), saves nothing. Also fixed: faded "บันทึกว่าสั่งแล้ว" when disabled; bar + menu in one sticky box. **Still no** cancelling, receiving, Home button. Details and own decisions: DECISIONS "M4 PR 11.4". Tests 1029; build passes.
+
+### Left for later (do not start before the owner says)
+Cancel order (open question), 11.5 receiving + stock, 11.6 Home buttons.
+
+
 ## M4 PR 11.3b-2b — "สั่งแล้วใช่ไหม" sheet and saving the order (4 พ.ย. 2569)
 
 Branch `m4-pr11-order` (PR #39, draft). On `#/n/order` with a shop chosen: "บันทึกว่าสั่งแล้ว" (and a copy / LINE that worked) opens "สั่งแล้วใช่ไหม"; "สั่งแล้ว" writes one `waiting` order plus the prices typed there with ONE `saveRoot`, the booked lines leave the list, toast "บันทึกใบสั่งแล้ว"; "ยังไม่ได้สั่ง" saves nothing. Medicines on a `waiting` / `partial` order start unticked with the badge "สั่งแล้ว รอรับ". **Still no** history, receiving, Home button or stock cut.

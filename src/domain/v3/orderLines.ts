@@ -10,8 +10,8 @@ import { houseStatus, isLowStock, stockNow, targetDoses, tubeLevel } from './sto
 const byName = (a: { name: string }, b: { name: string }): number => a.name.localeCompare(b.name, 'th');
 
 /** Why a line is on the list: 'low' = running low (ticked), 'unknown' = no stock count (shown, not ticked), 'typed' = a new medicine
- * typed by hand, 'manual' = a medicine of the app picked by the owner (M4 PR 11.2). */
-export type DraftReason = 'low' | 'unknown' | 'typed' | 'manual';
+ * typed by hand, 'manual' = a medicine of the app picked by the owner (M4 PR 11.2), 'repeat' = put in again from an old order (M4 PR 11.4). */
+export type DraftReason = 'low' | 'unknown' | 'typed' | 'manual' | 'repeat';
 
 interface DraftBase {
   /** 'med:<medicationId>' / 'house:<houseItemId>' / 'free:<name without spaces, lower case>' */

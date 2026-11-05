@@ -34,11 +34,11 @@ export const TOAST_GAP = 12;
 
 /** For a page with its own fixed bar at the bottom (M4 PR 11.3b-2b fix): keeps the floating message above that bar. It measures the bar's real
  * top edge (so it follows the font size and the safe area) and publishes it as `--toast-bottom` on <html>; Toast.module.css reads it, and
- * without it the message sits where it always did. The variable goes away when the page leaves. */
-export function useToastAbove(bar: RefObject<HTMLElement | null>): void {
+ * without it the message sits where it always did. The variable goes away when the page leaves, or when `active` is false (the bar is not drawn). */
+export function useToastAbove(bar: RefObject<HTMLElement | null>, active = true): void {
   useLayoutEffect(() => {
     const el = bar.current;
-    if (!el) return;
+    if (!active || !el) return; // no bar on screen (e.g. the history view): the message keeps its normal place
     const root = document.documentElement;
     const set = (): void => {
       const lift = root.clientHeight - el.getBoundingClientRect().top + TOAST_GAP;
@@ -53,5 +53,5 @@ export function useToastAbove(bar: RefObject<HTMLElement | null>): void {
       window.removeEventListener('resize', set);
       root.style.removeProperty('--toast-bottom');
     };
-  }, [bar]);
+  }, [bar, active]);
 }

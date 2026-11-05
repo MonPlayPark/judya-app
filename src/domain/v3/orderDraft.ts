@@ -17,6 +17,7 @@ export const REASON_LABEL: Record<DraftReason, string> = {
   unknown: 'ไม่ทราบสต็อก',
   typed: 'ยาใหม่ ยังไม่อยู่ในรายการยา',
   manual: 'เลือกเพิ่มเอง',
+  repeat: 'สั่งซ้ำ',
 };
 
 // ---------- C. the "sell as" choices by kind ----------

@@ -133,6 +133,12 @@
   background: var(--color-surface);
   color: var(--color-primary-ink);
 }
+.call:disabled {
+  border-color: var(--color-border);
+  background: var(--color-border);
+  color: var(--color-ink-muted);
+  cursor: not-allowed;
+}
 .soonButton {
   grid-column: 1 / -1;
   border-color: var(--color-border);
