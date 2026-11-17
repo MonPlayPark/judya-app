@@ -138,7 +138,7 @@ function reasonText(e: Extract<MedEvent, { type: 'stop' | 'resume' }>): string |
   return e.type === 'stop' && e.note ? `${base} · อาการ: ${e.note}` : base;
 }
 
-function historyRow(e: MedEvent, m: Medication): HistoryRow {
+export function historyRow(e: MedEvent, m: Medication): HistoryRow {
   const base = { id: e.id, date: fullThaiDate(e.effectiveOn) };
   switch (e.type) {
     case 'start':
