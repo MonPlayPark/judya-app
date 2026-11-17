@@ -55,7 +55,11 @@ const V3_ROUTES = ['/', '/n', '/no-such-page', '/old', // M4 PR 7b: an unknown o
   '/n/meds/a4/dose?demo=normal', '/n/meds/a9/dose?demo=cream', '/n/meds/a11/dose?demo=dose', '/n/meds/a12/dose?demo=dose', '/n/meds/a14/dose?demo=dose',
   '/n/meds/a7/dose?demo=stopped', '/n/meds/nope/dose?demo=normal',
   // v3 price per shop (M4 PR 13): card with 3 shops (2 priced), no shops, cream, a stopped medicine (no card), the house sheet with the card
-  '/n/meds/a4?demo=price', '/n/meds/a4?demo=normal', '/n/meds/a9?demo=price', '/n/meds/a7?demo=stopped', '/n/meds?demo=price&tab=house&item=h5'];
+  '/n/meds/a4?demo=price', '/n/meds/a4?demo=normal', '/n/meds/a9?demo=price', '/n/meds/a7?demo=stopped', '/n/meds?demo=price&tab=house&item=h5',
+  // v3 members tab (M4 PR 9): list, list with the taken-out section open, empty, one member (with / without medicines, 6 medicines of a busy person), the remove question, the edit form
+  '/n/members', '/n/members?demo=members', '/n/members?demo=members&open=removed', '/n/members?demo=nomember',
+  '/n/members/p1?demo=members', '/n/members/p4?demo=members', '/n/members/p1?demo=members&sheet=remove', '/n/members/p1/edit?demo=members', '/n/members/p3/edit?demo=members',
+  '/n/members/p1/edit?demo=members&sheet=remove', '/n/members/nope?demo=members'];
 
 // v3 shops page (M4 PR 11.3a): states that need pressing (pick-up form, wrong values, long values, the delete question).
 const SHOPS_ADD = '/n/shops?demo=normal&sheet=add';
@@ -108,6 +112,17 @@ const EDIT_SCENARIOS = [
   ['saved house (back to the list, message)', EDIT_HOUSE, async (page) => { await page.getByLabel(/^ชื่อยา/).fill('พาราเซตามอล'); await click(page, 'บันทึกการแก้ไข'); }],
   ['detail edit sheet, dose row pressed (message)', '/n/meds/a4?demo=normal&sheet=edit', async (page) => { await page.getByRole('link', { name: /เปลี่ยนวิธีกิน/ }).waitFor(); }], // 8b: the faded row became a link, so it is no longer pressed here
   ['house info sheet with the edit link', '/n/meds?demo=normal&tab=house&item=h5', async () => {}],
+];
+
+// v3 members tab (M4 PR 9): states that need pressing (restore message, a 40-letter name with the same-name warning, a wrong year, the picture sheet).
+const MEMBER_SCENARIOS = [
+  ['list, restore (message)', '/n/members?demo=members&open=removed', async (page) => { await page.getByRole('button', { name: /^นำกลับ/ }).click(); }],
+  ['detail, remove question', '/n/members/p2?demo=members', async (page) => { await click(page, 'นำสมาชิกออก'); }],
+  ['edit, 40-letter name and same-name warning', '/n/members/p1/edit?demo=members', async (page) => { await page.getByLabel('ชื่อที่เรียก').fill('คุณแม่'); await page.getByLabel('ชื่อที่เรียก').fill('ก'.repeat(40)); }],
+  ['edit, same name as another member', '/n/members/p1/edit?demo=members', async (page) => { await page.getByLabel('ชื่อที่เรียก').fill('คุณแม่'); }],
+  ['edit, wrong year', '/n/members/p1/edit?demo=members', async (page) => { await page.getByLabel('ปีเกิด (พ.ศ.)').fill('2399'); }],
+  ['edit, picture sheet', '/n/members/p1/edit?demo=members&sheet=avatars', async () => {}],
+  ['edit, remove question', '/n/members/p3/edit?demo=members', async (page) => { await click(page, 'นำสมาชิกออก'); }],
 ];
 
 // v3 add medicine (M4 PR 6b): states that need pressing. Each one opens `route`, runs the clicks, then is measured like the rest.
@@ -477,6 +492,17 @@ for (const width of WIDTHS) {
       if (bad) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 price(${label}): ${bad}`); }
       const small = await page.evaluate(measureV3, fs === 'n' ? 13.9 : 14.9);
       if (small) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 price(${label}): ${small}`); }
+    }
+
+    // 1k) v3 members tab after pressing (M4 PR 9)
+    for (const [label, route, act] of MEMBER_SCENARIOS) {
+      await visit(route, 'v3');
+      await act(page);
+      const bad = await page.evaluate(measure);
+      checked += 1;
+      if (bad) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 members(${label}): ${bad}`); }
+      const small = await page.evaluate(measureV3, fs === 'n' ? 13.9 : 14.9);
+      if (small) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 members(${label}): ${small}`); }
     }
 
     // 1g) v3 shops page after pressing (M4 PR 11.3a)

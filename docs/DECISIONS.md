@@ -1200,3 +1200,33 @@ Item 1, 5, 7 above; the board's per-unit line also shows for the single unit "�
 
 ### Missing tokens
 None.
+
+## M4 PR 9 — members tab: list, one member, edit member (boards #10, #11, #12, #14, #60, #61, Home "จัดการ")
+
+Text and layout follow `canvas4/members.md`. Domain `src/domain/v3/memberEdit.ts` (`updateMember`, `removeMember`, `restoreMember`, `buildMembersList`, `buildMemberDetail`; 20 tests) and `draftFromPerson` in `members.ts`. Screens `pages/v3/MembersV3.tsx` (list, one member, edit, the remove question) and `MembersPage.tsx` (data). Routes `#/n/members`, `#/n/members/:id`, `#/n/members/:id/edit` (`/new` is still checked first). The edit page is the add form of PR 6a (`MemberForm` got an `extra` slot); it is not a copy.
+
+### Built as written
+- List: cards with avatar, name, "อายุ N ปี · ยา N รายการ" (age left out without a birth year; count = active assignments), chip "จัดยาทานเอง", fold "สมาชิกที่นำออก (N)" with removal date (short year, Thai date) and "นำกลับ", floating "เพิ่มสมาชิก" (hidden when empty), empty state #60.
+- One member: header (back, name, "แก้ไข"), card "ข้อมูลสมาชิก", card "ยาที่ใช้อยู่ (N รายการ)" with "ดูทั้งหมด", empty block #61 with "เพิ่มยาให้<name>", allergy line, faded "แชร์ให้แพทย์", red "นำสมาชิกออก".
+- Edit: title "แก้ไขข้อมูลสมาชิก", prefilled, edit-only red "นำสมาชิกออก" + note. Save goes to the detail page with "บันทึกแล้ว".
+- The Members tab of the bottom bar and Home "จัดการ" are links (Home's keeps `?demo=` in a demo). A tap on a member in the Home strip still switches the "ยาของวันนี้" card (it was not coming soon), so it is unchanged.
+
+### Own decisions
+1. **Remove question** (the board has none): sheet "นำ<name>ออกจากรายชื่อไหม" + the sentence from the brief + red "นำออก" / "ไม่นำออก". Also reachable from the edit page.
+2. **Remove = `removedAt` now** (soft). Assignments, history and prices stay. Home, the medicine list, the order page and the add forms already skip removed people, so nothing else was changed. After removing: back to the list, message "นำ<name>ออกแล้ว" (through `flash.ts`).
+3. **"นำกลับ"** clears `removedAt`, message "นำ<name>กลับแล้ว". If the person is "ตัวฉัน" and another active "ตัวฉัน" exists, it is refused with "นำ<name>กลับไม่ได้ เพราะมี 'ตัวฉัน' อยู่ในรายชื่อแล้ว" under the list (role alert); nothing is saved.
+4. **`updateMember`** has the same checks as `createMember`; the person is left out of the same-name warning and of the "ตัวฉัน" rule. It changes the five form fields only (colour, allergies, coverage, id, `removedAt` stay). A removed or unknown member gives "ไม่พบสมาชิกคนนี้" (page with a way back to the list).
+5. **Removal date** is the Thai date of the saved time (`bangkokDate`), not the UTC date.
+6. **Allergy line** shows the saved status words ("ยังไม่ได้บันทึกข้อมูลการแพ้ยา" / "ไม่มีประวัติแพ้ยา (ยืนยันแล้ว)" / "แพ้ยา N รายการ"); PR 10 makes it editable.
+7. **Medicine rows** link to `#/n/meds/:assignmentId` (the board's href is "#"); the sub line is the list's dose line ("เช้า · 1 เม็ด"), without the board's "หลังอาหาร" (the list line does not carry the meal). No period icon column.
+8. **Demo:** `?demo=members` (five people: one self-managed, one without a birth year or medicine, one taken out). Every list demo and Home demo name also works on these pages; a demo reads and writes nothing, and its removals are not kept when the page changes.
+9. Test-only links: `?open=removed` (list), `?sheet=remove` (detail, edit), `?sheet=avatars` (edit).
+10. `check-overflow`: 11 routes and 7 pressed scenarios added (nothing removed).
+
+### Differences from the boards
+- **Insurance** (boards #12 and #14 show "ประกันสุขภาพ / ประกันอุบัติเหตุ" free text): not built, no rows and no fields. The schema has `coverage {type, company?}` (M4 PR 1); insurance / coverage is left to PR 10.
+- Left out because they have no destination: the "ประวัติการปรับยา" row and the "สั่งยาที่ใกล้หมด" button of the medicines card.
+- The medicine rows link (item 7); "แชร์ให้แพทย์" stays faded ComingSoon (PR 15), as asked.
+
+### Missing tokens
+None. Board colours map to existing tokens: #E4F0FE `--color-primary-tint`, #005FD6 `--color-primary-ink`, #013073 `--color-navy`, #5F6368 `--color-ink-muted`, #C5221F `--color-error-ink`, #E3E8EF `--color-border`, white text on blue is the literal `#fff` as on the other pages.
