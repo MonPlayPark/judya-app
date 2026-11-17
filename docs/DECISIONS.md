@@ -1065,3 +1065,12 @@ No board for receiving on the canvas; layout follows the order sheets (decided b
 12. **"ไม่รอแล้ว" confirm sheet** shows "<shop> · N รายการที่ยังไม่มา" with N = the lines still waited for (as on the card). On a failed write it shows the same failure text and stays open.
 13. After a receive or a drop the order page's lines go through `clearOnOrder` (as after a cancel): a medicine whose order is closed now loses the "สั่งแล้ว รอรับ" badge; one still on another open order keeps it.
 14. `check-overflow` has 10 new receive / drop scenarios (the receive sheet in 5 states, typed-line note, both toasts, the add-medicine question, the drop sheet) plus the `sheet=receive` route.
+
+## Overnight: 11.6 and small fixes
+
+Decided while building (no owner answer yet):
+- Home links (item 1) are plain `#/n/order` with no `?demo=` suffix, like the "รายการยา" tile. The old test "Home does not contain /n/order" in `OrderV3.test.tsx` was turned round (Home now links to it).
+- The "สั่งยา" link and the list's low-stock link keep their look but are links, not faded buttons; the faded look of the coming-soon wrapper is gone for them.
+- Liquids (item 3): new `formatDose(med, n)` in `home.ts` (liquid = plain decimal, else `formatAmount`). Used for doses on Home, the medicine list, the detail, the refill preview, ml stock on the detail and the owner list's "เหลือ …" line. Not changed: house items (`houseDetail.ts`) and the pack size line "1 ขวด = N มล." in `addMedicine.ts`, because they are not doses of a liquid medicine assignment.
+- Tubes (item 4): chip words are the medicine list's words: "ใกล้หมด" (opened, no spare, kind low) and "หมด" (none, kind out, so it also counts in the "ยาหมดแล้ว" warning line). `isLowStock` is untouched. An expired tube is still listed as expired first.
+- Birth year (item 5): while 1-3 digits are typed the hint reads "พิมพ์ปี พ.ศ. 4 หลัก ตั้งแต่ 2400 ถึง <ปีล่าสุด>" (neutral) and "บันทึก" stays pressable; pressing it with that value turns the field red and saves nothing. After that the field stays red until the year is valid. Other blockers (name, relation) still grey the button as before. The old test that typed "25" and expected a grey button was changed to "1999".
