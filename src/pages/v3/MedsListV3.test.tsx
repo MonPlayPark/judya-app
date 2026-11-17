@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('virtual:pwa-register', () => ({ registerSW: () => async () => {} }));
@@ -67,6 +67,15 @@ describe('own medicines tab', () => {
 });
 
 describe('house tab', () => {
+  it('the low-stock buttons are real links to the order page, with no coming-soon button', () => {
+    demo('normal');
+    const dad = screen.getByRole('region', { name: 'คุณพ่อ' });
+    expect(within(dad).getByRole('link', { name: /สั่งยาที่ใกล้หมด \(2 รายการ\)/ })).toHaveAttribute('href', '#/n/order');
+    expect(within(dad).getByText(/สั่งยาที่ใกล้หมด/).closest('button')).toBeNull();
+    cleanup();
+    demo('normal', '&tab=house');
+    expect(screen.getByRole('link', { name: /สั่งยาสามัญที่ใกล้หมด/ })).toHaveAttribute('href', '#/n/order');
+  });
   it('sorted, with hint, order button and the add button', () => {
     demo('normal', '&tab=house');
     expect(screen.getByText('เรียงจากที่ต้องดูแลก่อน')).toBeInTheDocument();

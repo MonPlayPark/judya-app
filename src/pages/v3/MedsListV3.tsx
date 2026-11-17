@@ -248,10 +248,10 @@ function ExpiryNote({ text }: { text: string }) {
 
 function OrderButton({ text }: { text: string }) {
   return (
-    <ComingSoon className={styles.orderButton}>
+    <a href="#/n/order" className={`${styles.orderButton} ${styles.orderLink}`}>
       <CartGlyph />
       {text}
-    </ComingSoon>
+    </a>
   );
 }
 
