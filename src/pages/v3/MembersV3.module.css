@@ -486,6 +486,26 @@
   line-height: calc(22px * var(--fs));
   font-weight: var(--weight-semibold);
 }
+.share {
+  text-decoration: none;
+  box-sizing: border-box;
+}
+.shareOff {
+  background: var(--color-border);
+  color: var(--color-ink-muted);
+  cursor: default;
+}
+.shareOff img {
+  opacity: 0.5;
+  filter: grayscale(1);
+}
+.shareOffNote {
+  margin: -6px 0 0;
+  text-align: center;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  color: var(--color-ink-muted);
+}
 .removeLink {
   align-self: center;
   min-height: 44px;

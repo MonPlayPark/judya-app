@@ -3,13 +3,14 @@
 // One action = one `persist` call. Demo: `persist` is not given, so nothing is saved and nothing is read from storage.
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { BackIcon, ChevronRightIcon, InfoIcon, PlusIcon, WarningIcon } from '../../components/icons';
-import { ComingSoon } from '../../components/v3/ComingSoon';
 import { Sheet } from '../../components/v3/Sheet';
 import { Toast, useToast } from '../../components/v3/Toast';
 import { V3Nav } from '../../components/v3/V3Nav';
 import { setFlash, takeFlash } from '../../components/v3/flash';
 import { sheetStyles } from '../../components/v3/sheetParts';
 import { COVERAGE_LABEL, COVERAGE_NOT_GIVEN, type CoverageDraft } from '../../domain/v3/allergy';
+import { bangkokDate } from '../../domain/v3/backup';
+import { NO_MEDS_TEXT, buildDoctorSummary } from '../../domain/v3/doctorSummary';
 import { buildMemberDetail, buildMembersList, removeMember, restoreMember, updateMember } from '../../domain/v3/memberEdit';
 import { draftFromPerson, type MemberDraft } from '../../domain/v3/members';
 import { COVERAGE_TYPES, type Root } from '../../domain/v3/schema';
@@ -263,6 +264,7 @@ export function MemberDetailView({ root, id, demo, persist, linkSuffix = '', now
   const medsHref = `#/n/meds${linkSuffix}`;
   const addMedHref = `#/n/meds/new?person=${encodeURIComponent(d.id)}${linkSuffix === '' ? '' : `&${linkSuffix.replace('?', '')}`}`;
   const none = d.meds.length === 0;
+  const canSummarise = buildDoctorSummary(root, id, bangkokDate(nowIso()))?.empty === false;
 
   return (
     <div className={styles.page}>
@@ -345,10 +347,22 @@ export function MemberDetailView({ root, id, demo, persist, linkSuffix = '', now
           </span>
         </a>
 
-        <ComingSoon className={styles.share}>
-          <img src={iconUrl('share-doctor')} alt="" width={24} height={24} />
-          แชร์ให้แพทย์
-        </ComingSoon>
+        {canSummarise ? (
+          <a className={styles.share} href={`${detailHref(d.id, '')}/summary${linkSuffix}`}>
+            <img src={iconUrl('share-doctor')} alt="" width={24} height={24} />
+            แชร์ให้แพทย์
+          </a>
+        ) : (
+          <>
+            <button type="button" className={`${styles.share} ${styles.shareOff}`} aria-disabled="true" aria-describedby="md-share-off">
+              <img src={iconUrl('share-doctor')} alt="" width={24} height={24} />
+              แชร์ให้แพทย์
+            </button>
+            <p id="md-share-off" className={styles.shareOffNote}>
+              {NO_MEDS_TEXT}
+            </p>
+          </>
+        )}
 
         <button type="button" className={styles.removeLink} onClick={() => setSheet(true)}>
           นำสมาชิกออก

@@ -120,8 +120,16 @@ describe('one member (#/n/members/:id)', () => {
     expect(screen.getByRole('link', { name: /ยาตัวอย่าง B 20 mg/ })).toHaveAttribute('href', '#/n/meds/a2');
     expect(screen.getByRole('link', { name: 'ดูทั้งหมด' })).toHaveAttribute('href', '#/n/meds');
     expect(screen.getByText('ยืนยันแล้วว่าไม่มีประวัติแพ้ยา (บันทึก 28 ต.ค. 69)')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'แชร์ให้แพทย์' })).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('link', { name: 'แชร์ให้แพทย์' })).toHaveAttribute('href', '#/n/members/p2/summary');
+    expect(screen.queryByText('ยังไม่มียาให้สรุป')).toBeNull();
     expect(screen.getByRole('button', { name: 'นำสมาชิกออก' })).toBeInTheDocument();
+  });
+
+  it('share to doctor looks disabled with a line when the member has no medicines', () => {
+    openLive('#/n/members/p5');
+    expect(screen.getByRole('button', { name: /แชร์ให้แพทย์/ })).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.queryByRole('link', { name: 'แชร์ให้แพทย์' })).toBeNull();
+    expect(screen.getByText('ยังไม่มียาให้สรุป')).toBeInTheDocument();
   });
 
   it('no medicines: empty block, "เพิ่มยา" link with the person, no "ดูทั้งหมด"; unknown allergy line', () => {
