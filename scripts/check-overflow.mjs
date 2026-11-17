@@ -35,7 +35,7 @@ const V3_ROUTES = ['/', '/n', '/no-such-page', '/old', // M4 PR 7b: an unknown o
   '/n/settings/data?demo=normal&backup=old&error=wrong_version',
   // v3 order draft (M4 PR 11.2): real data (empty), the three demo houses, the add sheet (both tabs, a repeated name, a name that is in the list),
   // the unit sheet, and the add sheet on a house with nothing to suggest / no medicine at all
-  '/n/order', '/n/order?demo=normal&orders=waiting&screen=history', '/n/order?demo=normal&orders=history&screen=history', '/n/order?demo=normal&screen=history', '/n/order?demo=normal', '/n/order?demo=nolow', '/n/order?demo=nomeds',
+  '/n/order', '/n/order?demo=normal&orders=waiting&screen=history', '/n/order?demo=normal&orders=history&screen=history', '/n/order?demo=normal&orders=history&screen=history&sheet=receive', '/n/order?demo=normal&screen=history', '/n/order?demo=normal', '/n/order?demo=nolow', '/n/order?demo=nomeds',
   '/n/order?demo=normal&sheet=add&tab=meds', '/n/order?demo=normal&sheet=add&tab=new', '/n/order?demo=normal&sheet=add&tab=new&name=Simvastatin',
   '/n/order?demo=normal&sheet=add&tab=new&name=Meto', '/n/order?demo=normal&sheet=unit', '/n/order?demo=normal&sheet=unit&item=med:m8',
   '/n/order?demo=nolow&sheet=add&tab=meds', '/n/order?demo=nomeds&sheet=add&tab=meds', '/n/order?demo=nomeds&sheet=add&tab=new',
@@ -122,6 +122,17 @@ const ORDER_SCENARIOS = [
   ['history, cancel sheet', HIST, async (page) => { await click(page, 'ยกเลิกใบสั่ง'); }],
   ['history, cancel done (toast above the menu)', HIST, async (page) => { await click(page, 'ยกเลิกใบสั่ง'); await page.getByRole('dialog').getByRole('button', { name: 'ยกเลิกใบสั่ง', exact: true }).click(); }],
   ['history, reorder (toast on the order page)', HIST, async (page) => { await page.getByRole('button', { name: /^สั่งซ้ำ/ }).first().click(); }],
+  // receiving (M4 PR 11.5b)
+  ['receive sheet, waiting order (all prefilled)', HIST, async (page) => { await click(page, /รับของแล้ว/); }],
+  ['receive sheet, partial order (typed line, "รับแล้ว")', HIST, async (page) => { await click(page, /รับของที่เหลือ/); }],
+  ['receive sheet, below what is left (pills)', HIST, async (page) => { await click(page, /รับของแล้ว/); await page.getByRole('dialog').getByRole('button', { name: /^ลดจำนวน/ }).first().click(); }],
+  ['receive sheet, "ไม่รอแล้ว" chosen', HIST, async (page) => { await click(page, /รับของแล้ว/); await page.getByRole('dialog').getByRole('button', { name: /^ลดจำนวน/ }).first().click(); await page.getByRole('dialog').getByRole('button', { name: 'ไม่รอแล้ว' }).click(); }],
+  ['receive sheet, everything 0 (button faded)', HIST, async (page) => { await click(page, /รับของแล้ว/); const d = page.getByRole('dialog'); for (const b of await d.getByRole('button', { name: /^ลดจำนวน/ }).all()) while (await b.isEnabled()) await b.click(); }],
+  ['receive sheet, typed line (grey note)', HIST, async (page) => { await click(page, /รับของที่เหลือ/); }],
+  ['receive done (toast above the menu)', HIST, async (page) => { await click(page, /รับของแล้ว/); await page.getByRole('dialog').getByRole('button', { name: 'บันทึกรับของ' }).click(); }],
+  ['receive done, asks to add a typed medicine', HIST, async (page) => { await click(page, /รับของที่เหลือ/); await page.getByRole('dialog').getByRole('button', { name: 'บันทึกรับของ' }).click(); }],
+  ['drop sheet "ไม่รอของที่เหลือแล้วใช่ไหม"', HIST, async (page) => { await click(page, /^ไม่รอแล้ว/); }],
+  ['drop done (toast above the menu)', HIST, async (page) => { await click(page, /^ไม่รอแล้ว/); await page.getByRole('dialog').getByRole('button', { name: 'ไม่รอแล้ว' }).click(); }],
   // layout of the bottom bar and the floating messages (M4 PR 11.3b-2b fix)
   ['toast, price saved', SH3, async (page) => { await page.getByRole('button', { name: /^ใส่ราคา/ }).click(); await page.getByLabel(/^ราคาต่อ หลอด/).fill('80'); await click(page, 'บันทึกราคา'); }],
   ['toast, text copied (no shop chosen)', '/n/order?demo=normal&recipient=full&shops=three', async (page) => { await click(page, 'คัดลอกข้อความ'); }],

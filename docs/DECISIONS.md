@@ -1034,3 +1034,34 @@ Branch `m4-pr11-order` (PR #39, draft, status unchanged). Scope: history, cancel
 
 ### Numbers
 Tests 1054 (1014 before); JS gzip 161.29 kB (158.69 before); `check:overflow` see HANDOFF. Pictures: branch `shots-pr11-4`.
+
+## M4 PR 11.5 — receiving
+
+No board for receiving on the canvas; layout follows the order sheets (decided by the team lead overnight, owner to check)
+
+### Domain choices (made in 11.5a, `orderReceive.ts`)
+1. A line left out of the input counts as 0 received.
+2. A stopped or missing share is skipped (named in `skipped`) and the received amount is split over the remaining people.
+3. Tubes / drops are handed out one whole tube at a time, to the largest share first; people left without one are named in `noTube`.
+4. No `perSellUnit` = 1; the amount of medicine is floored to whole units.
+5. Kind `other` is never counted = no stock update.
+6. A house item whose order unit differs from its stock unit = error, nothing is saved. A missing house item is ignored.
+7. The result is re-checked with `rootSchema` before it is returned.
+8. Receiving 0 everywhere keeps the order partial.
+9. `dropRest` also drops short lines that have no leftover decision yet.
+
+### Screens (11.5b: `OrderReceive.tsx`, `OrderHistory.tsx`, `OrderV3.tsx`)
+1. **Cannot receive more than ordered** (decided by the owner): the stepper is limited to what is still left (+ is faded at the limit, - at 0).
+2. **Rows** are only the lines that are not finished and not dropped; a finished line has no row. Sub line of a medicine line adds "ของ <names>" from the people of its shares (not shown for house and typed lines).
+3. **Failure text** is always "บันทึกไม่สำเร็จ ลองอีกครั้ง" in the receive and drop sheets (the spec gave this exact text), not the cause-specific text the cancel sheet shows. A domain error (for example the unit mismatch of a house item) shows its own Thai text in the receive sheet and nothing is saved.
+4. **"ไม่รอแล้ว" pill** only counts when the number is below what is left; going back up to the full amount hides the pills (the choice is kept if you come back down).
+5. **Save button** is disabled and faded when every number is 0 and no line below its remaining amount is set to "ไม่รอแล้ว" (a plain `disabled` button, like the order bar).
+6. **Notes** (yellow `warn` box with icon: not-counted-yet, skipped, no tube; one grey line with an info icon for "ไม่อัปเดตสต็อก") come from a dry run of `receiveOrder` on the current numbers, so they change as the numbers change. If the dry run fails, no yellow note is shown. "ไม่อัปเดตสต็อก" lists lines with a number above 0 that are typed, house without a stock count, or kind `other` whose people have no stock kind.
+7. **Toast** is chosen from the saved order: partial = "บันทึกรับของแล้ว ยังรอ N รายการ" (N counted as on the card), else "บันทึกรับของแล้ว สต็อกอัปเดตแล้ว".
+8. **Main buttons** on the history card ("รับของแล้ว", "รับของที่เหลือ") are solid primary (white text); "ไม่รอแล้ว" on a partial card is the outlined button like "ยกเลิกใบสั่ง". The sheet is `tall`, with the round X, like the order sheet.
+9. **"เพิ่มยาเข้ารายการไหม"** opens after the receive sheet has closed and only when typed lines arrived (> 0). "เพิ่ม" is a link (44px) to `#/n/meds/new?name=<encoded>`; in a demo the link also carries `demo=<name>` so the add page stays in the demo. `AddMedPage` already reads `name`; nothing changed there.
+10. **Demo** works like the cancel sheet: the root changes in memory only, nothing is written to storage.
+11. **Test link** `&sheet=receive` (with `screen=history`) opens the receive sheet of the first waiting order of the history.
+12. **"ไม่รอแล้ว" confirm sheet** shows "<shop> · N รายการที่ยังไม่มา" with N = the lines still waited for (as on the card). On a failed write it shows the same failure text and stays open.
+13. After a receive or a drop the order page's lines go through `clearOnOrder` (as after a cancel): a medicine whose order is closed now loses the "สั่งแล้ว รอรับ" badge; one still on another open order keeps it.
+14. `check-overflow` has 10 new receive / drop scenarios (the receive sheet in 5 states, typed-line note, both toasts, the add-medicine question, the drop sheet) plus the `sheet=receive` route.
