@@ -24,6 +24,9 @@ import {
 import type { Root } from '../../domain/v3/schema';
 import { avatarUrl, iconUrl, type IconName } from '../../visual';
 import mascotUrl from '../../assets/visual/mascot/pharmacist-clipboard.svg?url';
+import { PriceSheet } from '../../components/v3/PriceCard';
+import { defaultNewId } from '../../domain/v3/medActions';
+import { subjectOfHouse } from '../../domain/v3/medPrices';
 import { HouseInfoSheet, HouseRefillSheet, type HouseSheetKind } from './HouseSheets';
 import styles from './MedsListV3.module.css';
 
@@ -91,6 +94,7 @@ export function MedsListView({ root: initialRoot, today, demo, persist, linkSuff
     if (t) showToast(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  const [priceShop, setPriceShop] = useState<string | null>(null);
   const [tab, setTab] = useState<MedsTab>(initial?.tab ?? (initial?.open === 'deleted' || initial?.item ? 'house' : 'mine'));
   const [filter, setFilter] = useState<MedsFilter>('all');
   const [query, setQuery] = useState('');
@@ -112,6 +116,15 @@ export function MedsListView({ root: initialRoot, today, demo, persist, linkSuff
     setRoot(next);
     setSheet(null);
     showToast('เติมสต็อกแล้ว');
+    return null;
+  };
+  /** A changed price list of a house medicine: save (or keep in memory in a demo), show it, back to the info sheet, say `message`. */
+  const commitPrice = (next: Root, message: string): string | null => {
+    const res = persist ? persist(next) : ({ ok: true } as const);
+    if (!res.ok) return res.text;
+    setRoot(next);
+    setPriceShop(null);
+    showToast(message);
     return null;
   };
   const clearAll = (): void => {
@@ -217,7 +230,11 @@ export function MedsListView({ root: initialRoot, today, demo, persist, linkSuff
         </div>
       )}
       <V3Nav current="meds" />
-      {sheet?.kind === 'info' && <HouseInfoSheet root={root} id={sheet.id} today={today} editHref={`#/n/house/${encodeURIComponent(sheet.id)}/edit${linkSuffix}`} onClose={() => setSheet(null)} onRefill={() => setSheet({ id: sheet.id, kind: 'refill' })} />}
+      {sheet?.kind === 'info' && priceShop !== null && (() => {
+        const subject = subjectOfHouse(root, sheet.id);
+        return subject ? <PriceSheet root={root} subject={subject} shopId={priceShop} today={today} newId={defaultNewId} onClose={() => setPriceShop(null)} onSave={commitPrice} /> : null;
+      })()}
+      {sheet?.kind === 'info' && priceShop === null && <HouseInfoSheet root={root} id={sheet.id} today={today} editHref={`#/n/house/${encodeURIComponent(sheet.id)}/edit${linkSuffix}`} onClose={() => setSheet(null)} onRefill={() => setSheet({ id: sheet.id, kind: 'refill' })} onPickShop={setPriceShop} />}
       {sheet?.kind === 'refill' && <HouseRefillSheet root={root} id={sheet.id} onClose={() => setSheet(null)} commit={commitHouse} />}
       <Toast text={toast} />
     </div>

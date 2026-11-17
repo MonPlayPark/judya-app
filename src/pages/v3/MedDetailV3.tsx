@@ -8,10 +8,11 @@ import { EveningIcon, MorningIcon, NightIcon, NoonIcon } from '../../components/
 import { Sheet } from '../../components/v3/Sheet';
 import { ExpiryPart, NumberField, OptionButton, sheetStyles as form } from '../../components/v3/sheetParts';
 import { takeFlash } from '../../components/v3/flash';
+import { PriceCard, PriceSheet } from '../../components/v3/PriceCard';
 import { Toast, useToast } from '../../components/v3/Toast';
 import type { IsoDate } from '../../domain/calc';
 import type { Period } from '../../domain/v3/home';
-import { resumeMedication, stopMedication } from '../../domain/v3/medActions';
+import { defaultNewId, resumeMedication, stopMedication } from '../../domain/v3/medActions';
 import {
   applyRefill,
   buildMedDetail,
@@ -22,6 +23,7 @@ import {
   type HistoryRow,
   type RefillValues,
 } from '../../domain/v3/medDetail';
+import { subjectOfMedication } from '../../domain/v3/medPrices';
 import { RESUME_REASONS, RESUME_REASON_LABEL, STOP_REASONS, STOP_REASON_LABEL, type Root } from '../../domain/v3/schema';
 import { openNewTube } from '../../domain/v3/stock';
 import { avatarUrl, iconUrl } from '../../visual';
@@ -89,10 +91,23 @@ export function MedDetailView({ root: initialRoot, id, today, demo, persist, lis
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [pageError, setPageError] = useState<string | null>(null);
+  const [priceShop, setPriceShop] = useState<string | null>(null);
   const d = useMemo(() => buildMedDetail(root, id, today), [root, id, today]);
   if (!d) return <MedDetailNotFound listHref={listHref} />;
 
   const stopped = d.status === 'stopped';
+  const medicationId = root.assignments.find((x) => x.id === id)?.medicationId;
+  const priceSubject = medicationId === undefined ? null : subjectOfMedication(root, medicationId);
+  /** Saves a changed price list (one `persist`); on success shows it, closes the price sheet and says `message`. */
+  const commitPrice = (next: Root, message: string): string | null => {
+    const res = persist(next);
+    if (!res.ok) return res.text;
+    setRoot(next);
+    setPageError(null);
+    setPriceShop(null);
+    showToast(message);
+    return null;
+  };
   const close = (): void => setSheet(null);
   /** Saves a new root; on success shows it, closes the sheet and says `message`. On failure nothing changes. */
   const commit = (next: Root, message: string): string | null => {
@@ -247,6 +262,9 @@ export function MedDetailView({ root: initialRoot, id, today, demo, persist, lis
           )}
         </section>
 
+        {/* ----- card: price per shop (optional; not shown for a stopped medicine) ----- */}
+        {!stopped && priceSubject && <PriceCard root={root} subject={priceSubject} onPick={setPriceShop} shopsHref="#/n/shops" />}
+
         {/* ----- card 4: history ----- */}
         <section className={styles.card} aria-labelledby="card-history">
           <div className={styles.cardHead}>
@@ -326,6 +344,9 @@ export function MedDetailView({ root: initialRoot, id, today, demo, persist, lis
             </div>
           </div>
         </Sheet>
+      )}
+      {priceShop !== null && !stopped && priceSubject && (
+        <PriceSheet root={root} subject={priceSubject} shopId={priceShop} today={today} newId={defaultNewId} onClose={() => setPriceShop(null)} onSave={commitPrice} />
       )}
       <Toast text={toast} />
     </div>

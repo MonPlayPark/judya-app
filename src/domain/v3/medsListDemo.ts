@@ -7,7 +7,7 @@ import type { Assignment, HouseItem, Medication, MedEvent, Person, Root, Schedul
 
 // cream / notdaily / stopped are for the detail page (#/n/meds/:id?demo=...): the normal house plus what that view needs.
 // dose: the normal house plus what the dose-change page needs (a syrup, 4 meals, a low stock, an every-N-hours medicine, a cream, chosen days).
-export const MEDS_DEMO_NAMES = ['normal', 'nomember', 'nomeds', 'nohouse', 'cream', 'notdaily', 'stopped', 'dose'] as const;
+export const MEDS_DEMO_NAMES = ['normal', 'nomember', 'nomeds', 'nohouse', 'cream', 'notdaily', 'stopped', 'dose', 'price'] as const;
 export type MedsDemoName = (typeof MEDS_DEMO_NAMES)[number];
 
 export const isMedsDemoName = (v: string | null): v is MedsDemoName => v !== null && (MEDS_DEMO_NAMES as readonly string[]).includes(v);
@@ -127,6 +127,29 @@ export function medsDemoRoot(name: MedsDemoName): Root {
         assignments,
         events: [...EVENTS, start(CREAM), start(NOT_DAILY), ...DOSE_ASSIGNMENTS.map((a) => start(a))],
         houseItems: HOUSE,
+      };
+    }
+    case 'price': {
+      // the cream house plus three shops; VitaminD (m4): ก 180/box, ข 65/strip, ค none; the cream (m8): ก 45/tube; house h5: ก 25/strip
+      const item = (medicationId: string) => ({ kind: 'med', medicationId }) as const;
+      return {
+        ...blank,
+        persons: PERSONS,
+        medications: [...MEDICATIONS, ...EXTRA_MEDICATIONS],
+        assignments: [...ASSIGNMENTS, CREAM],
+        events: [...EVENTS, start(CREAM)],
+        houseItems: HOUSE,
+        shops: [
+          { id: 's1', name: 'ร้านทดสอบ ก', delivery: { kind: 'pickup' } },
+          { id: 's2', name: 'ร้านทดสอบ ข', delivery: { kind: 'pickup' } },
+          { id: 's3', name: 'ร้านทดสอบ ค', delivery: { kind: 'pickup' } },
+        ],
+        prices: [
+          { id: 'pr1', shopId: 's1', item: item('m4'), price: 180, sellUnit: 'กล่อง', perSellUnit: 30, date: '2026-10-20' },
+          { id: 'pr2', shopId: 's2', item: item('m4'), price: 65, sellUnit: 'แผง', perSellUnit: 10, date: '2026-10-12' },
+          { id: 'pr3', shopId: 's1', item: item('m8'), price: 45, sellUnit: 'หลอด', perSellUnit: 1, date: '2026-10-20' },
+          { id: 'pr4', shopId: 's1', item: { kind: 'house', houseItemId: 'h5' }, price: 25, sellUnit: 'แผง', perSellUnit: 1, date: '2026-10-20' },
+        ],
       };
     }
     case 'notdaily':
