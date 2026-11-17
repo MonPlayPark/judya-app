@@ -102,7 +102,7 @@ describe('no "ตารางยา" and no dead controls', () => {
     // only real links exist; nothing else is a link, so nothing can be a dead link
     // the "รายการยา" shortcut and the three nav tabs (Settings since PR 6c)
     const hrefs = Array.from(container.querySelectorAll('a')).map((a) => a.getAttribute('href'));
-    expect(hrefs.slice(-4)).toEqual(['#/n', '#/n/meds', '#/n/members', '#/n/settings/data']); // PR 9: the Members tab is a link too
+    expect(hrefs.slice(-4)).toEqual(['#/n', '#/n/meds', '#/n/members', '#/n/settings']); // PR 9: the Members tab is a link too
     // the other links are the "รายการยา" shortcut and (since PR 6a) the add-member links and (since PR 6b) the add-medicine link, which carry ?demo=
     // and (since PR 6c) the backup reminder, which links to the data page and carries ?demo=
     expect(hrefs.slice(0, -4).every((h) => h === `#/n/members?demo=${name}` || h === '#/n/meds' || h === '#/n/order' || h === `#/n/settings/data?demo=${name}` || h === `#/n/members/new?demo=${name}` || h === `#/n/meds/new?demo=${name}`)).toBe(true);
@@ -157,7 +157,7 @@ describe('no "ตารางยา" and no dead controls', () => {
     expect(tile).not.toBeNull();
     expect(tile).toHaveTextContent('รายการยาดูและจัดการยา');
     expect(tile).not.toHaveTextContent('เร็ว ๆ นี้');
-    expect(screen.getByRole('link', { name: 'ตั้งค่า' })).toHaveAttribute('href', '#/n/settings/data'); // PR 6c: the Settings tab is a real link
+    expect(screen.getByRole('link', { name: 'ตั้งค่า' })).toHaveAttribute('href', '#/n/settings'); // PR 14: the Settings tab opens the list of groups
     expect(screen.getByRole('link', { name: 'สมาชิก' })).toHaveAttribute('href', '#/n/members'); // PR 9: the Members tab is a real link
     for (const t of ['แชร์ให้แพทย์']) {
       const hit = screen.getAllByText(t).map((e) => e.closest('button')).filter((b) => b !== null);

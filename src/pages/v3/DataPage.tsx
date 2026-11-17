@@ -27,10 +27,9 @@ function demoRootOf(name: string | null): Root | null {
 const OLD_BACKUP = '2026-10-08T09:00:00+07:00';
 const withOldBackup = (root: Root): Root => ({ ...root, meta: { ...root.meta, lastBackupAt: OLD_BACKUP } });
 
-/** Back goes to the page before; with no page before (opened by a link) it goes to Home. */
-function goBack(fallback: string): void {
-  if (window.history.length > 1) window.history.back();
-  else window.location.hash = fallback;
+/** Back goes to the list of settings (M4 PR 14); a demo stays a demo. */
+function goBack(suffix: string): void {
+  window.location.hash = `#/n/settings${suffix}`;
 }
 
 /** Reads the browser's answer about keeping our data when the page opens (it does not ask, and does not touch localStorage). */
@@ -47,18 +46,18 @@ export function DataV3Route(props: HomePageProps) {
   const demoData = demoRootOf(demo);
   const error = query.get('error');
   return demoData ? (
-    <DemoData key={demo} root={query.get('backup') === 'old' ? withOldBackup(demoData) : demoData} error={isRestoreFailure(error) ? error : undefined} confirm={query.get('sheet') === 'confirm'} homeHref={isDemoName(demo) ? `#/n?demo=${demo}` : '#/n'} />
+    <DemoData key={demo} root={query.get('backup') === 'old' ? withOldBackup(demoData) : demoData} error={isRestoreFailure(error) ? error : undefined} confirm={query.get('sheet') === 'confirm'} backSuffix={`?demo=${demo ?? ''}`} />
   ) : (
     <LiveData key="live" {...props} />
   );
 }
 
-function DemoData({ root, error, confirm, homeHref }: { root: Root; error: RestoreFailure | undefined; confirm: boolean; homeHref: string }) {
+function DemoData({ root, error, confirm, backSuffix }: { root: Root; error: RestoreFailure | undefined; confirm: boolean; backSuffix: string }) {
   const persist = usePersistShown();
   // The confirm sheet of a test link shows a made-up file (the empty-medicines demo house) against the demo house.
   const file = medsDemoRoot('nomeds');
   const initial: DataViewProps['initial'] = { ...(error ? { error } : {}), ...(confirm ? { pending: { root: file, summary: summarizeRoot(file) } } : {}) };
-  return <DataView root={root} today={DEMO_TODAY} demo persist={persist} onBack={() => goBack(homeHref)} initial={initial} />; // no onBackup / onRestore: a demo saves nothing
+  return <DataView root={root} today={DEMO_TODAY} demo persist={persist} onBack={() => goBack(backSuffix)} initial={initial} />; // no onBackup / onRestore: a demo saves nothing
 }
 
 function LiveData({ getToday, store }: HomePageProps) {
@@ -87,5 +86,5 @@ function LiveData({ getToday, store }: HomePageProps) {
     return outcome;
   };
 
-  return <DataView root={root} today={today} demo={false} persist={persist} onBackup={onBackup} onRestore={onRestore} onBack={() => goBack('#/n')} />;
+  return <DataView root={root} today={today} demo={false} persist={persist} onBackup={onBackup} onRestore={onRestore} onBack={() => goBack('')} />;
 }

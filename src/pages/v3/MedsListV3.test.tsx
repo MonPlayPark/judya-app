@@ -207,7 +207,7 @@ describe('no dead buttons, no storage in demo', () => {
     const notNew = (h: string | null): boolean => !!h?.startsWith('#/n/meds/') && !h.startsWith('#/n/meds/new');
     expect(hrefs.filter(notNew).length).toBe(name === 'nomember' || name === 'nomeds' ? 0 : name === 'normal' || name === 'nohouse' || name === 'stopped' || name === 'members' ? 8 : name === 'dose' ? 14 : 9);
     for (const h of hrefs.filter(notNew)) expect(h).toMatch(new RegExp(`\\?demo=${name}$`));
-    expect(hrefs.slice(-4)).toEqual(['#/n', '#/n/meds', '#/n/members', '#/n/settings/data']); // the four real tabs (Settings since PR 6c, Members since PR 9)
+    expect(hrefs.slice(-4)).toEqual(['#/n', '#/n/meds', '#/n/members', '#/n/settings']); // the four real tabs (Settings since PR 6c, Members since PR 9)
   });
   it('demo mode: no localStorage call of any kind, no loadRoot / saveRoot', () => {
     const calls = (['getItem', 'setItem', 'removeItem', 'clear', 'key'] as const).map((m) => vi.spyOn(Storage.prototype, m));
@@ -265,12 +265,12 @@ describe('route and nav', () => {
   it('V3Nav: four real links (Members since PR 9), the current one is marked', () => {
     render(<V3Nav current="meds" />);
     const links = screen.getAllByRole('link');
-    expect(links.map((l) => l.getAttribute('href'))).toEqual(['#/n', '#/n/meds', '#/n/members', '#/n/settings/data']);
+    expect(links.map((l) => l.getAttribute('href'))).toEqual(['#/n', '#/n/meds', '#/n/members', '#/n/settings']);
     expect(screen.getByRole('link', { name: /รายการยา/ })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: /หน้าหลัก/ })).not.toHaveAttribute('aria-current');
     expect(screen.queryByText('เร็ว ๆ นี้')).toBeNull();
     expect(screen.queryAllByRole('button')).toHaveLength(0); // nothing is coming soon in the bar any more
-    expect(screen.getByRole('link', { name: 'ตั้งค่า' })).toHaveAttribute('href', '#/n/settings/data');
+    expect(screen.getByRole('link', { name: 'ตั้งค่า' })).toHaveAttribute('href', '#/n/settings');
     expect(screen.getByRole('link', { name: 'สมาชิก' })).toHaveAttribute('href', '#/n/members');
   });
 });

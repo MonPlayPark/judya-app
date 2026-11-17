@@ -11,6 +11,7 @@ import { MedsListV3Route } from './pages/v3/MedsListPage';
 import { MemberFormV3Route } from './pages/v3/MemberFormPage';
 import { MemberDetailRoute, MemberEditRoute, MembersListRoute } from './pages/v3/MembersPage';
 import { OrderV3Route } from './pages/v3/OrderPage';
+import { SettingsRoute } from './pages/v3/SettingsPage';
 import { ShopsV3Route } from './pages/v3/ShopsPage';
 import type { IsoDate } from './domain/calc';
 import { useRoute } from './router';
@@ -27,7 +28,7 @@ export function App({ getToday }: { getToday?: () => IsoDate }) {
 function screen(path: string, getToday: (() => IsoDate) | undefined): ReactNode {
   if (path === '/n/meds') return <MedsListV3Route getToday={getToday} />;
   if (path === '/n/order') return <OrderV3Route getToday={getToday} />; // test links only until step 11.6 puts a button on Home
-  if (path === '/n/shops') return <ShopsV3Route getToday={getToday} />; // reached by link only until PR 14 puts it in settings
+  if (path === '/n/shops') return <ShopsV3Route getToday={getToday} />; // M4 PR 14: reached from settings, order and shops
   if (path === '/n/members') return <MembersListRoute getToday={getToday} />; // M4 PR 9
   if (path === '/n/members/new') return <MemberFormV3Route getToday={getToday} />; // checked before `/n/members/:id`, so "new" is never read as an id
   const memberEdit = MEMBER_EDIT_PATH.exec(path);
@@ -35,6 +36,9 @@ function screen(path: string, getToday: (() => IsoDate) | undefined): ReactNode 
   const member = MEMBER_PATH.exec(path);
   if (member?.[1]) return <MemberDetailRoute id={safeDecode(member[1])} getToday={getToday} />;
   if (path === '/n/settings/data') return <DataV3Route getToday={getToday} />;
+  if (path === '/n/settings') return <SettingsRoute screen="list" getToday={getToday} />; // M4 PR 14: the 5 groups
+  const settings = SETTINGS_PATH.exec(path);
+  if (settings?.[1]) return <SettingsRoute screen={settings[1] as 'font' | 'reminders' | 'order' | 'about'} getToday={getToday} />;
   if (path === '/n/meds/new') return <AddMedV3Route getToday={getToday} />;
   const edit = EDIT_MED_PATH.exec(path);
   if (edit?.[1]) return <EditMedV3Route target={{ type: 'personal', assignmentId: safeDecode(edit[1]) }} getToday={getToday} />;
@@ -62,6 +66,7 @@ function V3Frame({ children }: { children: ReactNode }) {
   );
 }
 
+const SETTINGS_PATH = /^\/n\/settings\/(font|reminders|order|about)$/; // M4 PR 14
 const MEMBER_PATH = /^\/n\/members\/([^/]+)$/; // M4 PR 9: one member
 const MEMBER_EDIT_PATH = /^\/n\/members\/([^/]+)\/edit$/;
 const MED_PATH = /^\/n\/meds\/([^/]+)$/;
