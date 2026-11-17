@@ -1,11 +1,10 @@
 // The order history view (M4 PR 11.4): filter pills, one card per saved order, the cancel sheet and "สั่งซ้ำ". View only: OrderView owns the draft
-// and the write. Receiving (M4 PR 11.5b): the sheets are in OrderReceive.tsx; this view only opens them.
+// and the write. Receiving (M4 PR 11.5c): the screen is in OrderReceive.tsx; "รับของแล้ว" / "รับของที่เหลือ" only open it, "ไม่รอแล้ว" closes the order at once.
 import { useState } from 'react';
 import { CheckCircleIcon, ClockIcon, WarningIcon, XCircleIcon } from '../../components/icons';
 import { Sheet } from '../../components/v3/Sheet';
 import { sheetStyles } from '../../components/v3/sheetParts';
-import type { IsoDate } from '../../domain/calc';
-import { AddAskSheet, DropSheet, ReceiveSheet, type ReceiveOutcome } from './OrderReceive';
+import { AddAskSheet, SAVE_FAILED_TEXT, type AddItem, type ReceiveOutcome } from './OrderReceive';
 import { FILTER_LABEL, HISTORY_FILTERS, filterOrders, orderDateText, orderTotal, stillWaiting, type HistoryFilter } from '../../domain/v3/orderHistory';
 import { baht } from '../../domain/v3/orderShops';
 import type { Order, Root } from '../../domain/v3/schema';
@@ -29,30 +28,27 @@ export type CancelOutcome = { ok: true } | { ok: false; text: string };
 
 export interface OrderHistoryProps {
   root: Root;
-  today: IsoDate;
-  nowIso: () => string;
-  /** The `demo` value of the page (a test link) so the "add medicine" link stays in the demo; null on the real page. */
-  demo: string | null;
-  /** Test link `&sheet=receive`: the receiving sheet of the first waiting order starts open. */
-  startReceive?: boolean;
+  /** Opens the receiving screen of an order. */
+  onReceive: (orderId: string) => void;
+  /** After receiving: the typed medicines the owner wants to add (more than one); the sheet "เพิ่มยาเข้ารายการไหม" lists them. null = no sheet. */
+  addAsk: readonly AddItem[] | null;
+  onCloseAddAsk: () => void;
   onAgain: (orderId: string) => void;
   onCancel: (orderId: string) => CancelOutcome;
-  /** ONE write of the root after receiving; `toast` is shown when it worked. */
-  onReceive: (next: Root, toast: string) => ReceiveOutcome;
-  /** "ไม่รอแล้ว": drops what is still waited for, ONE write, toast "ปิดใบสั่งแล้ว". */
+  /** "ไม่รอแล้ว": drops what is still waited for, ONE write, toast "ปิดใบสั่ง ไม่รอของที่เหลือแล้ว" (board #72: no question first). */
   onDrop: (orderId: string) => ReceiveOutcome;
 }
 
-export function OrderHistory({ root, today, nowIso, demo, startReceive = false, onAgain, onCancel, onReceive, onDrop }: OrderHistoryProps) {
+export function OrderHistory({ root, onReceive, addAsk, onCloseAddAsk, onAgain, onCancel, onDrop }: OrderHistoryProps) {
   const [filter, setFilter] = useState<HistoryFilter>('all');
   const [askId, setAskId] = useState<string | null>(null);
-  const [receiveId, setReceiveId] = useState<string | null>(() => (startReceive ? (root.orders.find((o) => o.status === 'waiting')?.id ?? null) : null));
-  const [dropId, setDropId] = useState<string | null>(null);
-  const [addNames, setAddNames] = useState<string[] | null>(null);
-  const receiving = receiveId === null ? undefined : root.orders.find((o) => o.id === receiveId);
-  const dropping = dropId === null ? undefined : root.orders.find((o) => o.id === dropId);
+  const [dropError, setDropError] = useState<string | null>(null);
   const orders = filterOrders(root.orders, filter);
   const asked = askId === null ? undefined : root.orders.find((o) => o.id === askId);
+  const drop = (orderId: string): void => {
+    const res = onDrop(orderId);
+    setDropError(res.ok ? null : SAVE_FAILED_TEXT);
+  };
   return (
     <>
       <div className={styles.filters} role="group" aria-label="กรองใบสั่ง">
@@ -62,6 +58,12 @@ export function OrderHistory({ root, today, nowIso, demo, startReceive = false, 
           </button>
         ))}
       </div>
+      {dropError !== null && (
+        <p className={styles.sheetError} role="alert">
+          <WarningIcon />
+          {dropError}
+        </p>
+      )}
       {orders.length === 0 ? (
         <div className={styles.empty}>
           <p className={styles.emptyTitle}>ยังไม่มีใบสั่งในหมวดนี้</p>
@@ -69,42 +71,17 @@ export function OrderHistory({ root, today, nowIso, demo, startReceive = false, 
       ) : (
         <ul className={styles.list}>
           {orders.map((o) => (
-            <Card key={o.id} order={o} onAgain={() => onAgain(o.id)} onAskCancel={() => setAskId(o.id)} onReceive={() => setReceiveId(o.id)} onAskDrop={() => setDropId(o.id)} />
+            <Card key={o.id} order={o} onAgain={() => onAgain(o.id)} onAskCancel={() => setAskId(o.id)} onReceive={() => onReceive(o.id)} onDrop={() => drop(o.id)} />
           ))}
         </ul>
       )}
       {asked && <CancelSheet order={asked} onClose={() => setAskId(null)} onConfirm={() => onCancel(asked.id)} onDone={() => setAskId(null)} />}
-      {receiving && (
-        <ReceiveSheet
-          root={root}
-          order={receiving}
-          today={today}
-          nowIso={nowIso}
-          onSave={onReceive}
-          onDone={(names) => {
-            setReceiveId(null);
-            if (names.length > 0) setAddNames(names);
-          }}
-          onClose={() => setReceiveId(null)}
-        />
-      )}
-      {addNames && <AddAskSheet names={addNames} demo={demo} onClose={() => setAddNames(null)} />}
-      {dropping && (
-        <DropSheet
-          order={dropping}
-          onConfirm={() => {
-            const res = onDrop(dropping.id);
-            if (res.ok) setDropId(null);
-            return res;
-          }}
-          onClose={() => setDropId(null)}
-        />
-      )}
+      {addAsk && <AddAskSheet items={addAsk} onClose={onCloseAddAsk} />}
     </>
   );
 }
 
-function Card({ order: o, onAgain, onAskCancel, onReceive, onAskDrop }: { order: Order; onAgain: () => void; onAskCancel: () => void; onReceive: () => void; onAskDrop: () => void }) {
+function Card({ order: o, onAgain, onAskCancel, onReceive, onDrop }: { order: Order; onAgain: () => void; onAskCancel: () => void; onReceive: () => void; onDrop: () => void }) {
   const Icon = STATUS_ICON[o.status];
   const total = orderTotal(o);
   const waiting = stillWaiting(o);
@@ -155,7 +132,7 @@ function Card({ order: o, onAgain, onAskCancel, onReceive, onAskDrop }: { order:
             <button type="button" className={styles.receive} onClick={onReceive}>
               รับของที่เหลือ
             </button>
-            <button type="button" className={styles.cancel} onClick={onAskDrop}>
+            <button type="button" className={styles.cancel} onClick={onDrop}>
               ไม่รอแล้ว
             </button>
           </>
