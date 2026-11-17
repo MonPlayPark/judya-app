@@ -5,7 +5,7 @@ import { diffDays, expiryStatus, type IsoDate } from '../calc';
 import { backupBanner, bangkokDate } from './backup';
 import { dosesOn } from './schedule';
 import type { Assignment, HouseItem, Medication, Person, Root, Schedule } from './schema';
-import { daysLeft, houseStatus, isLowStock } from './stock';
+import { daysLeft, houseStatus, isLowStock, tubeLevel } from './stock';
 import { formatDaysLeft, unitFor } from './stockText';
 
 export type Period = 'morning' | 'noon' | 'evening' | 'bedtime';
@@ -257,6 +257,11 @@ function careOfAssignment(a: Assignment, root: Root, today: IsoDate): CareItem |
   if (expiry.status === 'expired') {
     return { ...base, kind: 'expired', reason: CARE_REASON.expired, chip: 'เลิกใช้', sortDays: a.expiry ? diffDays(today, a.expiry) : 0 };
   }
+  // cream / drops counted in tubes: the owner's rule from `tubeLevel` (the same words as the medicine list); isLowStock stays as it is
+  const tubes = daysLeft(a, m, today, root.events);
+  const level = tubes.status === 'tubes' ? tubeLevel(tubes) : null;
+  if (level === 'out') return { ...base, kind: 'out', reason: CARE_REASON.out, chip: 'หมด', sortDays: 0 };
+  if (level === 'low') return { ...base, kind: 'low', reason: CARE_REASON.low, chip: 'ใกล้หมด', sortDays: 0 };
   if (isLowStock(a, m, today, root.settings.lowStockDays, root.events)) {
     const d = daysLeft(a, m, today, root.events);
     return { ...base, kind: 'low', reason: CARE_REASON.low, chip: formatDaysLeft(d, unitFor(a.schedule)), sortDays: d.status === 'ok' ? d.days : 0 };
@@ -286,7 +291,7 @@ function careOfHouse(h: HouseItem, root: Root, today: IsoDate): CareItem | null 
 }
 
 /** Medicines that need care, worst first: expired, out, low stock, expiring soon (fewest days first). A medicine is
- * listed once, under its worst problem. Cream / drops are not warned about low stock yet (stock.ts decides).
+ * listed once, under its worst problem. Cream / drops counted in tubes are listed when `tubeLevel` is low or out.
  * Stopped medicines and removed members are left out. */
 export function careItems(root: Root, today: IsoDate): CareItem[] {
   const items: CareItem[] = [];
