@@ -9,7 +9,7 @@ import { RecoveryContext } from './components/v3/recovery';
 import { MedDetailV3Route } from './pages/v3/MedDetailPage';
 import { MedsListV3Route } from './pages/v3/MedsListPage';
 import { MemberFormV3Route } from './pages/v3/MemberFormPage';
-import { AllergyRoute, MemberDetailRoute, MemberEditRoute, MembersListRoute } from './pages/v3/MembersPage';
+import { AllergyRoute, MemberDetailRoute, MemberEditRoute, MembersListRoute, SummaryRoute } from './pages/v3/MembersPage';
 import { OrderV3Route } from './pages/v3/OrderPage';
 import { SettingsRoute } from './pages/v3/SettingsPage';
 import { ShopsV3Route } from './pages/v3/ShopsPage';
@@ -33,6 +33,8 @@ function screen(path: string, getToday: (() => IsoDate) | undefined): ReactNode 
   if (path === '/n/members/new') return <MemberFormV3Route getToday={getToday} />; // checked before `/n/members/:id`, so "new" is never read as an id
   const allergy = ALLERGY_PATH.exec(path);
   if (allergy?.[1]) return <AllergyRoute id={safeDecode(allergy[1])} getToday={getToday} />; // M4 PR 10
+  const summary = SUMMARY_PATH.exec(path);
+  if (summary?.[1]) return <SummaryRoute id={safeDecode(summary[1])} getToday={getToday} />; // M4 PR 15a
   const memberEdit = MEMBER_EDIT_PATH.exec(path);
   if (memberEdit?.[1]) return <MemberEditRoute id={safeDecode(memberEdit[1])} getToday={getToday} />;
   const member = MEMBER_PATH.exec(path);
@@ -70,6 +72,7 @@ function V3Frame({ children }: { children: ReactNode }) {
 
 const SETTINGS_PATH = /^\/n\/settings\/(font|reminders|order|about)$/; // M4 PR 14
 const ALLERGY_PATH = /^\/n\/members\/([^/]+)\/allergy$/; // M4 PR 10
+const SUMMARY_PATH = /^\/n\/members\/([^/]+)\/summary$/; // M4 PR 15a
 const MEMBER_PATH = /^\/n\/members\/([^/]+)$/; // M4 PR 9: one member
 const MEMBER_EDIT_PATH = /^\/n\/members\/([^/]+)\/edit$/;
 const MED_PATH = /^\/n\/meds\/([^/]+)$/;
