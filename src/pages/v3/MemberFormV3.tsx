@@ -1,6 +1,6 @@
 // The v3 add-member screen (M4 PR 6a): view only. What is valid, what is saved and the colour come from
 // src/domain/v3/members.ts; MemberFormPage owns the data. `MemberForm` takes starting values, so the edit page
-// (PR 9) can use it again. Today only the "add" mode is built.
+// (PR 9, MembersV3.tsx) uses it again.
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { BackIcon, CheckIcon, InfoIcon, PlusIcon, WarningIcon } from '../../components/icons';
 import { Sheet } from '../../components/v3/Sheet';
@@ -26,11 +26,13 @@ export interface MemberFormProps {
   onSubmit: (draft: MemberDraft) => void;
   initialSheet?: 'avatars';
   banner?: ReactNode;
+  /** Shown under the "จัดยาทานเอง" card (the edit page puts "นำสมาชิกออก" here). */
+  extra?: ReactNode;
   /** Sheets or other overlays drawn inside the page. */
   children?: ReactNode;
 }
 
-export function MemberForm({ initial, persons, title, saveError, onBack, onSubmit, initialSheet, banner, children }: MemberFormProps) {
+export function MemberForm({ initial, persons, title, saveError, onBack, onSubmit, initialSheet, banner, extra, children }: MemberFormProps) {
   const [draft, setDraft] = useState<MemberDraft>(() => ({ ...emptyDraft(), ...initial }));
   const [switchTouched, setSwitchTouched] = useState(initial?.selfManaged !== undefined);
   const [avatarSheet, setAvatarSheet] = useState(initialSheet === 'avatars');
@@ -192,6 +194,7 @@ export function MemberForm({ initial, persons, title, saveError, onBack, onSubmi
               </span>
             </button>
           </section>
+          {extra}
         </div>
 
         <div className={styles.bar}>

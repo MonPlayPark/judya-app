@@ -9,6 +9,7 @@ import { RecoveryContext } from './components/v3/recovery';
 import { MedDetailV3Route } from './pages/v3/MedDetailPage';
 import { MedsListV3Route } from './pages/v3/MedsListPage';
 import { MemberFormV3Route } from './pages/v3/MemberFormPage';
+import { MemberDetailRoute, MemberEditRoute, MembersListRoute } from './pages/v3/MembersPage';
 import { OrderV3Route } from './pages/v3/OrderPage';
 import { ShopsV3Route } from './pages/v3/ShopsPage';
 import type { IsoDate } from './domain/calc';
@@ -27,7 +28,12 @@ function screen(path: string, getToday: (() => IsoDate) | undefined): ReactNode 
   if (path === '/n/meds') return <MedsListV3Route getToday={getToday} />;
   if (path === '/n/order') return <OrderV3Route getToday={getToday} />; // test links only until step 11.6 puts a button on Home
   if (path === '/n/shops') return <ShopsV3Route getToday={getToday} />; // reached by link only until PR 14 puts it in settings
-  if (path === '/n/members/new') return <MemberFormV3Route getToday={getToday} />;
+  if (path === '/n/members') return <MembersListRoute getToday={getToday} />; // M4 PR 9
+  if (path === '/n/members/new') return <MemberFormV3Route getToday={getToday} />; // checked before `/n/members/:id`, so "new" is never read as an id
+  const memberEdit = MEMBER_EDIT_PATH.exec(path);
+  if (memberEdit?.[1]) return <MemberEditRoute id={safeDecode(memberEdit[1])} getToday={getToday} />;
+  const member = MEMBER_PATH.exec(path);
+  if (member?.[1]) return <MemberDetailRoute id={safeDecode(member[1])} getToday={getToday} />;
   if (path === '/n/settings/data') return <DataV3Route getToday={getToday} />;
   if (path === '/n/meds/new') return <AddMedV3Route getToday={getToday} />;
   const edit = EDIT_MED_PATH.exec(path);
@@ -56,6 +62,8 @@ function V3Frame({ children }: { children: ReactNode }) {
   );
 }
 
+const MEMBER_PATH = /^\/n\/members\/([^/]+)$/; // M4 PR 9: one member
+const MEMBER_EDIT_PATH = /^\/n\/members\/([^/]+)\/edit$/;
 const MED_PATH = /^\/n\/meds\/([^/]+)$/;
 const EDIT_MED_PATH = /^\/n\/meds\/([^/]+)\/edit$/; // M4 PR 8a: fix the data of a medicine
 const DOSE_PATH = /^\/n\/meds\/([^/]+)\/dose$/; // M4 PR 8b: change how to take a medicine

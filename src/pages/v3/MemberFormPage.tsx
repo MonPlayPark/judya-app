@@ -14,7 +14,7 @@ import { MemberFormView, type MemberFormViewProps } from './MemberFormV3';
 const SHEETS: readonly string[] = ['avatars', 'done'];
 
 /** A demo name of the list page (normal, nomember ...) or of Home (empty0 ...); the same names are carried in links. */
-function demoRootOf(name: string | null): Root | null {
+export function demoRootOf(name: string | null): Root | null {
   if (isMedsDemoName(name)) return medsDemoRoot(name);
   if (isDemoName(name)) return demoRoot(name);
   return null;
