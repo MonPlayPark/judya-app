@@ -1095,3 +1095,43 @@ Decided while building (no owner answer yet):
 - Liquids (item 3): new `formatDose(med, n)` in `home.ts` (liquid = plain decimal, else `formatAmount`). Used for doses on Home, the medicine list, the detail, the refill preview, ml stock on the detail and the owner list's "เหลือ …" line. Not changed: house items (`houseDetail.ts`) and the pack size line "1 ขวด = N มล." in `addMedicine.ts`, because they are not doses of a liquid medicine assignment.
 - Tubes (item 4): chip words are the medicine list's words: "ใกล้หมด" (opened, no spare, kind low) and "หมด" (none, kind out, so it also counts in the "ยาหมดแล้ว" warning line). `isLowStock` is untouched. An expired tube is still listed as expired first.
 - Birth year (item 5): while 1-3 digits are typed the hint reads "พิมพ์ปี พ.ศ. 4 หลัก ตั้งแต่ 2400 ถึง <ปีล่าสุด>" (neutral) and "บันทึก" stays pressable; pressing it with that value turns the field red and saves nothing. After that the field stays red until the year is valid. Other blockers (name, relation) still grey the button as before. The old test that typed "25" and expected a grey button was changed to "1999".
+
+## M4 PR 8a — edit medicine data (typo fixes), boards #23 - #27, #38
+
+Boards: #23 the "แก้ไขยานี้" sheet on the detail page, #24 edit page (personal), #25 "ตรวจก่อนบันทึก", #26 edit page (house), #27 kind-change sheet, #38 the house sheet whose "แก้ข้อมูลยา" is now a link. Text and layout follow `canvas4/edit-med.md`.
+
+### What was built
+- Domain `src/domain/v3/editMedicine.ts` (47 tests): `draftFromCurrent`, `changedFields`, `needsConfirm`, `evaluateEdit` (pack line, "ตอนนี้มีรวม N …", "พอใช้ประมาณ N วัน", confirm rows, notes, the grey bar sentence), `changeKind` / `resetForKind`, `applyEdit`. An edit is **not** a MedEvent: `events` is never touched, one `saveRoot` on save.
+- Screens: `EditMedV3.tsx` + `EditMedPage.tsx`, routes `#/n/meds/:assignmentId/edit` and `#/n/house/:houseItemId/edit` (house items are addressed by their id, as `&item=<id>` on the list). The pencil on the detail page opens the sheet; the house info sheet's button is a link. Reused from the add form: `planStock`, `sizeFields`, `countFields`, `packLine`, `nameProblem`, `strengthOf`, tiles and number-box styles (`parseNum`, `nameProblem`, `validDate` are now exported and `sizeDraftOfPack` was split out of `planStockWithPack`; no behaviour change).
+- `components/v3/flash.ts`: a one-time message in memory carried to the next page (not storage).
+
+### Rules from the team lead (built as written)
+a. Shared medicine: pack-card note "ยานี้ใช้ร่วมกับ <names> ชื่อ ชนิด ความแรง และขนาดบรรจุจะเปลี่ยนของทุกคน" and stock-card note "จำนวนที่มีและวันหมดอายุ แก้เฉพาะของ <owner>"; none when nobody else uses it. "Others" = any other assignment of the same medication (active or stopped); a person taken out of the house is left out of the names ("คนอื่น" if only such people are left).
+b. When the pack changes, every other assignment's `count` stock keeps its TOTAL pieces, written with the new strip size (whole strips + loose); its counting day is kept. Tested.
+c. Cross-group kind change only when nobody else uses the medicine; otherwise the sheet says "ยานี้มีคนอื่นใช้ด้วย …" with only "ตกลง". Pack and counts are cleared and "buy as" goes to the default of the group.
+d. A stock written here is a recount: `countedOn = today`; "ไม่นับสต็อก" = `stock: null` and pack `none`.
+e. After saving: back to the medicine page (house: the house list, sheet closed) with the toast "บันทึกการแก้ไขแล้ว". The edit sheet's second row ("เปลี่ยนวิธีกิน") is a faded "เร็ว ๆ นี้" row.
+f. Duplicate name (same person, ignoring case and spaces): a yellow note, saving allowed.
+g. Allergy hint: not built.
+
+### Own decisions while building
+1. **Prefilled counts are what is there TODAY** (saved count minus the doses since the counting day, `stockNow`), not the count of the counting day, so the numbers equal the detail page. If buy-as, pack and counts are all untouched, the stock row is **not** rewritten (its counting day stays). Any change of those three, or a cross-group kind, rewrites it with `countedOn = today`. Stopped medicine: the saved count as it is.
+2. **A medicine with no pack but a count** (`pack: none`, many in the demo data) shows a "นับเป็นเม็ด/ซอง/มล./ชิ้น" tile (`buy = loose`) next to the board's tiles, so its count is not lost on opening.
+3. **House medicines have no pack size in the data** (`stock: { qty, unit }` only). So the house page has no "ขนาดบรรจุ" card; "นับเป็นอะไร" is "ไม่นับสต็อก" + the units of the kind (+ the saved unit, even an unusual one like "ตลับ"), and "จำนวนที่มีตอนนี้" is one number in that unit. The board's "10 เม็ดต่อแผง" and "40 เม็ด" cannot be shown. Changing the unit or number asks the confirm sheet (rows "นับเป็น" / "จำนวนที่มีรวม"). The low-stock mark `lowAt` is kept only while the unit stays the same (and the kind group); an empty number means not counted.
+4. **A dose that does not fit the new kind blocks the save** (e.g. 1 pill per time cannot become a liquid dose; the schema's `doseProblem` would refuse the root). The page shows an amber note "วิธีกินเดิมใช้หน่วยของชนิดเดิม ต้องปรับวิธีกินก่อนถึงจะเปลี่ยนเป็นชนิดนี้ได้" and the grey bar says "กรอกข้อมูลที่จำเป็นให้ครบก่อน". Until the dose change step exists, tablet -> liquid is therefore not savable; tablet -> sachet / other / capsule is. The dose is never converted for the person. **Question for the owner / next step (8b).**
+5. **Days line** ("พอใช้ประมาณ N วัน") is shown for every counted personal medicine in pieces or ml that is in use (the board says solid only); uses `daysLeft` / `leftTextFor` with the current schedule. The words are never doubled ("พอใช้ประมาณ 3 สัปดาห์").
+6. **Confirm rows** are shown only when the text changes; a row of "พอใช้ประมาณ" only with a pack/count change. The fallback row "จำนวนที่มี / ค่าเดิม / ค่าที่แก้แล้ว" is used when a confirm is needed but no row differs.
+7. **Duplicate name for a house medicine**: "มียาสามัญชื่อนี้อยู่แล้ว" (rule f has no owner there).
+8. **Name rules** are the add form's (2 - 60 letters); an empty name says "ต้องกรอกช่องนี้", a one-letter name the add form's sentence. A wrong strength ("ความแรงต้องเป็นตัวเลขมากกว่า 0") stops the save like the add form.
+9. **Kind labels** are the add form's (ยาเม็ด, ยาน้ำ, ผงชงดื่ม ...), not the board's short ones (เม็ด, น้ำ/น้ำเชื่อม ...), so one name is used everywhere. The sheet title uses the same word.
+10. **Default "buy as" after a group change** is the add form's `DEFAULT_BUY` (drops -> ขวด; the board says หลอด for the tube group).
+11. The kind sheet's link "ไปที่ เปลี่ยนวิธีกิน (หมอสั่งใหม่)" is a faded "เร็ว ๆ นี้" button (dose change is the next step); the board's href was a wrong link anyway.
+12. Back arrow on the edit page leaves without asking (the board draws no "discard?" question).
+13. Test links: `#/n/meds/a4/edit?demo=normal`, `#/n/house/h5/edit?demo=normal`, `#/n/meds/a4?demo=normal&sheet=edit`. A demo saves nothing (not even a read of storage) and goes back with the message.
+14. `check-overflow`: 9 routes and 33 pressed scenarios (tablet box, strip, bottle, not counted, required missing, duplicate name, long numbers, confirm sheet x 3, kind sheet, liquid / sachet / cream / other after the kind sheet, cream, shared medicine, house x 9, saved x 2, the detail sheet, the house info sheet) at 360 / 412 x 3 font sizes.
+
+### Differences from the boards
+Items 2, 3, 4, 5, 9, 10 above; the board's fixed "แก้เฉพาะยาของ พ่อ ยาของ แม่ ไม่เปลี่ยน" is replaced by rule a; the board jumps to MedsList after saving (rule e); the board draws no toast.
+
+### Missing tokens
+None new. The board colours map to existing tokens (#E4F0FE `--color-primary-tint`, #005FD6 `--color-primary-ink`, #E6F4EA / #137333 `--color-success-*`, #FEF7E0 / #8A5300 `--color-warning-*`, #C5221F `--color-error-ink`, #E3E8EF `--color-border`, #80868B `--color-border-strong`). The button text colour `#fff` is the one the add form already uses.

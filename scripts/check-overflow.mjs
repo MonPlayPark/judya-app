@@ -47,7 +47,10 @@ const V3_ROUTES = ['/', '/n', '/no-such-page', '/old', // M4 PR 7b: an unknown o
   '/n/order?demo=normal&sheet=incomplete', '/n/order?demo=normal&recipient=full&sheet=recipient', '/n/order?demo=nolow&recipient=full',
   // v3 shops page (M4 PR 11.3a): real data (empty), an empty house, three shops, a 40-letter name, the add form (delivery), the edit form
   '/n/shops', '/n/shops?demo=empty', '/n/shops?demo=normal', '/n/shops?demo=long', '/n/shops?demo=normal&sheet=add', '/n/shops?demo=long&sheet=edit&item=s1',
-  '/n/shops?demo=normal&sheet=edit&item=s3'];
+  '/n/shops?demo=normal&sheet=edit&item=s3',
+  // v3 edit medicine (M4 PR 8a): the edit sheet on the detail page, the page for a tablet box, a cream, a medicine other people use, and two house medicines
+  '/n/meds/a4?demo=normal&sheet=edit', '/n/meds/a4/edit?demo=normal', '/n/meds/a9/edit?demo=cream', '/n/meds/a3/edit?demo=normal', '/n/meds/a7/edit?demo=stopped',
+  '/n/meds/nope/edit?demo=normal', '/n/house/h5/edit?demo=normal', '/n/house/h4/edit?demo=normal', '/n/house/h2/edit?demo=normal'];
 
 // v3 shops page (M4 PR 11.3a): states that need pressing (pick-up form, wrong values, long values, the delete question).
 const SHOPS_ADD = '/n/shops?demo=normal&sheet=add';
@@ -60,6 +63,46 @@ const SHOPS_SCENARIOS = [
   ['edit, delete question', '/n/shops?demo=normal&sheet=edit&item=s1', async (page) => { await click(page, 'ลบร้านนี้'); }],
   ['edit long, delete question', '/n/shops?demo=long&sheet=edit&item=s1', async (page) => { await click(page, 'ลบร้านนี้'); }],
   ['saved toast', SHOPS_ADD, async (page) => { await fill(page, 'ชื่อร้าน', 'ร้านทดสอบ ง'); await fill(page, 'ค่าส่ง', '20'); await click(page, 'บันทึก'); }],
+];
+
+// v3 edit medicine (M4 PR 8a): states that need pressing (boards #24 - #27 and the cases the board does not draw). Same shape as ADD_SCENARIOS.
+const EDIT = '/n/meds/a4/edit?demo=normal';
+const EDIT_HOUSE = '/n/house/h5/edit?demo=normal';
+const EDIT_SCENARIOS = [
+  ['tablet box, name changed (chip, enabled bar)', EDIT, async (page) => { await fill(page, /^ชื่อยา/, 'ก'); }],
+  ['tablet box, long name + duplicate note', EDIT, async (page) => { await page.getByLabel(/^ชื่อยา/).fill('Simvastatin'); }],
+  ['tablet box, name empty (required missing)', EDIT, async (page) => { await page.getByLabel(/^ชื่อยา/).fill(''); }],
+  ['tablet box, required pack box empty', EDIT, async (page) => { await page.getByLabel('จำนวนแผงต่อกล่อง').fill(''); }],
+  ['tablet box, wrong strength', EDIT, async (page) => { await page.getByLabel('ความแรง (ไม่บังคับ)').fill('abc'); }],
+  ['tablet box, long numbers', EDIT, async (page) => { for (const l of ['จำนวนแผงต่อกล่อง', 'จำนวนเม็ดต่อแผง']) await page.getByLabel(l).fill('9'.repeat(5)); await page.getByLabel('จำนวน กล่อง').fill('9'.repeat(5)); }],
+  ['tablet box, wrong count', EDIT, async (page) => { await page.getByLabel('จำนวน แผง').fill('abc'); }],
+  ['tablet, bought as strip', EDIT, async (page) => { await click(page, 'แผง'); }],
+  ['tablet, bought as bottle', EDIT, async (page) => { await click(page, 'ขวด/กระปุก'); }],
+  ['tablet, not counted', EDIT, async (page) => { await click(page, 'ไม่นับสต็อก'); }],
+  ['confirm sheet (pack size changed)', EDIT, async (page) => { await page.getByLabel('จำนวนเม็ดต่อแผง').fill('14'); await click(page, 'บันทึกการแก้ไข'); }],
+  ['confirm sheet (bought as and count changed)', EDIT, async (page) => { await click(page, 'แผง'); await page.getByLabel('จำนวนเม็ดต่อแผง').fill('99999'); await page.getByLabel('จำนวน แผง').fill('99999'); await click(page, 'บันทึกการแก้ไข'); }],
+  ['kind sheet (tablet to liquid)', EDIT, async (page) => { await page.getByRole('button', { name: /ยาน้ำ/ }).click(); }],
+  ['liquid after the kind sheet (pack empty, dose note)', EDIT, async (page) => { await page.getByRole('button', { name: /ยาน้ำ/ }).click(); await click(page, 'เปลี่ยนชนิดยา'); }],
+  ['sachet after the kind sheet (pack empty)', EDIT, async (page) => { await page.getByRole('button', { name: /ผงชงดื่ม/ }).click(); await click(page, 'เปลี่ยนชนิดยา'); }],
+  ['cream after the kind sheet', EDIT, async (page) => { await page.getByRole('button', { name: /ครีม/ }).click(); await click(page, 'เปลี่ยนชนิดยา'); }],
+  ['other after the kind sheet', EDIT, async (page) => { await page.getByRole('button', { name: /อื่นๆ/ }).click(); await click(page, 'เปลี่ยนชนิดยา'); }],
+  ['cream, counted by the tube', '/n/meds/a9/edit?demo=cream', async () => {}],
+  ['cream, bought as bottle', '/n/meds/a9/edit?demo=cream', async (page) => { await click(page, 'ขวด'); }],
+  ['shared medicine, notes (pack and stock)', '/n/meds/a3/edit?demo=normal', async (page) => { await click(page, 'แผง'); }],
+  ['shared medicine, kind sheet (only ตกลง)', '/n/meds/a3/edit?demo=normal', async (page) => { await page.getByRole('button', { name: /ผงชงดื่ม/ }).click(); }],
+  ['shared medicine, not counted (note under expiry)', '/n/meds/a3/edit?demo=normal', async (page) => { await click(page, 'ไม่นับสต็อก'); }],
+  ['house, count changed', EDIT_HOUSE, async (page) => { await page.getByLabel('จำนวน แผง').fill('9'.repeat(5)); }],
+  ['house, confirm sheet', EDIT_HOUSE, async (page) => { await page.getByLabel('จำนวน แผง').fill('6'); await click(page, 'บันทึกการแก้ไข'); }],
+  ['house, unit changed (confirm sheet)', EDIT_HOUSE, async (page) => { await click(page, 'เม็ด'); await click(page, 'บันทึกการแก้ไข'); }],
+  ['house, not counted', EDIT_HOUSE, async (page) => { await click(page, 'ไม่นับสต็อก'); }],
+  ['house, kind sheet (no dose link)', EDIT_HOUSE, async (page) => { await page.getByRole('button', { name: /ยาน้ำ/ }).click(); }],
+  ['house, long name and duplicate note', EDIT_HOUSE, async (page) => { await page.getByLabel(/^ชื่อยา/).fill('ยาธาตุน้ำขาว'); }],
+  ['house, wrong count', EDIT_HOUSE, async (page) => { await page.getByLabel('จำนวน แผง').fill('abc'); }],
+  ['house liquid, kind changed to tablet', '/n/house/h2/edit?demo=normal', async (page) => { await page.getByRole('button', { name: /ยาเม็ด/ }).click(); await click(page, 'เปลี่ยนชนิดยา'); }],
+  ['saved (back to the medicine page, message)', EDIT, async (page) => { await page.getByLabel(/^ชื่อยา/).fill('Vitamin D3'); await click(page, 'บันทึกการแก้ไข'); }],
+  ['saved house (back to the list, message)', EDIT_HOUSE, async (page) => { await page.getByLabel(/^ชื่อยา/).fill('พาราเซตามอล'); await click(page, 'บันทึกการแก้ไข'); }],
+  ['detail edit sheet, dose row pressed (message)', '/n/meds/a4?demo=normal&sheet=edit', async (page) => { await page.getByRole('button', { name: /เปลี่ยนวิธีกิน/ }).click({ force: true }); }],
+  ['house info sheet with the edit link', '/n/meds?demo=normal&tab=house&item=h5', async () => {}],
 ];
 
 // v3 add medicine (M4 PR 6b): states that need pressing. Each one opens `route`, runs the clicks, then is measured like the rest.
@@ -346,6 +389,17 @@ for (const width of WIDTHS) {
       if (bad) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 add-med(${label}): ${bad}`); }
       const small = await page.evaluate(measureV3, fs === 'n' ? 13.9 : 14.9);
       if (small) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 add-med(${label}): ${small}`); }
+    }
+
+    // 1h) v3 edit medicine after pressing (M4 PR 8a)
+    for (const [label, route, act] of EDIT_SCENARIOS) {
+      await visit(route, 'v3');
+      await act(page);
+      const bad = await page.evaluate(measure);
+      checked += 1;
+      if (bad) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 edit-med(${label}): ${bad}`); }
+      const small = await page.evaluate(measureV3, fs === 'n' ? 13.9 : 14.9);
+      if (small) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 edit-med(${label}): ${small}`); }
     }
 
     // 1f) v3 order draft after pressing (M4 PR 11.2)
