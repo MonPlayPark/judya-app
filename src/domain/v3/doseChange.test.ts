@@ -19,7 +19,7 @@ import {
   summarize,
   toggleDay,
   toggleMeal,
-  useAltDays,
+  setAltDays,
   type DoseDraft,
 } from './doseChange';
 import { rootSchema, type Assignment, type Medication, type Root, type Schedule } from './schema';
@@ -156,7 +156,7 @@ describe('days (shared by every meal)', () => {
     const alt = { ...draftOf(base(), 'a4'), days: { kind: 'alt', anchor: '2026-10-01' } } as DoseDraft;
     expect(selectedDays(alt.days)).toEqual([]);
     expect(toggleDay(alt, 3).days).toEqual({ kind: 'weekdays', days: [3] });
-    const back = useAltDays(toggleDay(alt, 3), '2026-10-01');
+    const back = setAltDays(toggleDay(alt, 3), '2026-10-01');
     expect(back.days).toEqual({ kind: 'alt', anchor: '2026-10-01' });
   });
 });

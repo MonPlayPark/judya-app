@@ -1,0 +1,485 @@
+/* v3 change-how-to-take page (M4 PR 8b, boards #41 - #49, #52). Page, header, cards, status chip and info row come from
+   MedDetailV3.module.css; this file only has what this page adds. Text as px at "normal" times var(--fs); colours from the
+   tokens of tokens.css. Every tap target >= 44px, the bottom buttons 52px. */
+.body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 12px 16px;
+}
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 12px 12px;
+}
+.strength {
+  margin: 0;
+  font-size: calc(15px * var(--fs));
+  line-height: calc(21px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
+}
+.kindCol {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 64px;
+}
+.kindWord {
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-navy);
+  text-align: center;
+}
+.cannot {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 14px 12px;
+  font-size: calc(15px * var(--fs));
+  line-height: calc(22px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-primary-ink);
+}
+.cannot svg {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+}
+.backLink,
+.linkButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  border-radius: 12px;
+  font-size: calc(16px * var(--fs));
+  font-weight: var(--weight-bold);
+  text-decoration: none;
+}
+.backLink {
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+}
+
+/* ----- which meals: four toggle tiles ----- */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  box-sizing: border-box;
+  min-height: 68px;
+  padding: 6px 2px;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: 16px;
+  background: var(--color-surface);
+  color: var(--color-navy);
+  font-family: inherit;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+.tileOn {
+  padding: 5.5px 1.5px;
+  border: 2px solid var(--color-primary);
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+}
+.tile[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+/* ----- one row per meal ----- */
+.rowsCard {
+  padding: 4px 12px;
+}
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 8px;
+  min-height: 68px;
+  padding: 6px 0;
+}
+.row + .row {
+  border-top: 1px solid var(--color-border);
+}
+.rowMain {
+  flex: 1 1 150px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 56px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.rowMain > svg:last-child {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: var(--color-ink-muted);
+}
+.rowText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.rowName {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: calc(16px * var(--fs));
+  line-height: calc(22px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-navy);
+}
+.chg {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+}
+.stepper {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+.stepBtn {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+  cursor: pointer;
+}
+.stepBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.stepBtn svg {
+  width: 24px;
+  height: 24px;
+}
+.stepValue {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 56px;
+  text-align: center;
+}
+.stepNum {
+  font-size: calc(20px * var(--fs));
+  line-height: calc(26px * var(--fs));
+  font-weight: var(--weight-bold);
+  color: var(--color-navy);
+}
+.stepUnit {
+  font-size: calc(14px * var(--fs));
+  line-height: calc(18px * var(--fs));
+  font-weight: var(--weight-medium);
+  color: var(--color-ink-muted);
+}
+
+/* ----- reason ----- */
+.reasons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.reason {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-sizing: border-box;
+  min-height: 48px;
+  padding: 0 8px;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-navy);
+  font-family: inherit;
+  font-size: calc(15px * var(--fs));
+  font-weight: var(--weight-bold);
+  cursor: pointer;
+}
+.reasonOn {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+}
+.radioDot {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  box-sizing: border-box;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+}
+.reasonOn .radioDot {
+  background: #fff;
+  box-shadow: inset 0 0 0 3px var(--color-primary);
+}
+.noteLabel {
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-navy);
+}
+.note {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: 12px;
+  background: var(--color-surface);
+  font-family: inherit;
+  font-size: calc(16px * var(--fs));
+  line-height: calc(24px * var(--fs));
+  color: var(--color-ink);
+  resize: vertical;
+}
+.note:focus {
+  border-color: var(--color-primary);
+  outline: 0;
+}
+.counter {
+  margin: -4px 0 0;
+  text-align: right;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  color: var(--color-ink-muted);
+}
+
+/* ----- summary ----- */
+.sumRows {
+  margin: 0;
+  padding: 0 12px 6px;
+  list-style: none;
+}
+.sumRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--color-border);
+}
+.sumLabel {
+  flex: none;
+  width: 84px;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-navy);
+}
+.sumText {
+  flex: 1;
+  min-width: 0;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  color: var(--color-ink-muted);
+  overflow-wrap: anywhere;
+}
+.sumNew {
+  font-weight: var(--weight-bold);
+  color: var(--color-ink);
+}
+.sumStock {
+  align-items: center;
+  justify-content: space-between;
+}
+.sumStockText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.sumBold {
+  font-size: calc(16px * var(--fs));
+  line-height: calc(22px * var(--fs));
+  font-weight: var(--weight-bold);
+  color: var(--color-navy);
+}
+
+/* ----- the bar ----- */
+.bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px calc(14px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+  box-shadow: 0 -1px 3px rgba(60, 64, 67, 0.16);
+}
+.barNote {
+  margin: 0;
+  text-align: center;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-ink-muted);
+}
+.saveError {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-error-ink);
+}
+.saveError svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+}
+.barButtons {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+  gap: 8px;
+}
+.cancel,
+.save,
+.saveOff {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 52px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  font-family: inherit;
+  font-size: calc(16px * var(--fs));
+  font-weight: var(--weight-bold);
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+.cancel {
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+}
+.save {
+  background: var(--color-primary);
+  color: #fff;
+}
+.saveOff {
+  background: var(--color-border);
+  color: var(--color-ink-muted);
+  cursor: not-allowed;
+}
+
+/* ----- the meal sheet ----- */
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.segment {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.spoons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.seg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-navy);
+  font-family: inherit;
+  font-size: calc(15px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+.segOn {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+}
+.days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+.day {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 0;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-navy);
+  font-family: inherit;
+  font-size: calc(14px * var(--fs));
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+.dayOn {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+}

@@ -44,12 +44,10 @@ describe('normal medicine', () => {
     expect(within(d).getByRole('heading', { name: 'แก้ไขยานี้' })).toBeInTheDocument();
     expect(within(d).getByRole('link', { name: /แก้ข้อมูลที่ใส่ผิดหรือไม่ครบ/ })).toHaveAttribute('href', '#/n/meds/a4/edit?demo=normal');
     expect(within(d).getByText('ชื่อ ความแรง ขนาดบรรจุ จำนวนที่มี · ไม่ลงในประวัติการใช้ยา')).toBeInTheDocument();
-    // the dose change is the next step: the row is faded, says เร็ว ๆ นี้, and goes nowhere
-    const soon = within(d).getByRole('button', { name: /เปลี่ยนวิธีกิน \(หมอสั่งใหม่\)/ });
-    expect(soon).toHaveAttribute('aria-disabled', 'true');
-    expect(soon).toHaveTextContent('เร็ว ๆ นี้');
-    fireEvent.click(soon);
-    expect(window.location.hash).not.toContain('edit');
+    // M4 PR 8b: the dose change is a real link (not faded, no "เร็ว ๆ นี้")
+    const dose = within(d).getByRole('link', { name: /เปลี่ยนวิธีกิน \(หมอสั่งใหม่\)/ });
+    expect(dose).toHaveAttribute('href', '#/n/meds/a4/dose?demo=normal');
+    expect(dose).not.toHaveTextContent('เร็ว ๆ นี้');
     fireEvent.click(within(d).getByRole('button', { name: 'ปิด' }));
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.getByText('ยาของ คุณพ่อ')).toBeInTheDocument();
@@ -118,6 +116,13 @@ describe('not taken every day', () => {
 });
 
 describe('stopped medicine', () => {
+  it('the edit sheet has no "เปลี่ยนวิธีกิน" row (only active medicines change dose)', () => {
+    demo('a7', 'stopped');
+    fireEvent.click(screen.getByRole('button', { name: 'แก้ไขยานี้' }));
+    expect(within(dialog()).getByRole('link', { name: /แก้ข้อมูลที่ใส่ผิดหรือไม่ครบ/ })).toBeInTheDocument();
+    expect(within(dialog()).queryByText(/เปลี่ยนวิธีกิน/)).toBeNull();
+  });
+
   it('stopped view: reason line, no stock chip, no days, no stock buttons, resume button', () => {
     demo('a7', 'stopped');
     expect(screen.getByText('หยุดแล้ว')).toBeInTheDocument();

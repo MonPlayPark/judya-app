@@ -6,7 +6,8 @@ import { blankRootV3, NOW } from './fixtures';
 import type { Assignment, HouseItem, Medication, MedEvent, Person, Root, Schedule } from './schema';
 
 // cream / notdaily / stopped are for the detail page (#/n/meds/:id?demo=...): the normal house plus what that view needs.
-export const MEDS_DEMO_NAMES = ['normal', 'nomember', 'nomeds', 'nohouse', 'cream', 'notdaily', 'stopped'] as const;
+// dose: the normal house plus what the dose-change page needs (a syrup, 4 meals, a low stock, an every-N-hours medicine, a cream, chosen days).
+export const MEDS_DEMO_NAMES = ['normal', 'nomember', 'nomeds', 'nohouse', 'cream', 'notdaily', 'stopped', 'dose'] as const;
 export type MedsDemoName = (typeof MEDS_DEMO_NAMES)[number];
 
 export const isMedsDemoName = (v: string | null): v is MedsDemoName => v !== null && (MEDS_DEMO_NAMES as readonly string[]).includes(v);
@@ -76,6 +77,23 @@ const MON_WED_FRI: Schedule = { kind: 'meal', slots: { morning: { pills: 1, meal
 const CREAM: Assignment = { id: 'a9', medicationId: 'm8', personId: 'p1', schedule: MORNING, stock: { kind: 'tubes', opened: true, spare: 2 }, status: 'active', createdAt: NOW };
 const NOT_DAILY: Assignment = { id: 'a10', medicationId: 'm9', personId: 'p2', schedule: MON_WED_FRI, stock: { kind: 'count', strips: 0, loose: 30, countedOn: DEMO_TODAY }, status: 'active', createdAt: NOW };
 
+// extra medicines for the dose-change page (demo "dose"): a syrup counted in ml, four meals a day, a low stock, and a medicine every 8 hours
+const DOSE_MEDICATIONS: Medication[] = [
+  { id: 'm10', name: 'Ambroxol', kind: 'liquid', strength: { value: 15, unit: 'mg/5 ml' }, pack: { type: 'container', amount: 100, unit: 'ml' } },
+  tablet('m11', 'Calcium', 600, 'mg'),
+  tablet('m12', 'Omega3', 1000, 'mg'),
+  tablet('m13', 'Cetirizine', 10, 'mg'),
+];
+const FOUR_MEALS: Schedule = { kind: 'meal', slots: { morning: { pills: 1, meal: 'after' }, noon: { pills: 1, meal: 'after' }, evening: { pills: 1, meal: 'after' }, bedtime: { pills: 1 } }, days: { kind: 'daily' } };
+const SYRUP: Schedule = { kind: 'meal', slots: { morning: { pills: 5, meal: 'after' }, evening: { pills: 5, meal: 'after' } }, days: { kind: 'daily' } };
+const EVERY_8H: Schedule = { kind: 'interval', everyHours: 8, firstTime: '08:00', pills: 1, course: { kind: 'ongoing' } };
+const DOSE_ASSIGNMENTS: Assignment[] = [
+  { id: 'a11', medicationId: 'm10', personId: 'p1', schedule: SYRUP, stock: { kind: 'volume', ml: 240, countedOn: DEMO_TODAY }, status: 'active', createdAt: NOW },
+  lasting(12, 'm11', 'p1', FOUR_MEALS, 30, 4),
+  lasting(13, 'm12', 'p2', MORNING_EVENING, 20, 2), // 40 pills, 2 a day: raising one dose by 1 leaves 13 days (low)
+  { id: 'a14', medicationId: 'm13', personId: 'p1', schedule: EVERY_8H, stock: { kind: 'count', strips: 0, loose: 60, countedOn: DEMO_TODAY }, status: 'active', createdAt: NOW },
+];
+
 const HOUSE: HouseItem[] = [
   { id: 'h1', name: 'ยาดมแก้วิงเวียน', kind: 'other', stock: { qty: 0, unit: 'อัน' } },
   { id: 'h2', name: 'ยาธาตุน้ำขาว', kind: 'liquid', stock: { qty: 1, unit: 'ขวด' }, expiry: '2026-09-30' },
@@ -100,6 +118,17 @@ export function medsDemoRoot(name: MedsDemoName): Root {
       return { ...blank, persons: PERSONS, medications: MEDICATIONS, assignments: ASSIGNMENTS, events: EVENTS, houseItems: HOUSE };
     case 'cream':
       return { ...blank, persons: PERSONS, medications: [...MEDICATIONS, ...EXTRA_MEDICATIONS], assignments: [...ASSIGNMENTS, CREAM], events: [...EVENTS, start(CREAM)], houseItems: HOUSE };
+    case 'dose': {
+      const assignments = [...ASSIGNMENTS, CREAM, NOT_DAILY, ...DOSE_ASSIGNMENTS];
+      return {
+        ...blank,
+        persons: PERSONS,
+        medications: [...MEDICATIONS, ...EXTRA_MEDICATIONS, ...DOSE_MEDICATIONS],
+        assignments,
+        events: [...EVENTS, start(CREAM), start(NOT_DAILY), ...DOSE_ASSIGNMENTS.map((a) => start(a))],
+        houseItems: HOUSE,
+      };
+    }
     case 'notdaily':
       return { ...blank, persons: PERSONS, medications: [...MEDICATIONS, ...EXTRA_MEDICATIONS], assignments: [...ASSIGNMENTS, NOT_DAILY], events: [...EVENTS, start(NOT_DAILY)], houseItems: HOUSE };
   }

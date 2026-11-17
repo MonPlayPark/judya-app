@@ -205,7 +205,7 @@ describe('no dead buttons, no storage in demo', () => {
     // own-medicine rows (and rows of the stopped fold) are links to their detail page; the demo name is carried along
     const hrefs = Array.from(document.querySelectorAll('a')).map((a) => a.getAttribute('href'));
     const notNew = (h: string | null): boolean => !!h?.startsWith('#/n/meds/') && !h.startsWith('#/n/meds/new');
-    expect(hrefs.filter(notNew).length).toBe(name === 'nomember' || name === 'nomeds' ? 0 : name === 'normal' || name === 'nohouse' || name === 'stopped' ? 8 : 9);
+    expect(hrefs.filter(notNew).length).toBe(name === 'nomember' || name === 'nomeds' ? 0 : name === 'normal' || name === 'nohouse' || name === 'stopped' ? 8 : name === 'dose' ? 14 : 9);
     for (const h of hrefs.filter(notNew)) expect(h).toMatch(new RegExp(`\\?demo=${name}$`));
     expect(hrefs.slice(-3)).toEqual(['#/n', '#/n/meds', '#/n/settings/data']); // the three real tabs (Settings since PR 6c)
   });

@@ -103,7 +103,7 @@ export function toggleDay(d: DoseDraft, day: number): DoseDraft {
   return { ...d, days: normalDays({ kind: 'weekdays', days: next }) };
 }
 /** Back to "วันเว้นวัน" (the anchor it had). */
-export const useAltDays = (d: DoseDraft, anchor: IsoDate): DoseDraft => ({ ...d, days: { kind: 'alt', anchor } });
+export const setAltDays = (d: DoseDraft, anchor: IsoDate): DoseDraft => ({ ...d, days: { kind: 'alt', anchor } });
 
 // ---------- what changed ----------
 

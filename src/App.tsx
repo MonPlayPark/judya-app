@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import { UpdateBar } from './components/UpdateBar';
 import { AddMedV3Route } from './pages/v3/AddMedPage';
+import { DoseChangeV3Route } from './pages/v3/DoseChangePage';
 import { EditMedV3Route } from './pages/v3/EditMedPage';
 import { DataV3Route } from './pages/v3/DataPage';
 import { HomeV3Route } from './pages/v3/HomeV3Page';
@@ -31,6 +32,8 @@ function screen(path: string, getToday: (() => IsoDate) | undefined): ReactNode 
   if (path === '/n/meds/new') return <AddMedV3Route getToday={getToday} />;
   const edit = EDIT_MED_PATH.exec(path);
   if (edit?.[1]) return <EditMedV3Route target={{ type: 'personal', assignmentId: safeDecode(edit[1]) }} getToday={getToday} />;
+  const dose = DOSE_PATH.exec(path);
+  if (dose?.[1]) return <DoseChangeV3Route id={safeDecode(dose[1])} getToday={getToday} />;
   const house = EDIT_HOUSE_PATH.exec(path);
   if (house?.[1]) return <EditMedV3Route target={{ type: 'house', houseItemId: safeDecode(house[1]) }} getToday={getToday} />;
   const med = MED_PATH.exec(path);
@@ -55,6 +58,7 @@ function V3Frame({ children }: { children: ReactNode }) {
 
 const MED_PATH = /^\/n\/meds\/([^/]+)$/;
 const EDIT_MED_PATH = /^\/n\/meds\/([^/]+)\/edit$/; // M4 PR 8a: fix the data of a medicine
+const DOSE_PATH = /^\/n\/meds\/([^/]+)\/dose$/; // M4 PR 8b: change how to take a medicine
 const EDIT_HOUSE_PATH = /^\/n\/house\/([^/]+)\/edit$/; // the same for a house medicine
 
 const safeDecode = (s: string): string => {

@@ -3,7 +3,6 @@
 // refill / open a tube change a copy of the data and hand it to `persist`; if saving fails the screen keeps the old data.
 import { useEffect, useMemo, useState } from 'react';
 import { BackIcon, ChevronRightIcon, InfoIcon, PlayIcon, StopIcon } from '../../components/icons';
-import { ComingSoon } from '../../components/v3/ComingSoon';
 import { KindIcon } from '../../components/v3/KindIcon';
 import { EveningIcon, MorningIcon, NightIcon, NoonIcon } from '../../components/v3/PeriodIcons';
 import { Sheet } from '../../components/v3/Sheet';
@@ -41,6 +40,8 @@ export interface MedDetailViewProps {
   listHref: string;
   /** The edit page of this medicine (keeps `?demo=` in a demo). */
   editHref: string;
+  /** The change-how-to-take page of this medicine (keeps `?demo=` in a demo). Not offered for a stopped medicine. */
+  doseHref: string;
   /** Test links only: `&sheet=refill|stop|resume|history|edit`. */
   initialSheet?: DetailSheet;
   nowIso: () => string;
@@ -70,7 +71,7 @@ export function MedDetailNotFound({ listHref }: { listHref: string }) {
   );
 }
 
-export function MedDetailView({ root: initialRoot, id, today, demo, persist, listHref, editHref, initialSheet, nowIso }: MedDetailViewProps) {
+export function MedDetailView({ root: initialRoot, id, today, demo, persist, listHref, editHref, doseHref, initialSheet, nowIso }: MedDetailViewProps) {
   const [root, setRoot] = useState(initialRoot);
   const [sheet, setSheet] = useState<DetailSheet | null>(() => {
     const d = buildMedDetail(initialRoot, id, today);
@@ -290,16 +291,18 @@ export function MedDetailView({ root: initialRoot, id, today, demo, persist, lis
                   <ChevronRightIcon />
                 </a>
               </li>
-              <li>
-                <ComingSoon className={styles.editRow}>
-                  <img className={styles.editIcon} src={iconUrl('prepare-meds')} alt="" />
-                  <span className={styles.editText}>
-                    <span className={styles.rowTitle}>เปลี่ยนวิธีกิน (หมอสั่งใหม่)</span>
-                    <span className={styles.sub}>เวลา ขนาดที่กิน ความถี่ · ลงในประวัติการใช้ยา</span>
-                    <span className={styles.sub}>เร็ว ๆ นี้</span>
-                  </span>
-                </ComingSoon>
-              </li>
+              {!stopped && (
+                <li>
+                  <a className={styles.editRow} href={doseHref}>
+                    <img className={styles.editIcon} src={iconUrl('prepare-meds')} alt="" />
+                    <span className={styles.editText}>
+                      <span className={styles.rowTitle}>เปลี่ยนวิธีกิน (หมอสั่งใหม่)</span>
+                      <span className={styles.sub}>เวลา ขนาดที่กิน ความถี่ · ลงในประวัติการใช้ยา</span>
+                    </span>
+                    <ChevronRightIcon />
+                  </a>
+                </li>
+              )}
             </ul>
             <div className={form.actions}>
               <button type="button" className={form.cancel} onClick={close}>
