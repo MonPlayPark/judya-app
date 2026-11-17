@@ -1,5 +1,5 @@
 // Receiving sheet on the order history (M4 PR 11.5b). Live pages use an in-memory store; the demo writes nothing.
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('virtual:pwa-register', () => ({ registerSW: () => async () => {} }));
@@ -32,6 +32,7 @@ const card = (date: string): HTMLElement => screen.getByText(date).closest('li')
 const toastOf = (): HTMLElement => screen.getAllByRole('status').at(-1)!;
 const W = '28 ต.ค. 2569'; // o1, waiting: m1 x30, m2 x10
 const P = '20 ต.ค. 2569'; // o2, partial: m1 10/10, m2 5/20, a typed line 0/2
+const row = (name: string) => screen.getByRole('checkbox', { name: new RegExp(`เลือกสั่ง ${name}`) }).closest('li') as HTMLElement;
 const sheet = () => within(screen.getByRole('dialog', { name: 'รับของ' }));
 const openWaiting = () => fireEvent.click(within(card(W)).getByRole('button', { name: /รับของแล้ว/ }));
 
@@ -184,6 +185,29 @@ describe('saving', () => {
     expect(toastOf()).toHaveTextContent('บันทึกรับของแล้ว');
     expect(within(card(W)).getByText('รับแล้ว', { selector: 'span' })).toBeInTheDocument();
     expect(setItem).not.toHaveBeenCalled();
+  });
+});
+
+describe('the order page after receiving', () => {
+  it('the "สั่งแล้ว รอรับ" badge is gone from the lines of the received order (clearOnOrder)', () => {
+    window.location.hash = '#/n/order?demo=normal&orders=history';
+    render(<OrderV3Route />);
+    expect(within(row('Simvastatin')).getByText('สั่งแล้ว รอรับ')).toBeInTheDocument();
+    const before = screen.getAllByText('สั่งแล้ว รอรับ').length;
+    act(() => {
+      window.location.hash = '#/n/order?demo=normal&orders=history&screen=history';
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+    });
+    openWaiting();
+    fireEvent.click(sheet().getByRole('button', { name: 'บันทึกรับของ' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    act(() => {
+      window.location.hash = '#/n/order?demo=normal&orders=history';
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+    });
+    expect(within(row('Simvastatin')).queryByText('สั่งแล้ว รอรับ')).not.toBeInTheDocument();
+    // the partial order o2 still waits for its second medicine, so only that badge may be left
+    expect(screen.queryAllByText('สั่งแล้ว รอรับ').length).toBeLessThan(before);
   });
 });
 
