@@ -60,6 +60,13 @@ const V3_ROUTES = ['/', '/n', '/no-such-page', '/old', // M4 PR 7b: an unknown o
   '/n/members', '/n/members?demo=members', '/n/members?demo=members&open=removed', '/n/members?demo=nomember',
   '/n/members/p1?demo=members', '/n/members/p4?demo=members', '/n/members/p1?demo=members&sheet=remove', '/n/members/p1/edit?demo=members', '/n/members/p3/edit?demo=members',
   '/n/members/p1/edit?demo=members&sheet=remove', '/n/members/nope?demo=members',
+  // v3 allergy, treatment rights, side effects (M4 PR 10): the three allergy states, the add and confirm sheets, detail with each state, the coverage form, the side-effect card and sheet, the add-medicine warning
+  '/n/members/p1/allergy?demo=members', '/n/members/p2/allergy?demo=members', '/n/members/p3/allergy?demo=members',
+  '/n/members/p1/allergy?demo=members&sheet=add', '/n/members/p1/allergy?demo=members&sheet=confirm',
+  '/n/members/p3/allergy?demo=members&sheet=add&drug=' + encodeURIComponent('ยาตัวอย่างสำหรับทดสอบชื่อยาที่ยาวมากเกือบหกสิบตัวอักษรพอดี') + '&symptom=' + encodeURIComponent('ผื่นคัน'),
+  '/n/members/p2?demo=members', '/n/members/p3?demo=members', '/n/members/p4/edit?demo=members', '/n/members/p2/edit?demo=members',
+  '/n/meds/a1?demo=members', '/n/meds/a1?demo=members&sheet=effects',
+  '/n/meds/new?demo=members&person=p3&name=' + encodeURIComponent('ยาตัวอย่าง Z 500 mg'),
   // v3 settings (M4 PR 14): the list and the four group pages, real data (empty) and demo houses
   '/n/settings', '/n/settings?demo=normal', '/n/settings?demo=backup', '/n/settings/font', '/n/settings/font?demo=normal', '/n/settings/reminders', '/n/settings/reminders?demo=normal',
   '/n/settings/order', '/n/settings/order?demo=normal', '/n/settings/about', '/n/settings/about?demo=normal'];
@@ -126,6 +133,13 @@ const MEMBER_SCENARIOS = [
   ['edit, wrong year', '/n/members/p1/edit?demo=members', async (page) => { await page.getByLabel('ปีเกิด (พ.ศ.)').fill('2399'); }],
   ['edit, picture sheet', '/n/members/p1/edit?demo=members&sheet=avatars', async () => {}],
   ['edit, remove question', '/n/members/p3/edit?demo=members', async (page) => { await click(page, 'นำสมาชิกออก'); }],
+  // M4 PR 10
+  ['allergy, delete question (last-item words)', '/n/members/p3/allergy?demo=members', async (page) => { await page.getByRole('button', { name: /^ลบ / }).first().click(); }],
+  ['allergy, confirmed in a demo', '/n/members/p1/allergy?demo=members', async (page) => { await click(page, 'ยืนยันว่าไม่มีประวัติแพ้ยา'); await page.getByRole('button', { name: 'ยืนยัน', exact: true }).click(); }],
+  ['allergy, add sheet with 60 + 200 letters', '/n/members/p1/allergy?demo=members&sheet=add', async (page) => { await page.getByLabel('ชื่อยาที่แพ้ *').fill('ก'.repeat(60)); await page.getByLabel('อาการที่เกิด *').fill('ข'.repeat(200)); }],
+  ['edit, private insurance with a long company', '/n/members/p1/edit?demo=members', async (page) => { await click(page, 'ประกันเอกชน'); await page.getByLabel('ชื่อบริษัทประกัน (ไม่บังคับ)').fill('บ'.repeat(60)); }],
+  ['medicine, side effects 500 letters', '/n/meds/a1?demo=members&sheet=effects', async (page) => { await page.getByRole('textbox').fill('ผ'.repeat(500)); }],
+  ['medicine, stopped for an allergy (link)', '/n/meds/a1?demo=members&sheet=stop', async (page) => { await click(page, 'แพ้ยา'); await page.getByPlaceholder('เช่น ผื่นคัน บวม คลื่นไส้ ใจสั่น').fill('ผื่นคัน'); await click(page, 'ยืนยันหยุดยา'); }],
 ];
 
 // v3 add medicine (M4 PR 6b): states that need pressing. Each one opens `route`, runs the clicks, then is measured like the rest.

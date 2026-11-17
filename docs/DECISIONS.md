@@ -1257,3 +1257,28 @@ None. Board colours map to existing tokens: #E4F0FE `--color-primary-tint`, #005
 
 ### Missing tokens
 None.
+
+
+## M4 PR 10 — allergy, treatment rights, side effects
+
+**No board in the M4 canvas: built with existing components, decided by the team lead overnight, owner to check.** Text and layout follow `canvas4/allergy.md` (only the old static line existed) and the spec of the PR. Domain `src/domain/v3/allergy.ts` (allergy items, the three states, coverage, side effects, the add-medicine warning; 19 tests). Screens: `pages/v3/AllergyV3.tsx` + `AllergyBlock.tsx` (route `#/n/members/:id/allergy`), the allergy card and the coverage row on the member page, the coverage card on the member edit form, the side-effects card on the medicine page.
+
+### Safety rules (all have tests)
+- **S1** unknown = exactly "ยังไม่ได้บันทึกข้อมูลการแพ้ยา"; the words "ไม่แพ้" / "ไม่มีประวัติแพ้" are never in the unknown state card (tested on the allergy page and on the whole member page).
+- **S2** `none_confirmed` = "ยืนยันแล้วว่าไม่มีประวัติแพ้ยา (บันทึก <วันที่สั้น>)". Only `confirmNoAllergy` makes it, only from `unknown`, only from the button "ยืนยันว่าไม่มีประวัติแพ้ยา" + the confirm sheet. Date = Thai date of the save.
+- **S3** `listed`: red-tint block (`--color-error-tint`) with the warning icon and the word "แพ้ยา" + each drug and reaction. First item switches unknown / none_confirmed to listed. Deleting the last item gives `unknown` (the delete question says so), never `none_confirmed`.
+- **S4** warning "ระวัง: <ชื่อ> มีบันทึกแพ้ยา <ยา> (<อาการ>) ตรวจกับแพทย์หรือเภสัชกรก่อน" in the add-medicine step 1 (after "ยานี้ของใคร") and on the edit-medicine name. A warning only; saving and "ถัดไป" stay allowed.
+- **S5** the coverage form has only the type pills and one company box; the schema is strict. Tested.
+
+### Own decisions
+1. **Match rule for S4:** case and spaces ignored, either name contains the other, and both at least 3 letters (the rule of `allergyHits` in calc.ts; the spec's rule alone would match one letter against everything).
+2. **Stop link:** the link "บันทึกในหัวข้อการแพ้ยาของ<name>" is shown on the medicine page whenever the last stop of that medicine has reason "แพ้ยา" or "ใช้ยาไม่ได้ / ผลข้างเคียง" (the app has two reasons, the board's "แพ้ยา / ผลข้างเคียง" is one). It is derived from the history, so it stays after a reload. It opens `#/n/members/:id/allergy?sheet=add&drug=&symptom=` (drug = medicine name without strength, symptom = the stop note). Nothing is saved until the person presses "บันทึก".
+3. **Treatment rights REPLACE the board's two free-text insurance fields** ("ประกันสุขภาพ" / "ประกันอุบัติเหตุ"), as decided in M4 PR 1 (schema `coverage {type, company?}`). **Difference from the boards: ask the owner.** Pills: บัตรทอง, ประกันสังคม, ข้าราชการ, ประกันเอกชน, จ่ายเอง, อื่นๆ, "ไม่ระบุ" (removes it). The company box shows only for ประกันเอกชน, kept only then and only when not empty. `updateMember` got an optional third argument (left out = coverage unchanged); one save for the whole form.
+4. **Allergy edit** is separate from the member edit form (own page, one save per action: add, edit, delete, confirm, cancel confirmation). The member page card is a link (chevron) showing the state and the listed drugs.
+5. **Side effects:** a card with "แก้" and a sheet (textarea, counter in UTF-16 units like the 500 limit); empty text removes the field; saving writes no MedEvent and does not touch the history. Shown for active and stopped medicines, after the history card.
+6. **Demo `members`** now shows each state: คุณแม่ confirmed + private insurance with a long company, พี่ชาย two listed drugs (one 60 letters), คุณลุง social security.
+7. Test links: `?sheet=add|confirm` (+ `&drug=` `&symptom=`) on the allergy page, `?sheet=effects` on the medicine page.
+8. `check-overflow`: routes and pressed scenarios added (nothing removed): allergy page in 3 states, add and confirm sheets, delete question, member page with each state, coverage form, side-effect card and sheet, add-medicine warning, the stop link.
+
+### Not built
+- Allergy is not shown on Home or in the order message; the doctor summary (PR 15) will read `allergies` itself.

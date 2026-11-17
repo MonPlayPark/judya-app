@@ -30,9 +30,18 @@ const PERSONS: Person[] = [
 /** p1 and p2 own the medicines of the normal house; p3 manages their own medicine and has none here; p4 has no birth year and no medicine; p5 was taken out. */
 const MEMBERS_DEMO_PERSONS: Person[] = [
   { ...PERSONS[0]!, birthYearBE: 2498 },
-  { ...PERSONS[1]!, birthYearBE: 2503 },
-  { id: 'p3', name: 'พี่ชาย', relation: 'ลูก', birthYearBE: 2540, avatar: 'avatar-03', color: 'yellow', selfManaged: true, allergies: { status: 'unknown' } },
-  { id: 'p4', name: 'คุณลุง', relation: 'ญาติ', avatar: 'avatar-04', color: 'gray', selfManaged: false, allergies: { status: 'unknown' } },
+  { ...PERSONS[1]!, birthYearBE: 2503, allergies: { status: 'none_confirmed', confirmedAt: '2026-10-20' }, coverage: { type: 'private', company: 'บริษัทประกันตัวอย่างชื่อยาวมากสำหรับทดสอบการตัดบรรทัด' } },
+  {
+    id: 'p3', name: 'พี่ชาย', relation: 'ลูก', birthYearBE: 2540, avatar: 'avatar-03', color: 'yellow', selfManaged: true,
+    allergies: {
+      status: 'listed',
+      items: [
+        { drug: 'ยาตัวอย่างสำหรับทดสอบชื่อยาที่ยาวมากเกือบหกสิบตัวอักษรพอดี', reaction: 'ผื่นคันตามตัวและหายใจไม่สะดวกมากในช่วงสองชั่วโมงหลังกินยา ต้องไปห้องฉุกเฉินตามที่หมอแจ้งไว้ในครั้งก่อน' },
+        { drug: 'ยาตัวอย่าง Z', reaction: 'ผื่นตัวอย่าง' },
+      ],
+    },
+  },
+  { id: 'p4', name: 'คุณลุง', relation: 'ญาติ', avatar: 'avatar-04', color: 'gray', selfManaged: false, allergies: { status: 'unknown' }, coverage: { type: 'social' } },
   { id: 'p5', name: 'คุณยาย', relation: 'ญาติ', birthYearBE: 2480, avatar: 'avatar-05', color: 'blue', selfManaged: false, allergies: { status: 'unknown' }, removedAt: '2026-10-03T10:00:00+07:00' },
 ];
 
