@@ -2,6 +2,19 @@
 
 Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every session.
 
+## Overnight run (17–18 พ.ย. 2569) — status for the next session
+
+Branch `ccr-8042e3bc-tjkpxx` = PR #39 (`m4-pr11-order`) + overnight work. Owner answered: merge PR #39 themselves ("ก"), and use the recommended answer for every open plan decision (d1–d6, saved on the plan page). Specs written by the team lead live in the session scratchpad (`specs/*.md`); the locked M4 canvas is https://claude.ai/artifact/N6CgtbBFWHYjvGtntz81dt (NOT the M2 one in BRIEF).
+
+Story order and state:
+1. 11.5a receive domain — done (f8c7a4e)
+2. 11.5b receive screens — done, but built as a sheet before the M4 canvas was read
+3. 11.6 Home/list order buttons + small fixes (ml decimals, tubes on care card, birth-year red only at 4 digits) — in progress
+4. 11.5c receive screen per boards #67/#75/#72 — next
+5. PR 8a edit medicine data (boards #23–#27) — spec ready
+6. PR 8b change how to take (boards #41–#52) — spec ready
+7. PR 13 price per shop on medicine detail, PR 9 members, PR 10 allergy/coverage (no board: smallest safe build), PR 14 settings 5 groups, PR 15 doctor summary + whole-app check — later
+
 ## M4 PR 11.4 — order history, cancel, "สั่งซ้ำ" (5 พ.ย. 2569)
 
 Branch `m4-pr11-order` (PR #39, draft). The clock button on `#/n/order` opens the history in the same page (`?screen=history`, ticked lines kept): pills ทั้งหมด / รอรับของ / รับแล้ว, one card per order (date, shop, N รายการ, status chip, total), "ยกเลิกใบสั่ง" for `waiting` only (one write, `closedAt`, stock untouched), "สั่งซ้ำ" for received / cancelled (adds to the list, nothing removed, reason "สั่งซ้ำ", shop cleared). Faded "เร็ว ๆ นี้" buttons: รับของแล้ว, รับของที่เหลือ, ไม่รอแล้ว (11.5). Fixes: faded "บันทึกว่าสั่งแล้ว"; bar + menu in one sticky box. Test link: `#/n/order?demo=normal&screen=history&orders=history`. Details and own decisions: DECISIONS "M4 PR 11.4".
