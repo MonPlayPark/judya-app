@@ -67,6 +67,9 @@ const V3_ROUTES = ['/', '/n', '/no-such-page', '/old', // M4 PR 7b: an unknown o
   '/n/members/p2?demo=members', '/n/members/p3?demo=members', '/n/members/p4/edit?demo=members', '/n/members/p2/edit?demo=members',
   '/n/meds/a1?demo=members', '/n/meds/a1?demo=members&sheet=effects',
   '/n/meds/new?demo=members&person=p3&name=' + encodeURIComponent('ยาตัวอย่าง Z 500 mg'),
+  // v3 doctor summary (M4 PR 15a): a normal summary, one with allergies listed, a member with no medicines, a missing member, the Home picker sheet
+  '/n/members/p1/summary?demo=members', '/n/members/p3/summary?demo=members', '/n/members/p4/summary?demo=members', '/n/members/nope/summary?demo=members',
+  '/n?demo=normal&sheet=doctor', '/n/members/p4?demo=members',
   // v3 settings (M4 PR 14): the list and the four group pages, real data (empty) and demo houses
   '/n/settings', '/n/settings?demo=normal', '/n/settings?demo=backup', '/n/settings/font', '/n/settings/font?demo=normal', '/n/settings/reminders', '/n/settings/reminders?demo=normal',
   '/n/settings/order', '/n/settings/order?demo=normal', '/n/settings/about', '/n/settings/about?demo=normal'];
@@ -139,6 +142,9 @@ const MEMBER_SCENARIOS = [
   ['allergy, add sheet with 60 + 200 letters', '/n/members/p1/allergy?demo=members&sheet=add', async (page) => { await page.getByLabel('ชื่อยาที่แพ้ *').fill('ก'.repeat(60)); await page.getByLabel('อาการที่เกิด *').fill('ข'.repeat(200)); }],
   ['edit, private insurance with a long company', '/n/members/p1/edit?demo=members', async (page) => { await click(page, 'ประกันเอกชน'); await page.getByLabel('ชื่อบริษัทประกัน (ไม่บังคับ)').fill('บ'.repeat(60)); }],
   ['medicine, side effects 500 letters', '/n/meds/a1?demo=members&sheet=effects', async (page) => { await page.getByRole('textbox').fill('ผ'.repeat(500)); }],
+  // M4 PR 15a
+  ['summary, 3000 letters (long message warning)', '/n/members/p1/summary?demo=members', async (page) => { await page.getByLabel('ข้อความสรุปให้แพทย์').fill('ก'.repeat(3000)); }],
+  ['summary, edited (reset link)', '/n/members/p1/summary?demo=members', async (page) => { await page.getByLabel('ข้อความสรุปให้แพทย์').fill('แก้ข้อความ'); }],
   ['medicine, stopped for an allergy (link)', '/n/meds/a1?demo=members&sheet=stop', async (page) => { await click(page, 'แพ้ยา'); await page.getByPlaceholder('เช่น ผื่นคัน บวม คลื่นไส้ ใจสั่น').fill('ผื่นคัน'); await click(page, 'ยืนยันหยุดยา'); }],
 ];
 

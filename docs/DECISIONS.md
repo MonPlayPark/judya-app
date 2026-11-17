@@ -1282,3 +1282,24 @@ None.
 
 ### Not built
 - Allergy is not shown on Home or in the order message; the doctor summary (PR 15) will read `allergies` itself.
+
+## M4 PR 15a — summary for the doctor (text only)
+
+**No board in the M4 canvas shows the summary: content comes from the owner's step 3.4 decisions, text only (no picture, no board), decided by the team lead, owner to check.** Domain `src/domain/v3/doctorSummary.ts` (tests first, `doctorSummary.test.ts`); page `pages/v3/SummaryV3.tsx` (route `#/n/members/:id/summary`); entries: member page button and the Home tile.
+
+### Content (fixed order)
+1. "สรุปยาของ <name>", then "อายุ N ปี · ข้อมูล ณ <date>" (no age part when there is no birth year).
+2. "การแพ้ยา:" — always second. Listed: "- <drug>: <reaction>" per item. Confirmed none: "ไม่มีประวัติแพ้ยาที่ทราบ (ยืนยันเมื่อ <date>)". Unknown: "ยังไม่ได้บันทึกข้อมูลการแพ้ยา โปรดสอบถามผู้ป่วยหรือญาติ" (tested: never "ไม่แพ้ยา", "ไม่มีประวัติแพ้", "ไม่พบ").
+3. "สิทธิ์รักษา: …" only when set. 4. "ยาที่ใช้อยู่ (N รายการ)" with วิธีกิน (the same words as the medicine page), เริ่ม, ผลข้างเคียง when recorded. 5. "การปรับยาล่าสุด": last 3 adjust / stop / resume of this member's medicines, newest first. 6. "ยาที่หยุดใน 90 วันที่ผ่านมา" (90 days included; omitted when none). 7. Footer sentence from step 3.4.
+- No medicine in use and none stopped within 90 days: the page says "ยังไม่มียาให้สรุป", no text box, no buttons.
+
+### Own decisions
+1. **Screen:** the text is in a textarea; editing is free and is NOT saved anywhere (no storage write; "คืนค่าข้อความเดิม" appears once edited). "คัดลอกข้อความ" / "เปิด LINE" reuse the order message's `copyText`, toasts, `lineLink` and the long-message LINE warning (the page shows the warning line under the text and a toast on LINE).
+2. **Wording of the lines** that the spec left open: stop = "หยุดยา (เหตุผล <reason>[, อาการ <symptom>])" (reason "อื่น ๆ" shows its note); a stopped medicine with no stop event is left out of the 90-day list (as in step 3.4); the medicine is written with its strength.
+3. **Member page button:** a link when the summary has something to say (a medicine in use or stopped within 90 days); otherwise a faded button (aria-disabled) with the line "ยังไม่มียาให้สรุป".
+4. **Home tile (owner decision d6):** several members open the sheet "สรุปยาของใคร" (avatar, name, "ยา N รายการ" = medicines in use; members with 0 are listed too and open the "ยังไม่มียาให้สรุป" page); exactly one member goes straight to that summary; none links to add a member (the tile is shown only on a ready Home, so that case is for safety). `?sheet=doctor` opens the sheet (test link). The list is built in the domain (`doctorPeople`) and given to `HomeView` by the page, so `home.ts` is unchanged.
+3b. Small changes elsewhere: `historyRow` (medDetail.ts) and `copyText` (OrderMessage.tsx) are now exported, nothing else changed in them. Two old Home / member tests turned round (the tile and the button are no longer "coming soon").
+4. `check-overflow`: routes and scenarios added only (summary normal, with allergies, no medicines, missing member, 3000-letter text, edited text, Home picker sheet).
+
+### Not built
+- No picture, PDF or print; no way to save the edited text; the allergy page is not linked from the summary.
