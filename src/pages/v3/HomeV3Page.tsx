@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRoute } from '../../router';
 import { buildHome, bangkokToday, toggleDose } from '../../domain/v3/home';
+import { doctorPeople } from '../../domain/v3/doctorSummary';
 import { DEMO_TODAY, demoRoot, isDemoName, type DemoName } from '../../domain/v3/homeDemo';
 import { emptyRoot, type Root } from '../../domain/v3/schema';
 import { loadRoot, saveRoot, type KeyValueStore, type LoadResult, type SaveResult } from '../../domain/v3/storage';
@@ -66,6 +67,7 @@ function DemoHome({ name }: { name: DemoName }) {
       demo
       linkSuffix={`?demo=${name}`}
       saveError={null}
+      doctorPeople={doctorPeople(root)}
       onPick={setPicked}
       onToggle={(key) => setRoot((r) => toggleDose(r, DEMO_TODAY, key))} // in memory only
     />
@@ -112,5 +114,5 @@ function LiveHome({ getToday, store }: HomePageProps) {
   if (loaded.kind === 'problem' || !model) {
     return loaded.kind === 'problem' ? <ProblemV3 loaded={loaded} {...(store === undefined ? {} : { store })} /> : null;
   }
-  return <HomeView model={model} demo={false} saveError={saveError} onPick={setPicked} onToggle={onToggle} />;
+  return <HomeView model={model} demo={false} saveError={saveError} doctorPeople={root ? doctorPeople(root) : []} onPick={setPicked} onToggle={onToggle} />;
 }

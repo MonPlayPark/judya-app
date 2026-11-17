@@ -25,6 +25,18 @@ const activePerson = (root: Root, id: string): Person | undefined => root.person
 /** Number of medicines in use (active) of a member. */
 export const activeMedCount = (root: Root, personId: string): number => root.assignments.filter((a) => a.personId === personId && a.status === 'active').length;
 
+export interface DoctorPerson {
+  id: string;
+  name: string;
+  avatar: Person['avatar'];
+  /** 'ยา N รายการ' (medicines in use). */
+  medText: string;
+}
+
+/** The members the Home tile "แชร์ให้แพทย์" offers (active members, list order). */
+export const doctorPeople = (root: Root): DoctorPerson[] =>
+  root.persons.filter((p) => p.removedAt === undefined).map((p) => ({ id: p.id, name: p.name, avatar: p.avatar, medText: `ยา ${activeMedCount(root, p.id)} รายการ` }));
+
 function allergyLines(p: Person): string[] {
   const a = p.allergies;
   switch (a.status) {

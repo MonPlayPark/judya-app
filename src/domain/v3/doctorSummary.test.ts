@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildDoctorSummary, activeMedCount, DOCTOR_FOOTER, NO_MEDS_TEXT } from './doctorSummary';
+import { buildDoctorSummary, activeMedCount, doctorPeople, DOCTOR_FOOTER, NO_MEDS_TEXT } from './doctorSummary';
 import { sampleRootV3 } from './fixtures';
 import type { MedEvent, Root } from './schema';
 
@@ -140,5 +140,19 @@ describe('doctor summary: order and content', () => {
     const t = get(sampleRootV3(), 'p1').text;
     expect(t).not.toContain('สมาชิก ข');
     expect(t).not.toContain('ยาตัวอย่าง B');
+  });
+});
+
+describe('doctorPeople (the Home picker)', () => {
+  it('lists active members in order with the number of medicines in use', () => {
+    const list = doctorPeople(sampleRootV3());
+    expect(list.map((p) => p.id)).toEqual(['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7']);
+    expect(list.find((p) => p.id === 'p3')?.medText).toBe('ยา 2 รายการ');
+    expect(list.find((p) => p.id === 'p5')?.medText).toBe('ยา 0 รายการ');
+  });
+  it('leaves out a removed member', () => {
+    const r = sampleRootV3();
+    r.persons = r.persons.map((p) => (p.id === 'p2' ? { ...p, removedAt: '2026-10-28T09:00:00+07:00' } : p));
+    expect(doctorPeople(r).map((p) => p.id)).not.toContain('p2');
   });
 });

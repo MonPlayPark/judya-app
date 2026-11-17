@@ -628,3 +628,61 @@
   align-self: flex-start;
   margin-top: 2px;
 }
+
+/* M4 PR 15a: the "แชร์ให้แพทย์" tile as a button, and the member picker sheet */
+.tileButton {
+  width: 100%;
+  border: 0;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pickList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.pickRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-sizing: border-box;
+  min-height: 64px;
+  padding: 8px 12px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: inherit;
+  text-decoration: none;
+}
+.pickRow > svg {
+  flex: none;
+  color: var(--color-ink-muted);
+}
+.pickAvatar {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+}
+.pickText {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+}
+.pickName {
+  font-size: calc(16px * var(--fs));
+  line-height: calc(22px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-navy);
+  overflow-wrap: anywhere;
+}
+.pickSub {
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  color: var(--color-ink-muted);
+}
