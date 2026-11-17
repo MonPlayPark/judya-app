@@ -424,3 +424,50 @@
   font-weight: var(--weight-bold);
   text-decoration: none;
 }
+
+/* ---------- the "แก้ไขยานี้" sheet (M4 PR 8a, board #23): two rows, 76px high, icon at the left ---------- */
+.editRows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.editRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-sizing: border-box;
+  width: 100%;
+  flex-direction: row;
+  justify-content: flex-start;
+  min-height: 76px;
+  padding: 8px 4px;
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-ink);
+  font-family: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.editRow svg {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: var(--color-ink-muted);
+}
+.editIcon {
+  flex: none;
+  width: 36px;
+  height: 36px;
+}
+.editText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  text-align: left;
+}
+.editRow > span {
+  justify-content: flex-start;
+}

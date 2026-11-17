@@ -1,7 +1,6 @@
 // The two bottom sheets of a house medicine on the v3 medicine list (M4 PR 5b): details, and refill.
 // House items have no pack size, so a refill is one number in the item's own unit. No MedEvent is made.
 import { useState } from 'react';
-import { ComingSoon } from '../../components/v3/ComingSoon';
 import { KindIcon } from '../../components/v3/KindIcon';
 import { Sheet } from '../../components/v3/Sheet';
 import { ExpiryPart, NumberField, sheetStyles as form } from '../../components/v3/sheetParts';
@@ -22,7 +21,7 @@ function ToneChip({ chip }: { chip: Chip }) {
   );
 }
 
-export function HouseInfoSheet({ root, id, today, onClose, onRefill }: { root: Root; id: string; today: IsoDate; onClose: () => void; onRefill: () => void }) {
+export function HouseInfoSheet({ root, id, today, editHref, onClose, onRefill }: { root: Root; id: string; today: IsoDate; /** The edit page of this house medicine (keeps `?demo=` in a demo). */ editHref: string; onClose: () => void; onRefill: () => void }) {
   const d = buildHouseDetail(root, id, today);
   if (!d) return null;
   return (
@@ -56,7 +55,9 @@ export function HouseInfoSheet({ root, id, today, onClose, onRefill }: { root: R
               เติมสต็อก
             </button>
           )}
-          <ComingSoon className={form.cancel}>แก้ข้อมูลยา</ComingSoon>
+          <a className={`${form.cancel} ${styles.editLink}`} href={editHref}>
+            แก้ข้อมูลยา
+          </a>
           <button type="button" className={form.cancel} onClick={onClose}>
             ปิด
           </button>

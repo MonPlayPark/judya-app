@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import { UpdateBar } from './components/UpdateBar';
 import { AddMedV3Route } from './pages/v3/AddMedPage';
+import { EditMedV3Route } from './pages/v3/EditMedPage';
 import { DataV3Route } from './pages/v3/DataPage';
 import { HomeV3Route } from './pages/v3/HomeV3Page';
 import { RecoveryContext } from './components/v3/recovery';
@@ -28,6 +29,10 @@ function screen(path: string, getToday: (() => IsoDate) | undefined): ReactNode 
   if (path === '/n/members/new') return <MemberFormV3Route getToday={getToday} />;
   if (path === '/n/settings/data') return <DataV3Route getToday={getToday} />;
   if (path === '/n/meds/new') return <AddMedV3Route getToday={getToday} />;
+  const edit = EDIT_MED_PATH.exec(path);
+  if (edit?.[1]) return <EditMedV3Route target={{ type: 'personal', assignmentId: safeDecode(edit[1]) }} getToday={getToday} />;
+  const house = EDIT_HOUSE_PATH.exec(path);
+  if (house?.[1]) return <EditMedV3Route target={{ type: 'house', houseItemId: safeDecode(house[1]) }} getToday={getToday} />;
   const med = MED_PATH.exec(path);
   if (med?.[1]) return <MedDetailV3Route id={safeDecode(med[1])} getToday={getToday} />;
   return <HomeV3Route getToday={getToday} />; // '/', '/n' and anything unknown
@@ -49,6 +54,8 @@ function V3Frame({ children }: { children: ReactNode }) {
 }
 
 const MED_PATH = /^\/n\/meds\/([^/]+)$/;
+const EDIT_MED_PATH = /^\/n\/meds\/([^/]+)\/edit$/; // M4 PR 8a: fix the data of a medicine
+const EDIT_HOUSE_PATH = /^\/n\/house\/([^/]+)\/edit$/; // the same for a house medicine
 
 const safeDecode = (s: string): string => {
   try {

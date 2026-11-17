@@ -85,3 +85,11 @@
   background: var(--color-border);
   color: var(--color-ink-muted);
 }
+
+/* "แก้ข้อมูลยา" is a link that looks like the tonal button next to it (M4 PR 8a) */
+.editLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}

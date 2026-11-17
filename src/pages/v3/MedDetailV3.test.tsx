@@ -36,12 +36,22 @@ describe('normal medicine', () => {
     expect(screen.queryByRole('tablist')).toBeNull();
     expect(screen.queryByAltText('JudYa')).toBeNull();
   });
-  it('back link, edit button (coming soon), owner, name, strength, status', () => {
+  it('back link, pencil opens the edit sheet, owner, name, strength, status', () => {
     demo('a4', 'normal');
     expect(screen.getByRole('link', { name: 'กลับไปรายการยา' })).toHaveAttribute('href', '#/n/meds?demo=normal');
-    expect(screen.getByRole('button', { name: 'แก้ไขยานี้' })).toHaveAttribute('aria-disabled', 'true');
     fireEvent.click(screen.getByRole('button', { name: 'แก้ไขยานี้' }));
-    expect(screen.getAllByRole('status').some((e) => e.textContent === 'เร็ว ๆ นี้')).toBe(true);
+    const d = dialog();
+    expect(within(d).getByRole('heading', { name: 'แก้ไขยานี้' })).toBeInTheDocument();
+    expect(within(d).getByRole('link', { name: /แก้ข้อมูลที่ใส่ผิดหรือไม่ครบ/ })).toHaveAttribute('href', '#/n/meds/a4/edit?demo=normal');
+    expect(within(d).getByText('ชื่อ ความแรง ขนาดบรรจุ จำนวนที่มี · ไม่ลงในประวัติการใช้ยา')).toBeInTheDocument();
+    // the dose change is the next step: the row is faded, says เร็ว ๆ นี้, and goes nowhere
+    const soon = within(d).getByRole('button', { name: /เปลี่ยนวิธีกิน \(หมอสั่งใหม่\)/ });
+    expect(soon).toHaveAttribute('aria-disabled', 'true');
+    expect(soon).toHaveTextContent('เร็ว ๆ นี้');
+    fireEvent.click(soon);
+    expect(window.location.hash).not.toContain('edit');
+    fireEvent.click(within(d).getByRole('button', { name: 'ปิด' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.getByText('ยาของ คุณพ่อ')).toBeInTheDocument();
     expect(screen.getByText('VitaminD')).toBeInTheDocument();
     expect(screen.getByText('1,000 IU')).toBeInTheDocument();
@@ -342,7 +352,7 @@ describe('house medicine sheets on the list', () => {
     expect(within(d).getByText('2 ซอง')).toBeInTheDocument();
     expect(within(d).getByText('ใกล้หมด')).toBeInTheDocument();
     expect(within(d).getByText('ยาสามัญไม่ตัดสต็อกอัตโนมัติ ถ้าใช้ไปแล้วให้แก้จำนวนที่เหลือในแก้ข้อมูลยา')).toBeInTheDocument();
-    expect(within(d).getByRole('button', { name: 'แก้ข้อมูลยา' })).toHaveAttribute('aria-disabled', 'true');
+    expect(within(d).getByRole('link', { name: 'แก้ข้อมูลยา' })).toHaveAttribute('href', '#/n/house/h3/edit?demo=normal');
     fireEvent.click(within(d).getByRole('button', { name: 'ปิด' }));
     expect(screen.queryByRole('dialog')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'ผงเกลือแร่ ORS เปิดรายละเอียด' }));

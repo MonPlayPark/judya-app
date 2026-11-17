@@ -1,13 +1,14 @@
 // The v3 medicine detail screen (M4 PR 5b): one page, no tabs, no bottom menu. What to show comes from
 // `buildMedDetail` (src/domain/v3/medDetail.ts); MedDetailPage owns the data, the clock and saving. Stop / resume /
 // refill / open a tube change a copy of the data and hand it to `persist`; if saving fails the screen keeps the old data.
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { BackIcon, ChevronRightIcon, InfoIcon, PlayIcon, StopIcon } from '../../components/icons';
 import { ComingSoon } from '../../components/v3/ComingSoon';
 import { KindIcon } from '../../components/v3/KindIcon';
 import { EveningIcon, MorningIcon, NightIcon, NoonIcon } from '../../components/v3/PeriodIcons';
 import { Sheet } from '../../components/v3/Sheet';
 import { ExpiryPart, NumberField, OptionButton, sheetStyles as form } from '../../components/v3/sheetParts';
+import { takeFlash } from '../../components/v3/flash';
 import { Toast, useToast } from '../../components/v3/Toast';
 import type { IsoDate } from '../../domain/calc';
 import type { Period } from '../../domain/v3/home';
@@ -27,7 +28,7 @@ import { openNewTube } from '../../domain/v3/stock';
 import { avatarUrl, iconUrl } from '../../visual';
 import styles from './MedDetailV3.module.css';
 
-export type DetailSheet = 'refill' | 'stop' | 'resume' | 'history';
+export type DetailSheet = 'refill' | 'stop' | 'resume' | 'history' | 'edit';
 export type Persist = (root: Root) => { ok: true } | { ok: false; text: string };
 
 export interface MedDetailViewProps {
@@ -38,7 +39,9 @@ export interface MedDetailViewProps {
   persist: Persist;
   /** Where the back arrow goes (keeps `?demo=` in a demo). */
   listHref: string;
-  /** Test links only: `&sheet=refill|stop|resume|history`. */
+  /** The edit page of this medicine (keeps `?demo=` in a demo). */
+  editHref: string;
+  /** Test links only: `&sheet=refill|stop|resume|history|edit`. */
   initialSheet?: DetailSheet;
   nowIso: () => string;
 }
@@ -67,7 +70,7 @@ export function MedDetailNotFound({ listHref }: { listHref: string }) {
   );
 }
 
-export function MedDetailView({ root: initialRoot, id, today, demo, persist, listHref, initialSheet, nowIso }: MedDetailViewProps) {
+export function MedDetailView({ root: initialRoot, id, today, demo, persist, listHref, editHref, initialSheet, nowIso }: MedDetailViewProps) {
   const [root, setRoot] = useState(initialRoot);
   const [sheet, setSheet] = useState<DetailSheet | null>(() => {
     const d = buildMedDetail(initialRoot, id, today);
@@ -78,6 +81,12 @@ export function MedDetailView({ root: initialRoot, id, today, demo, persist, lis
     return initialSheet;
   });
   const [toast, showToast] = useToast();
+  // the edit page leaves one message here when it saves ("บันทึกการแก้ไขแล้ว")
+  useEffect(() => {
+    const t = takeFlash();
+    if (t) showToast(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [pageError, setPageError] = useState<string | null>(null);
   const d = useMemo(() => buildMedDetail(root, id, today), [root, id, today]);
   if (!d) return <MedDetailNotFound listHref={listHref} />;
@@ -131,9 +140,9 @@ export function MedDetailView({ root: initialRoot, id, today, demo, persist, lis
         </a>
         <img className={styles.headIcon} src={iconUrl('nav-medicines')} alt="" />
         <h1 className={styles.title}>รายละเอียดยา</h1>
-        <ComingSoon className={styles.round} aria-label="แก้ไขยานี้">
+        <button type="button" className={styles.round} aria-label="แก้ไขยานี้" onClick={() => setSheet('edit')}>
           <MoreGlyph />
-        </ComingSoon>
+        </button>
       </header>
 
       <main className={styles.body}>
@@ -267,6 +276,39 @@ export function MedDetailView({ root: initialRoot, id, today, demo, persist, lis
         )}
       </main>
 
+      {sheet === 'edit' && (
+        <Sheet title="แก้ไขยานี้" onClose={close}>
+          <div className={form.body}>
+            <ul className={styles.editRows}>
+              <li>
+                <a className={styles.editRow} href={editHref}>
+                  <img className={styles.editIcon} src={iconUrl('rx-medicine')} alt="" />
+                  <span className={styles.editText}>
+                    <span className={styles.rowTitle}>แก้ข้อมูลที่ใส่ผิดหรือไม่ครบ</span>
+                    <span className={styles.sub}>ชื่อ ความแรง ขนาดบรรจุ จำนวนที่มี · ไม่ลงในประวัติการใช้ยา</span>
+                  </span>
+                  <ChevronRightIcon />
+                </a>
+              </li>
+              <li>
+                <ComingSoon className={styles.editRow}>
+                  <img className={styles.editIcon} src={iconUrl('prepare-meds')} alt="" />
+                  <span className={styles.editText}>
+                    <span className={styles.rowTitle}>เปลี่ยนวิธีกิน (หมอสั่งใหม่)</span>
+                    <span className={styles.sub}>เวลา ขนาดที่กิน ความถี่ · ลงในประวัติการใช้ยา</span>
+                    <span className={styles.sub}>เร็ว ๆ นี้</span>
+                  </span>
+                </ComingSoon>
+              </li>
+            </ul>
+            <div className={form.actions}>
+              <button type="button" className={form.cancel} onClick={close}>
+                ปิด
+              </button>
+            </div>
+          </div>
+        </Sheet>
+      )}
       {sheet === 'refill' && <RefillSheet root={root} id={id} medName={d.strength ? `${d.name} ${d.strength}` : d.name} today={today} onClose={close} commit={commit} />}
       {sheet === 'stop' && <ReasonSheet kind="stop" root={root} id={id} today={today} nowIso={nowIso} onClose={close} commit={commit} />}
       {sheet === 'resume' && <ReasonSheet kind="resume" root={root} id={id} today={today} nowIso={nowIso} onClose={close} commit={commit} />}

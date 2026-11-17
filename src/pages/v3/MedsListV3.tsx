@@ -1,11 +1,12 @@
 // The v3 medicine list screen (M4 PR 5a): view only. What to show comes from `buildMedsList`
 // (src/domain/v3/medsList.ts); MedsListPage owns the data and the clock. Own-medicine rows are links to the detail
 // page (PR 5b); house rows open a bottom sheet (details, refill). Every place with no destination yet is <ComingSoon>.
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CheckCircleIcon, ChevronRightIcon, ClockIcon, InfoIcon, PlusIcon, WarningIcon, XCircleIcon } from '../../components/icons';
 import { ComingSoon } from '../../components/v3/ComingSoon';
 import { KindIcon } from '../../components/v3/KindIcon';
 import { EveningIcon, MorningIcon, NightIcon, NoonIcon } from '../../components/v3/PeriodIcons';
+import { takeFlash } from '../../components/v3/flash';
 import { Toast, useToast } from '../../components/v3/Toast';
 import { V3Nav } from '../../components/v3/V3Nav';
 import type { IsoDate } from '../../domain/calc';
@@ -84,6 +85,12 @@ export function MedsListView({ root: initialRoot, today, demo, persist, linkSuff
     initial?.item ? { id: initial.item, kind: initial.sheet === 'refill' ? 'refill' : 'info' } : null,
   );
   const [toast, showToast] = useToast();
+  // the edit page leaves one message here when it saves ("บันทึกการแก้ไขแล้ว")
+  useEffect(() => {
+    const t = takeFlash();
+    if (t) showToast(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [tab, setTab] = useState<MedsTab>(initial?.tab ?? (initial?.open === 'deleted' || initial?.item ? 'house' : 'mine'));
   const [filter, setFilter] = useState<MedsFilter>('all');
   const [query, setQuery] = useState('');
@@ -210,7 +217,7 @@ export function MedsListView({ root: initialRoot, today, demo, persist, linkSuff
         </div>
       )}
       <V3Nav current="meds" />
-      {sheet?.kind === 'info' && <HouseInfoSheet root={root} id={sheet.id} today={today} onClose={() => setSheet(null)} onRefill={() => setSheet({ id: sheet.id, kind: 'refill' })} />}
+      {sheet?.kind === 'info' && <HouseInfoSheet root={root} id={sheet.id} today={today} editHref={`#/n/house/${encodeURIComponent(sheet.id)}/edit${linkSuffix}`} onClose={() => setSheet(null)} onRefill={() => setSheet({ id: sheet.id, kind: 'refill' })} />}
       {sheet?.kind === 'refill' && <HouseRefillSheet root={root} id={sheet.id} onClose={() => setSheet(null)} commit={commitHouse} />}
       <Toast text={toast} />
     </div>
