@@ -331,15 +331,20 @@
 /* ---------- members ---------- */
 .manage {
   flex: none;
-  flex-direction: row;
-  gap: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
   min-height: var(--touch-min);
-  font-size: calc(14px * var(--fs));
+  padding-left: 12px;
+  font-size: calc(15px * var(--fs));
+  line-height: calc(22px * var(--fs));
   font-weight: var(--weight-semibold);
   color: var(--color-primary-ink);
+  text-decoration: none;
 }
-.manageBadge {
-  flex: none;
+.manage svg {
+  width: 20px;
+  height: 20px;
 }
 .members {
   display: grid;

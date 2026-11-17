@@ -102,10 +102,10 @@ describe('no "ตารางยา" and no dead controls', () => {
     // only real links exist; nothing else is a link, so nothing can be a dead link
     // the "รายการยา" shortcut and the three nav tabs (Settings since PR 6c)
     const hrefs = Array.from(container.querySelectorAll('a')).map((a) => a.getAttribute('href'));
-    expect(hrefs.slice(-3)).toEqual(['#/n', '#/n/meds', '#/n/settings/data']);
+    expect(hrefs.slice(-4)).toEqual(['#/n', '#/n/meds', '#/n/members', '#/n/settings/data']); // PR 9: the Members tab is a link too
     // the other links are the "รายการยา" shortcut and (since PR 6a) the add-member links and (since PR 6b) the add-medicine link, which carry ?demo=
     // and (since PR 6c) the backup reminder, which links to the data page and carries ?demo=
-    expect(hrefs.slice(0, -3).every((h) => h === '#/n/meds' || h === '#/n/order' || h === `#/n/settings/data?demo=${name}` || h === `#/n/members/new?demo=${name}` || h === `#/n/meds/new?demo=${name}`)).toBe(true);
+    expect(hrefs.slice(0, -4).every((h) => h === `#/n/members?demo=${name}` || h === '#/n/meds' || h === '#/n/order' || h === `#/n/settings/data?demo=${name}` || h === `#/n/members/new?demo=${name}` || h === `#/n/meds/new?demo=${name}`)).toBe(true);
     for (const b of Array.from(container.querySelectorAll('button'))) {
       if (b.hasAttribute('aria-pressed')) {
         expect(b).toBeEnabled(); // member picker or tick: a real handler (tested below)
@@ -151,14 +151,15 @@ describe('no "ตารางยา" and no dead controls', () => {
     expect(link).not.toHaveTextContent('เร็ว ๆ นี้');
     expect(within(care).queryByRole('button')).toBeNull();
   });
-  it('the "รายการยา" shortcut is a real link without a badge; the other shortcuts and tabs are coming soon', () => {
+  it('the "รายการยา" shortcut is a real link without a badge; the other shortcuts are coming soon', () => {
     const { container } = renderDemo('normal');
     const tile = container.querySelector('main a[href="#/n/meds"]');
     expect(tile).not.toBeNull();
     expect(tile).toHaveTextContent('รายการยาดูและจัดการยา');
     expect(tile).not.toHaveTextContent('เร็ว ๆ นี้');
     expect(screen.getByRole('link', { name: 'ตั้งค่า' })).toHaveAttribute('href', '#/n/settings/data'); // PR 6c: the Settings tab is a real link
-    for (const t of ['แชร์ให้แพทย์', 'สมาชิก', 'จัดการ']) {
+    expect(screen.getByRole('link', { name: 'สมาชิก' })).toHaveAttribute('href', '#/n/members'); // PR 9: the Members tab is a real link
+    for (const t of ['แชร์ให้แพทย์']) {
       const hit = screen.getAllByText(t).map((e) => e.closest('button')).filter((b) => b !== null);
       expect(hit.length, t).toBeGreaterThan(0);
       for (const b of hit) expect(b).toHaveAttribute('aria-disabled', 'true');
@@ -184,9 +185,9 @@ describe('add-member buttons are real links (PR 6a)', () => {
     render(<HomeV3Route store={memoryStore()} />);
     expect(screen.getByText('เพิ่มสมาชิก').closest('a')).toHaveAttribute('href', '#/n/members/new');
   });
-  it('the "จัดการ" button of the members card stays coming soon (PR 9)', () => {
+  it('the "จัดการ" link of the members card opens the members list (PR 9)', () => {
     renderDemo('normal');
-    expect(screen.getByText('จัดการ').closest('button')).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('link', { name: 'จัดการ' })).toHaveAttribute('href', '#/n/members?demo=normal');
   });
 });
 

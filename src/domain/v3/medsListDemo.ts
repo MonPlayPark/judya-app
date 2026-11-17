@@ -6,8 +6,9 @@ import { blankRootV3, NOW } from './fixtures';
 import type { Assignment, HouseItem, Medication, MedEvent, Person, Root, Schedule } from './schema';
 
 // cream / notdaily / stopped are for the detail page (#/n/meds/:id?demo=...): the normal house plus what that view needs.
+// members: the members tab (PR 9): five people (one manages their own medicine, one has no medicine, one was taken out).
 // dose: the normal house plus what the dose-change page needs (a syrup, 4 meals, a low stock, an every-N-hours medicine, a cream, chosen days).
-export const MEDS_DEMO_NAMES = ['normal', 'nomember', 'nomeds', 'nohouse', 'cream', 'notdaily', 'stopped', 'dose', 'price'] as const;
+export const MEDS_DEMO_NAMES = ['normal', 'nomember', 'nomeds', 'nohouse', 'cream', 'notdaily', 'stopped', 'dose', 'price', 'members'] as const;
 export type MedsDemoName = (typeof MEDS_DEMO_NAMES)[number];
 
 export const isMedsDemoName = (v: string | null): v is MedsDemoName => v !== null && (MEDS_DEMO_NAMES as readonly string[]).includes(v);
@@ -24,6 +25,15 @@ const MORNING_EVENING = meal('morning', 'evening');
 const PERSONS: Person[] = [
   { id: 'p1', name: 'คุณพ่อ', relation: 'พ่อ', avatar: 'avatar-01', color: 'blue', selfManaged: false, allergies: { status: 'unknown' } },
   { id: 'p2', name: 'คุณแม่', relation: 'แม่', avatar: 'avatar-02', color: 'green', selfManaged: false, allergies: { status: 'unknown' } },
+];
+
+/** p1 and p2 own the medicines of the normal house; p3 manages their own medicine and has none here; p4 has no birth year and no medicine; p5 was taken out. */
+const MEMBERS_DEMO_PERSONS: Person[] = [
+  { ...PERSONS[0]!, birthYearBE: 2498 },
+  { ...PERSONS[1]!, birthYearBE: 2503 },
+  { id: 'p3', name: 'พี่ชาย', relation: 'ลูก', birthYearBE: 2540, avatar: 'avatar-03', color: 'yellow', selfManaged: true, allergies: { status: 'unknown' } },
+  { id: 'p4', name: 'คุณลุง', relation: 'ญาติ', avatar: 'avatar-04', color: 'gray', selfManaged: false, allergies: { status: 'unknown' } },
+  { id: 'p5', name: 'คุณยาย', relation: 'ญาติ', birthYearBE: 2480, avatar: 'avatar-05', color: 'blue', selfManaged: false, allergies: { status: 'unknown' }, removedAt: '2026-10-03T10:00:00+07:00' },
 ];
 
 const tablet = (id: string, name: string, value: number, unit: 'mg' | 'IU'): Medication => ({ id, name, kind: 'tablet', strength: { value, unit }, pack: { type: 'none' } });
@@ -152,6 +162,8 @@ export function medsDemoRoot(name: MedsDemoName): Root {
         ],
       };
     }
+    case 'members':
+      return { ...blank, persons: MEMBERS_DEMO_PERSONS, medications: MEDICATIONS, assignments: ASSIGNMENTS, events: EVENTS, houseItems: HOUSE };
     case 'notdaily':
       return { ...blank, persons: PERSONS, medications: [...MEDICATIONS, ...EXTRA_MEDICATIONS], assignments: [...ASSIGNMENTS, NOT_DAILY], events: [...EVENTS, start(NOT_DAILY)], houseItems: HOUSE };
   }

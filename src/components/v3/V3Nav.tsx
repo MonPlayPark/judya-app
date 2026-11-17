@@ -2,7 +2,7 @@ import { iconUrl, type IconName } from '../../visual';
 import { ComingSoon } from './ComingSoon';
 import styles from './V3Nav.module.css';
 
-export type V3NavTab = 'home' | 'meds' | 'settings';
+export type V3NavTab = 'home' | 'meds' | 'members' | 'settings';
 
 interface Tab {
   label: string;
@@ -12,11 +12,11 @@ interface Tab {
   href?: string;
 }
 
-// Same four tabs and icons as the canvas. Home, the medicine list and (for Settings) the data page exist in v3 so far; the others are "coming soon" (faded; pressing shows a floating message).
+// Same four tabs and icons as the canvas. Home, the medicine list, the members tab (PR 9) and (for Settings) the data page exist in v3 so far; the others are "coming soon" (faded; pressing shows a floating message).
 const TABS: Tab[] = [
   { label: 'หน้าหลัก', icon: 'nav-home', key: 'home', href: '#/n' },
   { label: 'รายการยา', icon: 'nav-medicines', key: 'meds', href: '#/n/meds' },
-  { label: 'สมาชิก', icon: 'nav-members' },
+  { label: 'สมาชิก', icon: 'nav-members', key: 'members', href: '#/n/members' },
   // Temporary (PR 6c): goes straight to the data and backup page. PR 14 turns it into the list of the 5 settings groups.
   { label: 'ตั้งค่า', icon: 'nav-settings', key: 'settings', href: '#/n/settings/data' },
 ];

@@ -1,6 +1,6 @@
 // The v3 Home screen (M4 PR 4): view only. All decisions come from `buildHome` (src/domain/v3/home.ts); the page that
 // owns the data and the clock is HomeV3Page. Places with no destination yet use <ComingSoon>.
-import { CheckIcon, WarningIcon, InfoIcon, PlusIcon } from '../../components/icons';
+import { CheckIcon, ChevronRightIcon, WarningIcon, InfoIcon, PlusIcon } from '../../components/icons';
 import { ComingSoon } from '../../components/v3/ComingSoon';
 import { EveningIcon, MorningIcon, NightIcon, NoonIcon } from '../../components/v3/PeriodIcons';
 import { V3Nav } from '../../components/v3/V3Nav';
@@ -80,7 +80,7 @@ export function HomeView({ model, demo, saveError, onPick, onToggle, linkSuffix 
           </p>
         )}
         {m.state !== 'ready' && <StartCard model={m} addMemberHref={addMemberHref} addMedHref={`#/n/meds/new${linkSuffix}`} />}
-        {m.showMembers && <MembersCard model={m} onPick={onPick} addMemberHref={addMemberHref} />}
+        {m.showMembers && <MembersCard model={m} onPick={onPick} addMemberHref={addMemberHref} manageHref={`#/n/members${linkSuffix}`} />}
         {m.showToday && <TodayCard model={m} onToggle={onToggle} />}
         {m.care.length > 0 && <CareCard model={m} />}
         {m.showTiles && <Shortcuts />}
@@ -144,16 +144,17 @@ function StartCard({ model, addMemberHref, addMedHref }: { model: HomeModel; add
   );
 }
 
-function MembersCard({ model, onPick, addMemberHref }: { model: HomeModel; onPick: (id: string) => void; addMemberHref: string }) {
+function MembersCard({ model, onPick, addMemberHref, manageHref }: { model: HomeModel; onPick: (id: string) => void; addMemberHref: string; manageHref: string }) {
   return (
     <section className={`${styles.card} ${styles.cardMembers}`} aria-labelledby="members-h">
       <div className={styles.cardHead}>
         <h2 id="members-h" className={styles.headingInline}>
           สมาชิกในครอบครัว
         </h2>
-        <ComingSoon className={styles.manage} badgeClassName={styles.manageBadge}>
+        <a className={styles.manage} href={manageHref}>
           จัดการ
-        </ComingSoon>
+          <ChevronRightIcon />
+        </a>
       </div>
       <div className={styles.members}>
         {model.members.map((c) => {
