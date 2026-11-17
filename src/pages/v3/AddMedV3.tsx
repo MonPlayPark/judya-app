@@ -47,6 +47,7 @@ import {
   stepAmount,
   strengthOf,
   suggestNames,
+  type StrengthUnit,
   userCards,
   type EveryHours,
   type FreqKind,
@@ -84,8 +85,8 @@ export interface AddMedViewProps {
   linkSuffix?: string;
   /** Same for links to the medicine list (it knows only its own demo names). */
   medsSuffix?: string;
-  /** Starting values (from the link): the page's own `type=house` and `person=<id>`; in a demo also name / kind / step. */
-  initial?: { type?: MedType; person?: string; name?: string; kind?: MedKind; step?: number };
+  /** Starting values (from the link): `type=house`, `person=<id>`, name, kind, strength (value, and its unit when given); in a demo also step. */
+  initial?: { type?: MedType; person?: string; name?: string; kind?: MedKind; strength?: { value: string; unit?: StrengthUnit }; step?: number };
   onBack: () => void;
   /** Called after a (pretend, in a demo) successful save. */
   onSaved: (type: MedType) => void;
@@ -101,7 +102,7 @@ export function AddMedView({ root, today, demo, persist, linkSuffix = '', medsSu
     const kind = initial?.kind ?? 'tablet';
     const base = emptyPersonalDraft();
     const person = initial?.person && people.some((p) => p.id === initial.person) ? initial.person : null;
-    return { ...base, name: initial?.name ?? '', kind, strength: { value: '', unit: defaultStrengthUnit(kind) }, personId: person, schedule: emptyScheduleDraft(kind), stock: emptyStockDraft(kind) };
+    return { ...base, name: initial?.name ?? '', kind, strength: { value: initial?.strength?.value ?? '', unit: initial?.strength?.unit ?? defaultStrengthUnit(kind) }, personId: person, schedule: emptyScheduleDraft(kind), stock: emptyStockDraft(kind) };
   });
   const [listOpen, setListOpen] = useState(false); // suggestion list: open while typing, closed after a pick
   const [newFor, setNewFor] = useState<string | null>(null); // the name for which "add as a new one" was pressed
