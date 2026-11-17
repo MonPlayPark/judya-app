@@ -17,6 +17,21 @@ describe('draftFromPerson', () => {
   });
 });
 
+describe('updateMember coverage (M4 PR 10)', () => {
+  it('a third argument changes the coverage; without it the coverage stays; null clears', () => {
+    const root = sampleRootV3();
+    const same = updateMember(root, 'p4', draft());
+    if (!same.ok) throw new Error(same.error);
+    expect(same.person.coverage).toEqual({ type: 'private', company: 'บริษัทตัวอย่าง' });
+    const changed = updateMember(root, 'p4', draft(), { type: 'social' });
+    if (!changed.ok) throw new Error(changed.error);
+    expect(changed.person.coverage).toEqual({ type: 'social' });
+    const cleared = updateMember(root, 'p4', draft(), null);
+    if (!cleared.ok) throw new Error(cleared.error);
+    expect('coverage' in cleared.person).toBe(false);
+  });
+});
+
 describe('updateMember', () => {
   it('changes only the five form fields; coverage, allergies, colour, id and removedAt stay', () => {
     const root = sampleRootV3();

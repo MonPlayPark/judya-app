@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('virtual:pwa-register', () => ({ registerSW: () => async () => {} }));
@@ -114,7 +114,8 @@ describe('one member (#/n/members/:id)', () => {
     expect(screen.getByRole('heading', { name: 'ข้อมูลสมาชิก' })).toBeInTheDocument();
     expect(screen.getByText('ปีเกิด')).toBeInTheDocument();
     expect(screen.getByText('พ.ศ. 2500 (อายุ 69 ปี)')).toBeInTheDocument();
-    expect(screen.queryByText(/ประกัน/)).toBeNull(); // PR 10 owns coverage
+    expect(screen.getByText('สิทธิ์รักษา')).toBeInTheDocument(); // M4 PR 10
+    expect(screen.getByText('ประกันสังคม')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /ยาที่ใช้อยู่ \(2 รายการ\)/ })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /ยาตัวอย่าง B 20 mg/ })).toHaveAttribute('href', '#/n/meds/a2');
     expect(screen.getByRole('link', { name: 'ดูทั้งหมด' })).toHaveAttribute('href', '#/n/meds');
@@ -237,5 +238,52 @@ describe('links into the tab', () => {
   it('the bottom tab "สมาชิก" is a link on the other pages too', () => {
     openLive('#/n/meds');
     expect(within(screen.getByRole('navigation', { name: 'เมนูหลัก' })).getByRole('link', { name: 'สมาชิก' })).toHaveAttribute('href', '#/n/members');
+  });
+});
+
+describe('treatment rights (สิทธิ์รักษา, M4 PR 10)', () => {
+  it('detail row: label, label + company, or "ยังไม่ได้ระบุ"', () => {
+    openLive('#/n/members/p4');
+    expect(screen.getByText('ประกันเอกชน (บริษัทตัวอย่าง)')).toBeInTheDocument();
+    cleanup();
+    openLive('#/n/members/p7');
+    const row = screen.getByText('สิทธิ์รักษา').parentElement!;
+    expect(row).toHaveTextContent('ยังไม่ได้ระบุ');
+  });
+  it('edit form: card with the six choices + "ไม่ระบุ", the chosen one pressed; company field only for private', () => {
+    openLive('#/n/members/p1/edit');
+    const card = screen.getByRole('group', { name: 'สิทธิ์รักษา (ถ้ามี)' });
+    expect(within(card).getAllByRole('button').map((b) => b.textContent)).toEqual(['บัตรทอง', 'ประกันสังคม', 'ข้าราชการ', 'ประกันเอกชน', 'จ่ายเอง', 'อื่นๆ', 'ไม่ระบุ']);
+    expect(within(card).getByRole('button', { name: 'บัตรทอง' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByLabelText('ชื่อบริษัทประกัน (ไม่บังคับ)')).toBeNull();
+    fireEvent.click(within(card).getByRole('button', { name: 'ประกันเอกชน' }));
+    expect(screen.getByLabelText('ชื่อบริษัทประกัน (ไม่บังคับ)')).toBeInTheDocument();
+    fireEvent.click(within(card).getByRole('button', { name: 'จ่ายเอง' }));
+    expect(screen.queryByLabelText('ชื่อบริษัทประกัน (ไม่บังคับ)')).toBeNull();
+  });
+  it('S5: the form has no field for an ID card, policy or member number: only the type pills and one company box', () => {
+    openLive('#/n/members/p4/edit');
+    const card = screen.getByRole('group', { name: 'สิทธิ์รักษา (ถ้ามี)' });
+    expect(within(card).getAllByRole('textbox')).toHaveLength(1);
+    expect(within(card).getByRole('textbox')).toHaveAccessibleName('ชื่อบริษัทประกัน (ไม่บังคับ)');
+    expect(card.textContent).not.toMatch(/เลขที่|เลขบัตร|กรมธรรม์|เลขสมาชิก/);
+  });
+  it('saving with one save: private + company; "ไม่ระบุ" clears; unchanged stays', () => {
+    const save$ = vi.spyOn(storage, 'saveRoot');
+    openLive('#/n/members/p1/edit');
+    const card = () => screen.getByRole('group', { name: 'สิทธิ์รักษา (ถ้ามี)' });
+    fireEvent.click(within(card()).getByRole('button', { name: 'ประกันเอกชน' }));
+    fireEvent.change(screen.getByLabelText('ชื่อบริษัทประกัน (ไม่บังคับ)'), { target: { value: ' บริษัทตัวอย่าง 2 ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'บันทึก' }));
+    expect(save$).toHaveBeenCalledTimes(1);
+    const root = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? '{}') as Root;
+    expect(root.persons.find((p) => p.id === 'p1')?.coverage).toEqual({ type: 'private', company: 'บริษัทตัวอย่าง 2' });
+    cleanup();
+    window.location.hash = '';
+    open('#/n/members/p1/edit');
+    fireEvent.click(within(card()).getByRole('button', { name: 'ไม่ระบุ' }));
+    fireEvent.click(screen.getByRole('button', { name: 'บันทึก' }));
+    const root2 = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? '{}') as Root;
+    expect(root2.persons.find((p) => p.id === 'p1')).not.toHaveProperty('coverage');
   });
 });

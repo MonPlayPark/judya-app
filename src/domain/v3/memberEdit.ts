@@ -1,6 +1,6 @@
 // The members tab (M4 PR 9): edit, take out, bring back, and what the list and the one-member page show. Pure: takes a root,
 // returns a new root (checked by rootSchema), never touches storage or the clock (callers give `nowIso`).
-import { allergyStateText, coverageText } from './allergy';
+import { allergyStateText, coverageFromDraft, coverageText, type CoverageDraft } from './allergy';
 import { bangkokDate } from './backup';
 import { doseTextOf, label, shortThaiDate } from './medsList';
 import { draftState, hasSelf, type MemberDraft } from './members';
@@ -12,17 +12,20 @@ const active = (persons: readonly Person[]): Person[] => persons.filter((p) => p
 export type UpdateResult = { ok: true; root: Root; person: Person; duplicateName: boolean } | { ok: false; error: string };
 
 /** Changes the five things of the form (name, relation, birth year, picture, self-managed). Same checks as `createMember`, but the
- * person themselves is left out of the "same name" warning and of the "ตัวฉัน" rule. Colour, allergies, coverage and removedAt stay. */
-export function updateMember(root: Root, id: string, draft: MemberDraft): UpdateResult {
+ * person themselves is left out of the "same name" warning and of the "ตัวฉัน" rule. Colour, allergies and removedAt stay.
+ * Coverage (PR 10) changes only when `coverage` is given (null = "ไม่ระบุ"); left out, it stays. */
+export function updateMember(root: Root, id: string, draft: MemberDraft, coverage?: CoverageDraft): UpdateResult {
   const was = root.persons.find((p) => p.id === id && p.removedAt === undefined);
   if (!was) return { ok: false, error: 'ไม่พบสมาชิกคนนี้' };
   const others = root.persons.filter((p) => p.id !== id);
   const state = draftState(draft, others);
   if (draft.relation === SELF_RELATION && hasSelf(others)) return { ok: false, error: "มี 'ตัวฉัน' แล้ว" };
   if (state.blocker !== null || draft.relation === null) return { ok: false, error: state.blocker ?? 'กรอกข้อมูลให้ครบก่อน' };
-  const { birthYearBE: _old, ...rest } = was;
+  const { birthYearBE: _old, coverage: oldCoverage, ...rest } = was;
+  const newCoverage = coverage === undefined ? oldCoverage : coverageFromDraft(coverage);
   const person: Person = {
     ...rest,
+    ...(newCoverage === undefined ? {} : { coverage: newCoverage }),
     name: draft.name.trim(),
     relation: draft.relation,
     ...(state.birth.kind === 'ok' ? { birthYearBE: state.birth.year } : {}),

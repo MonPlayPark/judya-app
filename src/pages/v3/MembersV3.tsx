@@ -9,9 +9,10 @@ import { Toast, useToast } from '../../components/v3/Toast';
 import { V3Nav } from '../../components/v3/V3Nav';
 import { setFlash, takeFlash } from '../../components/v3/flash';
 import { sheetStyles } from '../../components/v3/sheetParts';
+import { COVERAGE_LABEL, COVERAGE_NOT_GIVEN, type CoverageDraft } from '../../domain/v3/allergy';
 import { buildMemberDetail, buildMembersList, removeMember, restoreMember, updateMember } from '../../domain/v3/memberEdit';
 import { draftFromPerson, type MemberDraft } from '../../domain/v3/members';
-import type { Root } from '../../domain/v3/schema';
+import { COVERAGE_TYPES, type Root } from '../../domain/v3/schema';
 import { avatarUrl, iconUrl } from '../../visual';
 import { AllergyBlock } from './AllergyBlock';
 import { MemberForm } from './MemberFormV3';
@@ -289,6 +290,10 @@ export function MemberDetailView({ root, id, demo, persist, linkSuffix = '', now
                 <dt className={styles.infoLabel}>ปีเกิด</dt>
                 <dd className={d.birthText === 'ยังไม่ได้ระบุ' ? `${styles.infoValue} ${styles.infoEmpty}` : styles.infoValue}>{d.birthText}</dd>
               </div>
+              <div className={styles.infoRow}>
+                <dt className={styles.infoLabel}>สิทธิ์รักษา</dt>
+                <dd className={d.coverageText === COVERAGE_NOT_GIVEN ? `${styles.infoValue} ${styles.infoEmpty}` : styles.infoValue}>{d.coverageText}</dd>
+              </div>
             </dl>
           </div>
         </section>
@@ -367,16 +372,50 @@ export function MemberDetailView({ root, id, demo, persist, linkSuffix = '', now
 // ---------------------------------------------------------------------------------------------------------------
 // Edit
 
+/** Treatment rights (M4 PR 10): one choice among the six types, or none. A company name only for a private insurance.
+ * Only the type and the company: no ID card, policy or member number (rule S5). */
+function CoverageCard({ value, onChange }: { value: CoverageDraft; onChange: (v: CoverageDraft) => void }) {
+  return (
+    <section className={formStyles.card} role="group" aria-labelledby="mf-cov">
+      <h2 id="mf-cov" className={formStyles.cardTitle}>
+        สิทธิ์รักษา (ถ้ามี)
+      </h2>
+      <div className={formStyles.chips}>
+        {COVERAGE_TYPES.map((t) => {
+          const on = value?.type === t;
+          return (
+            <button key={t} type="button" className={on ? `${formStyles.chip} ${formStyles.chipOn}` : formStyles.chip} aria-pressed={on} onClick={() => onChange(t === 'private' ? { type: t, company: value?.company ?? '' } : { type: t })}>
+              {COVERAGE_LABEL[t]}
+            </button>
+          );
+        })}
+        <button type="button" className={value === null ? `${formStyles.chip} ${formStyles.chipOn}` : formStyles.chip} aria-pressed={value === null} onClick={() => onChange(null)}>
+          ไม่ระบุ
+        </button>
+      </div>
+      {value?.type === 'private' && (
+        <div className={formStyles.field}>
+          <label className={formStyles.label} htmlFor="mf-company">
+            ชื่อบริษัทประกัน (ไม่บังคับ)
+          </label>
+          <input id="mf-company" className={formStyles.input} type="text" autoComplete="off" maxLength={60} value={value.company ?? ''} onChange={(e) => onChange({ type: 'private', company: e.target.value })} />
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function MemberEditView({ root, id, demo, persist, linkSuffix = '', nowIso, initialSheet }: MembersViewProps & { id: string; initialSheet?: 'avatars' | 'remove' }) {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [removeOpen, setRemoveOpen] = useState(initialSheet === 'remove');
   const [removeError, setRemoveError] = useState<string | null>(null);
   const person = root.persons.find((p) => p.id === id && p.removedAt === undefined);
+  const [coverage, setCoverage] = useState<CoverageDraft>(() => (person?.coverage === undefined ? null : { ...person.coverage }));
   if (!person) return <MemberNotFound linkSuffix={linkSuffix} />;
   const back = detailHref(person.id, linkSuffix);
 
   const onSubmit = (draft: MemberDraft): void => {
-    const r = updateMember(root, person.id, draft);
+    const r = updateMember(root, person.id, draft, coverage);
     if (!r.ok) {
       setSaveError(r.error);
       return;
@@ -391,12 +430,15 @@ export function MemberEditView({ root, id, demo, persist, linkSuffix = '', nowIs
   };
 
   const extra: ReactNode = (
-    <div className={styles.removeBlock}>
+    <>
+      <CoverageCard value={coverage} onChange={setCoverage} />
+      <div className={styles.removeBlock}>
       <button type="button" className={styles.removeLink} onClick={() => setRemoveOpen(true)}>
         นำสมาชิกออก
       </button>
       <p className={formStyles.hint}>นำกลับได้จากหน้ารายชื่อสมาชิก</p>
-    </div>
+      </div>
+    </>
   );
 
   return (
