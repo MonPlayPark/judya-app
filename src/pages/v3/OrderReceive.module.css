@@ -1,0 +1,55 @@
+/* The receiving sheets (M4 PR 11.5b). Tokens only; text 14px or more at "normal" times var(--fs); every button 44px or more. */
+.rows { display: flex; flex-direction: column; gap: 10px; margin: 0 0 12px; padding: 0; list-style: none; }
+.row { padding: 10px 12px; border: 1.5px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+.rowTop { display: flex; align-items: center; gap: 8px; }
+.rowText { flex: 1; min-width: 0; }
+.name { margin: 0; font-size: calc(16px * var(--fs)); line-height: calc(24px * var(--fs)); font-weight: var(--weight-bold); color: var(--color-navy); overflow-wrap: anywhere; }
+.small { margin: 0; font-size: calc(14px * var(--fs)); line-height: calc(20px * var(--fs)); color: var(--color-ink-muted); overflow-wrap: anywhere; }
+.stepper { flex: none; display: flex; align-items: center; gap: 2px; }
+.step { flex: none; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: var(--color-primary-tint); color: var(--color-primary-ink); cursor: pointer; }
+.step:disabled { background: var(--color-background); color: var(--color-ink-muted); cursor: not-allowed; }
+.qty { min-width: 40px; margin: 0; text-align: center; font-size: calc(16px * var(--fs)); line-height: calc(22px * var(--fs)); font-weight: var(--weight-bold); color: var(--color-navy); overflow-wrap: anywhere; }
+
+.pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.pill {
+  flex: 1 1 120px;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-ink-muted);
+  font-family: inherit;
+  font-size: calc(15px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+.pill[aria-pressed='true'] { border-color: var(--color-primary); background: var(--color-primary-tint); color: var(--color-primary-ink); font-weight: var(--weight-bold); }
+
+.warn, .grey, .error { display: flex; align-items: flex-start; gap: 6px; margin: 0 0 10px; font-size: calc(14px * var(--fs)); line-height: calc(20px * var(--fs)); overflow-wrap: anywhere; }
+.warn svg, .grey svg, .error svg { flex: none; }
+.warn { padding: 8px 10px; border-radius: var(--radius-md); background: var(--color-warning-tint); color: var(--color-warning-ink); font-weight: var(--weight-semibold); }
+.grey { color: var(--color-ink-muted); }
+.error { font-weight: var(--weight-semibold); color: var(--color-error-ink); }
+
+.askText { margin: 0 0 12px; font-size: calc(16px * var(--fs)); line-height: calc(24px * var(--fs)); color: var(--color-ink); overflow-wrap: anywhere; }
+.askRow { display: flex; align-items: center; gap: 8px; }
+.askName { flex: 1; min-width: 0; }
+.addLink {
+  flex: none;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 72px;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: #fff;
+  font-size: calc(15px * var(--fs));
+  font-weight: var(--weight-bold);
+  text-decoration: none;
+}

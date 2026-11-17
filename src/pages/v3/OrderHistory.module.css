@@ -36,7 +36,7 @@
 
 .buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .buttons > * { flex: 1 1 140px; }
-.later, .cancel, .again, .dangerOutline {
+.receive, .cancel, .again, .dangerOutline {
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -52,10 +52,7 @@
   font-weight: var(--weight-bold);
   cursor: pointer;
 }
-.later { flex-direction: column; border: 1.5px solid transparent; cursor: not-allowed; }
-.laterMain { background: var(--color-border); color: var(--color-ink-muted); }
-.laterGrey { background: var(--color-surface); border-color: var(--color-border); color: var(--color-ink-muted); }
-.soonChip { padding: 0 8px; border-radius: 999px; background: var(--color-surface); color: var(--color-ink-muted); font-size: calc(14px * var(--fs)); line-height: calc(20px * var(--fs)); font-weight: var(--weight-semibold); }
+.receive { border: 0; background: var(--color-primary); color: #fff; }
 .cancel { border: 1.5px solid var(--color-border); background: var(--color-surface); color: var(--color-primary-ink); }
 .again { border: 0; background: var(--color-primary-tint); color: var(--color-primary-ink); }
 .again svg { flex: none; }

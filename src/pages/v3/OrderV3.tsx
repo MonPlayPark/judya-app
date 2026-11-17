@@ -20,6 +20,7 @@ import { recipientOf, withRecipient } from '../../domain/v3/recipient';
 import type { MedKind, Root } from '../../domain/v3/schema';
 import { useRoute } from '../../router';
 import { cancelOrder, reorderLines, reorderMessage } from '../../domain/v3/orderHistory';
+import { dropRest } from '../../domain/v3/orderReceive';
 import { OrderBook } from './OrderBook';
 import { OrderHistory, type CancelOutcome } from './OrderHistory';
 import { OrderCompare, type PriceOutcome } from './OrderCompare';
@@ -33,7 +34,7 @@ export interface OrderViewProps {
   demo: boolean;
   /** Test links only: which sheet starts open. `item` = the key of the line for the unit sheet. */
   initial?: {
-    sheet?: 'add' | 'unit' | 'recipient' | 'incomplete' | 'shop' | 'prices';
+    sheet?: 'add' | 'unit' | 'recipient' | 'incomplete' | 'shop' | 'prices' | 'receive';
     tab?: AddTab;
     name?: string;
     item?: string;
@@ -220,6 +221,25 @@ export function OrderView({ root: first, today, demo, initial, persist, newId = 
     return { ok: true };
   };
 
+  /** Receiving: the sheet hands the new root; ONE write; the toast is the sheet's. The order page's lines lose the "สั่งแล้ว รอรับ" badge of orders that are closed now (`clearOnOrder`, as after a cancel). */
+  const receive = (next: Root, toast: string): { ok: true } | { ok: false; text: string } => {
+    const res = commit(next);
+    if (!res.ok) return res;
+    setLines((all) => clearOnOrder(all, next, today));
+    showToast(toast);
+    return { ok: true };
+  };
+  /** "ไม่รอแล้ว": drops what is still waited for; ONE write. */
+  const dropOrder = (orderId: string): { ok: true } | { ok: false; text: string } => {
+    const made = dropRest(root, orderId, nowIso());
+    if (!made.ok) return { ok: false, text: made.error };
+    const res = commit(made.root);
+    if (!res.ok) return res;
+    setLines((all) => clearOnOrder(all, made.root, today));
+    showToast('ปิดใบสั่งแล้ว');
+    return { ok: true };
+  };
+
   const update = (key: string, fn: (l: DraftLine) => DraftLine): void => setLines((all) => all.map((l) => (l.key === key ? fn(l) : l)));
   const unitLine = sheet?.kind === 'unit' ? lines.find((l) => l.key === sheet.key) : undefined;
 
@@ -247,7 +267,7 @@ export function OrderView({ root: first, today, demo, initial, persist, newId = 
 
       {view === 'history' && (
         <main className={styles.body}>
-          <OrderHistory root={root} onAgain={again} onCancel={cancel} />
+          <OrderHistory root={root} today={today} nowIso={nowIso} demo={demo ? query.get('demo') : null} startReceive={initial?.sheet === 'receive'} onAgain={again} onCancel={cancel} onReceive={receive} onDrop={dropOrder} />
         </main>
       )}
 
