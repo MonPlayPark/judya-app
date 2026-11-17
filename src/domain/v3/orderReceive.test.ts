@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { IsoDate } from '../calc';
 import { sampleRootV3 } from './fixtures';
-import { defaultReceive, dropRest, receiveOrder, type ReceiveInput } from './orderReceive';
+import { defaultReceive, dropRest, receiveOrder, stockGainOf, type ReceiveInput } from './orderReceive';
 import { rootSchema, type Assignment, type Medication, type Order, type OrderLine, type Person, type Root, type Schedule } from './schema';
 
 const TODAY = '2026-10-28' as IsoDate;
@@ -340,5 +340,140 @@ describe('defaultReceive', () => {
       { lineIndex: 0, qtyReceivedNow: 2, leftover: null },
       { lineIndex: 1, qtyReceivedNow: 0, leftover: null },
     ]);
+  });
+});
+
+describe('11.5c: price typed on the row', () => {
+  const priceOf = (r: Root, shopId: string, medicationId: string, unit: string) => r.prices.find((p) => p.shopId === shopId && p.item.kind === 'med' && p.item.medicationId === medicationId && p.sellUnit === unit);
+  const ids = (): (() => string) => {
+    let k = 0;
+    return () => `np${(k += 1)}`;
+  };
+  const withPrice = (root: Root, input: ReceiveInput[], newId = ids()) => {
+    const r = receiveOrder(root, 'ox', input, TODAY, NOW, newId);
+    if (!r.ok) throw new Error(r.error);
+    return r;
+  };
+
+  it('a price above 0 sets the line price and updates the remembered price of that shop, sell unit and per-unit count, dated today', () => {
+    const root = world([order([line(med('m1', [['a1', 20]]))])]);
+    const r = withPrice(root, [{ ...got(0, 2), unitPrice: 50 }]);
+    expect(ord(r.root).lines[0]!.unitPrice).toBe(50);
+    expect(priceOf(r.root, 's1', 'm1', 'แผง')).toMatchObject({ id: 'pr1', price: 50, perSellUnit: 10, date: TODAY });
+    expect(r.root.prices).toHaveLength(root.prices.length);
+  });
+  it('a new item for the shop gets a new price row', () => {
+    const root = world([order([line(med('m1', [['a1', 20]]), { sellUnit: 'กล่อง', perSellUnit: 30 })])]);
+    const r = withPrice(root, [{ ...got(0, 2), unitPrice: 120 }]);
+    expect(priceOf(r.root, 's1', 'm1', 'กล่อง')).toMatchObject({ id: 'np1', price: 120, perSellUnit: 30, date: TODAY });
+    expect(r.root.prices).toHaveLength(root.prices.length + 1);
+  });
+  it('0 or no price keeps the old line price and the remembered prices', () => {
+    const root = world([order([line(med('m1', [['a1', 20]]), { unitPrice: 45 })])]);
+    for (const input of [{ ...got(0, 2), unitPrice: 0 }, got(0, 2)]) {
+      const r = withPrice(root, [input]);
+      expect(ord(r.root).lines[0]!.unitPrice).toBe(45);
+      expect(r.root.prices).toEqual(root.prices);
+    }
+  });
+  it('a house item: price remembered for the house item (per-unit count 1)', () => {
+    const root = world([order([line({ kind: 'house', houseItemId: 'h1' }, { perSellUnit: 1 })])]);
+    const r = withPrice(root, [{ ...got(0, 2), unitPrice: 33 }]);
+    expect(r.root.prices.find((p) => p.id === 'pr3')).toMatchObject({ price: 33, date: TODAY });
+  });
+  it('a typed (free) line: the line price is set, nothing is remembered', () => {
+    const root = world([order([line({ kind: 'free', name: 'ยาตัวอย่าง H' }, { perSellUnit: undefined })])]);
+    const r = withPrice(root, [{ ...got(0, 2), unitPrice: 77 }]);
+    expect(ord(r.root).lines[0]!.unitPrice).toBe(77);
+    expect(r.root.prices).toEqual(root.prices);
+  });
+  it('a shop that was deleted: the line price is kept, no remembered price is made, the receive still works', () => {
+    const base = world([order([line(med('m1', [['a1', 20]]))])]);
+    const root: Root = { ...base, shops: base.shops.filter((s) => s.id !== 's1'), prices: base.prices.filter((p) => p.shopId !== 's1') };
+    const r = withPrice(root, [{ ...got(0, 2), unitPrice: 50 }]);
+    expect(ord(r.root).lines[0]!.unitPrice).toBe(50);
+    expect(r.root.prices).toEqual(root.prices);
+  });
+  it('a negative or non-number price is refused and nothing is changed', () => {
+    const root = world([order([line(med('m1', [['a1', 20]]))])]);
+    for (const bad of [-1, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(receiveOrder(root, 'ox', [{ ...got(0, 2), unitPrice: bad }], TODAY, NOW).ok).toBe(false);
+    }
+  });
+  it('the price is saved even when 0 arrived', () => {
+    const root = world([order([line(med('m1', [['a1', 20]]))])]);
+    const r = withPrice(root, [{ ...got(0, 0, 'waiting'), unitPrice: 60 }]);
+    expect(priceOf(r.root, 's1', 'm1', 'แผง')!.price).toBe(60);
+  });
+});
+
+describe('11.5c: no maximum', () => {
+  it('more than ordered: the line is complete, stock adds what arrived, qtyReceived keeps it', () => {
+    const root = world([order([line(med('m1', [['a1', 20]]))])]);
+    const r = receive(root, [got(0, 5, 'waiting')]);
+    expect(ord(r.root).lines[0]).toMatchObject({ qtyReceived: 5, leftover: null });
+    expect(asg(r.root, 'a1').stock).toEqual({ kind: 'count', strips: 7, loose: 3, countedOn: TODAY }); // 23 + 50 = 73
+    expect(ord(r.root).status).toBe('received');
+  });
+  it('a partial order: receiving more than what is left closes the line', () => {
+    const root = world([order([line(med('m1', [['a1', 20]]), { qtyReceived: 1, leftover: 'waiting' })], 'partial')]);
+    const r = receive(root, [got(0, 4)]);
+    expect(ord(r.root).lines[0]).toMatchObject({ qtyReceived: 5, leftover: null });
+    expect(ord(r.root).status).toBe('received');
+  });
+});
+
+describe('11.5c: expiry of the new box', () => {
+  it('medicine: the nearer date wins on every share', () => {
+    const root = world([order([line(med('m1', [['a1', 10], ['a1b', 10]]))])]);
+    const near = receive(root, [{ ...got(0, 2), expiry: '2027-01-15' as IsoDate }]);
+    expect(asg(near.root, 'a1').expiry).toBe('2027-01-15');
+    expect(asg(near.root, 'a1b').expiry).toBe('2027-01-15');
+    const far = receive(root, [{ ...got(0, 2), expiry: '2028-01-15' as IsoDate }]);
+    expect(asg(far.root, 'a1').expiry).toBe('2027-06-30'); // old date is nearer
+    expect(asg(far.root, 'a1b').expiry).toBe('2028-01-15'); // had none
+  });
+  it('no expiry typed: expiry is not touched', () => {
+    const root = world([order([line(med('m1', [['a1', 20]]))])]);
+    expect(asg(receive(root, [got(0, 2)]).root, 'a1').expiry).toBe('2027-06-30');
+  });
+  it('0 arrived: expiry is not applied', () => {
+    const root = world([order([line(med('m1', [['a1', 20]]))])]);
+    const r = receive(root, [{ ...got(0, 0, 'waiting'), expiry: '2027-01-15' as IsoDate }]);
+    expect(asg(r.root, 'a1').expiry).toBe('2027-06-30');
+  });
+  it('house item: the same nearer-date rule', () => {
+    const root = world([order([line({ kind: 'house', houseItemId: 'h1' }, { perSellUnit: 1 })])]);
+    const near = receive(root, [{ ...got(0, 1), expiry: '2027-01-15' as IsoDate }]);
+    expect(near.root.houseItems.find((h) => h.id === 'h1')!.expiry).toBe('2027-01-15');
+    const far = receive(root, [{ ...got(0, 1), expiry: '2029-01-15' as IsoDate }]);
+    expect(far.root.houseItems.find((h) => h.id === 'h1')!.expiry).toBe('2027-03-31');
+  });
+});
+
+describe('11.5c: stockGainOf (the stock line on a card)', () => {
+  it('a medicine in boxes: got x perSellUnit in the small unit', () => {
+    const root = world([]);
+    expect(stockGainOf(root, line(med('m1', [['a1', 20]]), { perSellUnit: 30 }), 2)).toEqual({ counted: true, amount: 60, unit: 'เม็ด' });
+  });
+  it('a medicine with no pack size: perSellUnit 1', () => {
+    const root = world([]);
+    expect(stockGainOf(root, line(med('mn', [['an', 2]]), { perSellUnit: undefined }), 2)).toEqual({ counted: true, amount: 2, unit: 'เม็ด' });
+  });
+  it('liquid in ml, cream in whole tubes', () => {
+    const root = world([]);
+    expect(stockGainOf(root, line(med('m4', [['a4', 1]]), { sellUnit: 'หลอด', perSellUnit: 1 }), 2)).toEqual({ counted: true, amount: 2, unit: 'หลอด' });
+  });
+  it('a house item with stock: got in its stock unit; without stock: not counted', () => {
+    const root = world([]);
+    expect(stockGainOf(root, line({ kind: 'house', houseItemId: 'h1' }, { perSellUnit: 1 }), 3)).toEqual({ counted: true, amount: 3, unit: 'แผง' });
+    expect(stockGainOf(root, line({ kind: 'house', houseItemId: 'h2' }, { perSellUnit: 1 }), 3)).toEqual({ counted: false });
+  });
+  it('kind other with no stock, a typed line, a stopped person only: not counted', () => {
+    const root = world([]);
+    expect(stockGainOf(root, line(med('mo', [['ao1', 10]])), 2)).toEqual({ counted: false });
+    expect(stockGainOf(root, line({ kind: 'free', name: 'ยาตัวอย่าง H' }), 2)).toEqual({ counted: false });
+    const stopped: Root = { ...root, assignments: root.assignments.map((a) => (a.id === 'a1' ? { ...a, status: 'stopped' as const } : a)) };
+    expect(stockGainOf(stopped, line(med('m1', [['a1', 20]])), 2)).toEqual({ counted: false });
   });
 });

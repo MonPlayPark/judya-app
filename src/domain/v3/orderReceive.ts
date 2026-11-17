@@ -1,8 +1,12 @@
 // Receiving an order (M4 PR 11.5a): domain only. Pure functions on `Root`: no storage, no clock (`today` / `nowIso` are passed in), no UI.
-// Stock goes up ONLY by what arrived this time (`qtyReceivedNow`), through `refillStock` (docs/M4-PR11-GAP.md section 3). No MedEvent is made.
+// Stock goes up ONLY by what arrived this time (`qtyReceivedNow`, no maximum: more than ordered completes the line), through `refillStock` (docs/M4-PR11-GAP.md section 3). No MedEvent is made.
+// 11.5c: a price typed on the row sets `line.unitPrice` and is remembered for the order's shop (`upsertPrice`); the expiry of the new box goes to `refillStock` / the house item.
 // All or nothing: the new root is returned only when every step worked, so the screen writes ONE root once.
 import type { IsoDate } from '../calc';
-import { refillStock, type RefillAmount } from './stock';
+import { SMALL_UNIT } from './addMedicine';
+import { defaultNewId } from './medActions';
+import { upsertPrice, type PriceItem } from './prices';
+import { mergeExpiry, refillStock, type RefillAmount } from './stock';
 import { rootSchema, type Assignment, type Medication, type Order, type OrderLine, type Root } from './schema';
 
 export interface ReceiveInput {
@@ -13,6 +17,11 @@ export interface ReceiveInput {
   leftover: 'waiting' | 'dropped' | null;
   /** A typed (free) line: the owner's answer to "add to the medicine list?". */
   addToList?: boolean;
+  /** Price of one sell unit typed on the row (>= 0). Above 0: it becomes the line's price and is remembered for the order's shop (a medicine or a
+   * house item, never a typed one). 0 or left out: the old price stays. */
+  unitPrice?: number;
+  /** Expiry date of the new box: the nearer date wins (`mergeExpiry`) on every share of a medicine and on a house item. Used only when something arrived. */
+  expiry?: IsoDate;
 }
 
 export interface ReceiveSummary {
@@ -86,17 +95,52 @@ function refillKind(a: Assignment, m: Medication): Kind | null {
 const amountOf = (kind: Kind, n: number): RefillAmount =>
   kind === 'count' ? { kind: 'count', strips: 0, loose: n } : kind === 'volume' ? { kind: 'volume', ml: n } : { kind: 'tubes', spare: n };
 
-/** Records an order's received amounts and raises the stock of the medicines in it. See the header for the rules. */
-export function receiveOrder(root: Root, orderId: string, received: readonly ReceiveInput[], today: IsoDate, nowIso: string): ReceiveResult {
+/** The people of a medicine line whose stock goes up (a stopped or missing person, and kind `other` with no stock rule, do not count). */
+function eligibleShares(root: Root, l: OrderLine): { m: Medication; eligible: { a: Assignment; qty: number }[] } | null {
+  if (l.source.kind !== 'med') return null;
+  const { medicationId, shares } = l.source;
+  const m = root.medications.find((x) => x.id === medicationId);
+  if (!m) return null;
+  const eligible: { a: Assignment; qty: number }[] = [];
+  for (const s of shares) {
+    const a = root.assignments.find((x) => x.id === s.assignmentId);
+    if (!a || a.status === 'stopped' || refillKind(a, m) === null) continue;
+    eligible.push({ a, qty: s.qty });
+  }
+  return { m, eligible };
+}
+
+export type StockGain = { counted: true; amount: number; unit: string } | { counted: false };
+
+/** What the card of a line says about stock: "สต็อกจะเพิ่ม +amount unit" (counted) or "ไม่นับสต็อก" (a typed line, a house item with no count, kind `other` with
+ * no stock rule, nobody left to count it for). `got` = sell units arriving now. The amount is what `receiveOrder` adds in all (whole units). */
+export function stockGainOf(root: Root, l: OrderLine, got: number): StockGain {
+  if (l.source.kind === 'free') return { counted: false };
+  if (l.source.kind === 'house') {
+    const houseItemId = l.source.houseItemId;
+    const stock = root.houseItems.find((h) => h.id === houseItemId)?.stock;
+    return stock ? { counted: true, amount: round4(got), unit: stock.unit } : { counted: false };
+  }
+  const found = eligibleShares(root, l);
+  if (!found || found.eligible.length === 0) return { counted: false };
+  const kind = refillKind(found.eligible[0]!.a, found.m)!;
+  if (kind === 'tubes') return { counted: true, amount: Math.floor(got + EPS), unit: found.m.kind === 'drops' ? SMALL_UNIT.drops : SMALL_UNIT.cream };
+  const amount = Math.floor(got * (l.perSellUnit ?? 1) + EPS);
+  return { counted: true, amount, unit: kind === 'volume' ? SMALL_UNIT.liquid : SMALL_UNIT[found.m.kind] };
+}
+
+/** Records an order's received amounts and raises the stock of the medicines in it. See the header for the rules.
+ * `newId` makes the id of a remembered price that is new (the page passes the real one; a dry run may pass a made-up counter). */
+export function receiveOrder(root: Root, orderId: string, received: readonly ReceiveInput[], today: IsoDate, nowIso: string, newId: () => string = defaultNewId): ReceiveResult {
   try {
-    return receive(root, orderId, received, today, nowIso);
+    return receive(root, orderId, received, today, nowIso, newId);
   } catch (e) {
     if (e instanceof ReceiveError) return fail(e.message);
     throw e;
   }
 }
 
-function receive(root: Root, orderId: string, received: readonly ReceiveInput[], today: IsoDate, nowIso: string): ReceiveResult {
+function receive(root: Root, orderId: string, received: readonly ReceiveInput[], today: IsoDate, nowIso: string, newId: () => string): ReceiveResult {
   const order = root.orders.find((o) => o.id === orderId);
   if (!order) return fail('ไม่พบใบสั่งนี้');
   if (order.status !== 'waiting' && order.status !== 'partial') return fail('รับของได้เฉพาะใบสั่งที่ยังรอรับของหรือรับบางส่วน');
@@ -106,12 +150,16 @@ function receive(root: Root, orderId: string, received: readonly ReceiveInput[],
     if (!Number.isInteger(r.lineIndex) || r.lineIndex < 0 || r.lineIndex >= order.lines.length) return fail('ไม่พบรายการยาในใบสั่ง');
     if (!Number.isFinite(r.qtyReceivedNow) || r.qtyReceivedNow < 0) return fail('จำนวนที่รับต้องเป็นตัวเลขตั้งแต่ 0 ขึ้นไป');
     if (byLine.has(r.lineIndex)) return fail('มีรายการยาซ้ำกันในข้อมูลที่รับ');
+    if (r.unitPrice !== undefined && (!Number.isFinite(r.unitPrice) || r.unitPrice < 0)) return fail('ราคาต้องเป็นตัวเลขตั้งแต่ 0 ขึ้นไป');
     byLine.set(r.lineIndex, r);
   }
 
   const summary: ReceiveSummary = { skipped: [], noTube: [], startedCount: [], askAdd: [] };
   const assignments = new Map<string, Assignment>(root.assignments.map((a) => [a.id, a]));
   const houseStock = new Map<string, { qty: number; unit: string }>();
+  const houseExpiry = new Map<string, IsoDate>();
+  let prices = root.prices;
+  const shopKnown = root.shops.some((s) => s.id === order.shopId);
   const personName = (a: Assignment | undefined, fallback: string): string => root.persons.find((p) => p.id === a?.personId)?.name ?? fallback;
 
   const lines: OrderLine[] = order.lines.map((l, lineIndex) => {
@@ -120,7 +168,25 @@ function receive(root: Root, orderId: string, received: readonly ReceiveInput[],
     const qtyReceived = round4(l.qtyReceived + now);
     const complete = isComplete({ qtyOrdered: l.qtyOrdered, qtyReceived });
     const leftover: OrderLine['leftover'] = complete ? null : (input?.leftover ?? l.leftover ?? 'waiting');
-    const next: OrderLine = { ...l, qtyReceived, leftover, ...(input?.addToList === undefined ? {} : { addToList: input.addToList }) };
+    const typedPrice = input?.unitPrice !== undefined && input.unitPrice > 0 ? input.unitPrice : undefined;
+    const next: OrderLine = {
+      ...l,
+      qtyReceived,
+      leftover,
+      ...(typedPrice === undefined ? {} : { unitPrice: typedPrice }),
+      ...(input?.addToList === undefined ? {} : { addToList: input.addToList }),
+    };
+    if (typedPrice !== undefined && shopKnown && l.source.kind !== 'free') {
+      // remembered for this shop (rule 2 of 11.1: a typed medicine has no place for a price); a deleted medicine / house item has none either
+      const src = l.source;
+      const known = src.kind === 'med' ? root.medications.some((m) => m.id === src.medicationId) : root.houseItems.some((h) => h.id === src.houseItemId);
+      if (known) {
+        const item: PriceItem = src.kind === 'med' ? { kind: 'med', medicationId: src.medicationId } : { kind: 'house', houseItemId: src.houseItemId };
+        const res = upsertPrice(prices, { shopId: order.shopId, item, price: typedPrice, sellUnit: l.sellUnit, ...(item.kind === 'med' ? { perSellUnit: l.perSellUnit ?? 1 } : {}) }, today, newId);
+        if (!res.ok) throw new ReceiveError('ราคาที่ใส่ไม่ถูกต้อง จึงไม่บันทึก');
+        prices = res.prices;
+      }
+    }
 
     if (l.source.kind === 'free') {
       if (now > 0) summary.askAdd.push({ lineIndex, name: l.source.name });
@@ -135,6 +201,7 @@ function receive(root: Root, orderId: string, received: readonly ReceiveInput[],
       if (l.sellUnit.trim() !== item.stock.unit.trim()) throw new ReceiveError('หน่วยที่สั่งไม่ตรงกับหน่วยที่นับสต็อกของยาสามัญ');
       const cur = houseStock.get(item.id) ?? item.stock;
       houseStock.set(item.id, { ...cur, qty: round4(cur.qty + now) });
+      if (input?.expiry !== undefined) houseExpiry.set(item.id, input.expiry);
       return next;
     }
 
@@ -170,7 +237,7 @@ function receive(root: Root, orderId: string, received: readonly ReceiveInput[],
         return;
       }
       const cur = assignments.get(a.id)!;
-      const res = refillStock(cur, m, root.events, today, amountOf(kind, n));
+      const res = refillStock(cur, m, root.events, today, amountOf(kind, n), input?.expiry);
       if (!res.ok) throw new ReceiveError(res.error);
       if (cur.stock === null) summary.startedCount.push(personName(a, a.id));
       assignments.set(a.id, res.assignment);
@@ -183,7 +250,12 @@ function receive(root: Root, orderId: string, received: readonly ReceiveInput[],
   const nextRoot: Root = {
     ...root,
     assignments: root.assignments.map((a) => assignments.get(a.id) ?? a),
-    houseItems: root.houseItems.map((h) => (houseStock.has(h.id) ? { ...h, stock: houseStock.get(h.id)! } : h)),
+    houseItems: root.houseItems.map((h) => {
+      if (!houseStock.has(h.id)) return h;
+      const expiry = mergeExpiry(h.expiry, houseExpiry.get(h.id));
+      return { ...h, stock: houseStock.get(h.id)!, ...(expiry !== undefined ? { expiry } : {}) };
+    }),
+    prices,
     orders: root.orders.map((o) => (o.id === orderId ? nextOrder : o)),
   };
   if (!rootSchema.safeParse(nextRoot).success) return fail('ข้อมูลหลังรับของไม่ถูกต้อง จึงไม่บันทึก');
