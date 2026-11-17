@@ -249,10 +249,10 @@ function CareCard({ model }: { model: HomeModel }) {
         <CareLine key={c.key} item={c} />
       ))}
       {model.careMore > 0 && <p className={styles.more}>และอีก {model.careMore} รายการ</p>}
-      <ComingSoon className={styles.orderButton} badgeClassName={styles.orderBadge}>
+      <a href="#/n/order" className={`${styles.orderButton} ${styles.orderLink}`}>
         <img className={styles.orderIcon} src={iconUrl('order')} alt="" />
         สั่งยา
-      </ComingSoon>
+      </a>
     </section>
   );
 }
@@ -278,14 +278,14 @@ function CareLine({ item }: { item: CareItem }) {
 function Shortcuts() {
   return (
     <div className={styles.tiles}>
-      <Tile icon="order" title="สั่งซื้อยา" sub="เปรียบเทียบราคา" />
+      <OrderTile />
       <Tile icon="share-doctor" title="แชร์ให้แพทย์" sub="สรุปข้อมูลยา" />
       <MedsTile />
     </div>
   );
 }
 
-function Tile({ icon, title, sub }: { icon: 'order' | 'share-doctor'; title: string; sub: string }) {
+function Tile({ icon, title, sub }: { icon: 'share-doctor'; title: string; sub: string }) {
   return (
     <ComingSoon className={styles.tile} badgeClassName={styles.tileBadge}>
       <img className={styles.tileIcon} src={iconUrl(icon)} alt="" />
@@ -297,7 +297,20 @@ function Tile({ icon, title, sub }: { icon: 'order' | 'share-doctor'; title: str
   );
 }
 
-/** The only shortcut with a page so far: a real link to the medicine list (same card look, no "coming soon" badge). */
+/** A real link to the order page (same card look as the other tiles, no "coming soon"). */
+function OrderTile() {
+  return (
+    <a href="#/n/order" className={`${styles.tile} ${styles.tileLink}`}>
+      <img className={styles.tileIcon} src={iconUrl('order')} alt="" />
+      <span className={styles.tileText}>
+        <span className={styles.tileTitle}>สั่งซื้อยา</span>
+        <span className={styles.tileSub}>เปรียบเทียบราคา</span>
+      </span>
+    </a>
+  );
+}
+
+/** A shortcut with a page: a real link to the medicine list: a real link to the medicine list (same card look, no "coming soon" badge). */
 function MedsTile() {
   return (
     <a href="#/n/meds" className={`${styles.tile} ${styles.tileWide} ${styles.tileLink}`}>

@@ -553,12 +553,16 @@
   line-height: calc(20px * var(--fs));
   font-weight: var(--weight-semibold);
 }
+.orderLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  text-decoration: none;
+}
 .orderIcon {
   width: 26px;
   height: 26px;
-}
-.orderBadge {
-  margin: 2px 0;
 }
 
 /* ---------- shortcuts: 3 tiles, the last one full width so no cell is left empty ---------- */

@@ -63,7 +63,7 @@ describe('the six states render', () => {
     const care = screen.getByRole('region', { name: 'ยาที่ต้องดูแล' });
     expect(within(care).getByText('เลิกใช้')).toBeInTheDocument();
     expect(within(care).getByText('7 วัน')).toBeInTheDocument();
-    expect(within(care).getByText('สั่งยา').closest('button')).toHaveAttribute('aria-disabled', 'true');
+    expect(within(care).getByText('สั่งยา').closest('a')).toHaveAttribute('href', '#/n/order');
   });
   it('empty0 (S0): start card, step 2 locked, no members card, no today card, no shortcuts', () => {
     renderDemo('empty0');
@@ -105,7 +105,7 @@ describe('no "ตารางยา" and no dead controls', () => {
     expect(hrefs.slice(-3)).toEqual(['#/n', '#/n/meds', '#/n/settings/data']);
     // the other links are the "รายการยา" shortcut and (since PR 6a) the add-member links and (since PR 6b) the add-medicine link, which carry ?demo=
     // and (since PR 6c) the backup reminder, which links to the data page and carries ?demo=
-    expect(hrefs.slice(0, -3).every((h) => h === '#/n/meds' || h === `#/n/settings/data?demo=${name}` || h === `#/n/members/new?demo=${name}` || h === `#/n/meds/new?demo=${name}`)).toBe(true);
+    expect(hrefs.slice(0, -3).every((h) => h === '#/n/meds' || h === '#/n/order' || h === `#/n/settings/data?demo=${name}` || h === `#/n/members/new?demo=${name}` || h === `#/n/meds/new?demo=${name}`)).toBe(true);
     for (const b of Array.from(container.querySelectorAll('button'))) {
       if (b.hasAttribute('aria-pressed')) {
         expect(b).toBeEnabled(); // member picker or tick: a real handler (tested below)
@@ -134,6 +134,23 @@ describe('no "ตารางยา" and no dead controls', () => {
       vi.useRealTimers();
     }
   });
+  it('the "สั่งซื้อยา" tile is a real link to the order page, no badge and no coming-soon button', () => {
+    const { container } = renderDemo('normal');
+    const tile = container.querySelector('main a[href="#/n/order"]');
+    expect(tile).not.toBeNull();
+    expect(tile).toHaveAttribute('href', '#/n/order');
+    expect(tile).toHaveTextContent('สั่งซื้อยาเปรียบเทียบราคา');
+    expect(tile).not.toHaveTextContent('เร็ว ๆ นี้');
+    expect(screen.queryByRole('button', { name: /สั่งซื้อยา/ })).toBeNull();
+  });
+  it('the "สั่งยา" button in the care card is a real link to the order page', () => {
+    renderDemo('alert');
+    const care = screen.getByRole('region', { name: 'ยาที่ต้องดูแล' });
+    const link = within(care).getByRole('link', { name: /สั่งยา/ });
+    expect(link).toHaveAttribute('href', '#/n/order');
+    expect(link).not.toHaveTextContent('เร็ว ๆ นี้');
+    expect(within(care).queryByRole('button')).toBeNull();
+  });
   it('the "รายการยา" shortcut is a real link without a badge; the other shortcuts and tabs are coming soon', () => {
     const { container } = renderDemo('normal');
     const tile = container.querySelector('main a[href="#/n/meds"]');
@@ -141,7 +158,7 @@ describe('no "ตารางยา" and no dead controls', () => {
     expect(tile).toHaveTextContent('รายการยาดูและจัดการยา');
     expect(tile).not.toHaveTextContent('เร็ว ๆ นี้');
     expect(screen.getByRole('link', { name: 'ตั้งค่า' })).toHaveAttribute('href', '#/n/settings/data'); // PR 6c: the Settings tab is a real link
-    for (const t of ['สั่งซื้อยา', 'แชร์ให้แพทย์', 'สมาชิก', 'จัดการ']) {
+    for (const t of ['แชร์ให้แพทย์', 'สมาชิก', 'จัดการ']) {
       const hit = screen.getAllByText(t).map((e) => e.closest('button')).filter((b) => b !== null);
       expect(hit.length, t).toBeGreaterThan(0);
       for (const b of hit) expect(b).toHaveAttribute('aria-disabled', 'true');
