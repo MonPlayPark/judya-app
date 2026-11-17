@@ -88,10 +88,10 @@ export const alsoLabel = (p: Person): string => `เพิ่มให้${p.rel
 
 // ---------- number texts ----------
 
-type Num = { kind: 'empty' } | { kind: 'ok'; value: number } | { kind: 'bad' };
+export type Num = { kind: 'empty' } | { kind: 'ok'; value: number } | { kind: 'bad' };
 const MAX_NUMBER = 99999;
 
-function parseNum(text: string): Num {
+export function parseNum(text: string): Num {
   const t = text.trim();
   if (t === '') return { kind: 'empty' };
   if (!/^\d+(\.\d+)?$/.test(t)) return { kind: 'bad' };
@@ -635,14 +635,14 @@ export type AddHouseResult = { ok: true; root: Root; item: HouseItem } | { ok: f
 
 const fail = (error: string): { ok: false; error: string } => ({ ok: false, error });
 
-function nameProblem(name: string): string | null {
+export function nameProblem(name: string): string | null {
   const t = name.trim();
   if ([...t].length < NAME_MIN) return `ชื่อยาต้องมีอย่างน้อย ${NAME_MIN} ตัวอักษร`;
   if ([...t].length > NAME_MAX) return `ชื่อยายาวเกิน ${NAME_MAX} ตัวอักษร`;
   return null;
 }
 
-const validDate = (s: string): boolean => /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s));
+export const validDate = (s: string): boolean => /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s));
 
 /** Adds a personal medicine to a member: a Medication (new, or `reuseMedicationId`) + an Assignment + one `start` event. */
 export function addPersonalMedication(
@@ -682,7 +682,8 @@ export function addPersonalMedication(
 }
 
 /** The plan for a medicine whose pack is already known: the count boxes are read with that pack and the pack is not asked again. */
-export function planStockWithPack(kind: MedKind, pack: Pack, d: StockDraft, today: IsoDate): StockPlan {
+/** The pack boxes of the form filled from a pack that already exists. */
+export function sizeDraftOfPack(pack: Pack): StockDraft['size'] {
   const size: StockDraft['size'] = { perStrip: '', stripsPerBox: '', perBottle: '', sachetsPerBox: '', amount: '' };
   switch (pack.type) {
     case 'strip':
@@ -704,7 +705,12 @@ export function planStockWithPack(kind: MedKind, pack: Pack, d: StockDraft, toda
     case 'none':
       break;
   }
-  return planStock(kind, { buy: buyOfPack(kind, pack), size, counts: d.counts }, today);
+  return size;
+}
+
+/** The plan for a medicine whose pack is already known: the count boxes are read with that pack and the pack is not asked again. */
+export function planStockWithPack(kind: MedKind, pack: Pack, d: StockDraft, today: IsoDate): StockPlan {
+  return planStock(kind, { buy: buyOfPack(kind, pack), size: sizeDraftOfPack(pack), counts: d.counts }, today);
 }
 
 /** The stock of a reused medicine (same as `planStockWithPack`, as a result). */
