@@ -9,9 +9,11 @@ import { loadRoot, saveRoot } from '../../domain/v3/storage';
 import { openRoot, saveErrorText, type HomePageProps, type Loaded } from './HomeV3Page';
 import { demoRootOf } from './MemberFormPage';
 import { ProblemV3 } from './ProblemV3';
+import { AllergyView } from './AllergyV3';
 import { MemberDetailView, MemberEditView, MembersListView, type MembersViewProps } from './MembersV3';
 
-type Screen = { kind: 'list'; open: boolean } | { kind: 'detail'; id: string; sheet: 'remove' | undefined } | { kind: 'edit'; id: string; sheet: 'avatars' | 'remove' | undefined };
+type Screen = { kind: 'list'; open: boolean } | { kind: 'detail'; id: string; sheet: 'remove' | undefined } | { kind: 'edit'; id: string; sheet: 'avatars' | 'remove' | undefined }
+  | { kind: 'allergy'; id: string; sheet: 'add' | 'confirm' | undefined; drug: string | undefined; symptom: string | undefined };
 
 function Members({ screen, ...props }: HomePageProps & { screen: Screen }) {
   const { query } = useRoute();
@@ -28,6 +30,8 @@ const view = (screen: Screen, p: MembersViewProps) => {
       return <MemberDetailView {...p} id={screen.id} initialSheet={screen.sheet} />;
     case 'edit':
       return <MemberEditView {...p} id={screen.id} initialSheet={screen.sheet} />;
+    case 'allergy':
+      return <AllergyView {...p} id={screen.id} initialSheet={screen.sheet} prefill={{ ...(screen.drug === undefined ? {} : { drug: screen.drug }), ...(screen.symptom === undefined ? {} : { symptom: screen.symptom }) }} />;
   }
 };
 
@@ -63,4 +67,11 @@ export function MemberEditRoute({ id, ...props }: HomePageProps & { id: string }
   const { query } = useRoute();
   const sheet = query.get('sheet');
   return <Members screen={{ kind: 'edit', id, sheet: sheet === 'remove' || sheet === 'avatars' ? sheet : undefined }} {...props} />;
+}
+
+/** M4 PR 10. `?sheet=add|confirm` opens that sheet (test links, and the stop sheet's link: `&drug=` and `&symptom=` fill the add sheet). */
+export function AllergyRoute({ id, ...props }: HomePageProps & { id: string }) {
+  const { query } = useRoute();
+  const sheet = query.get('sheet');
+  return <Members screen={{ kind: 'allergy', id, sheet: sheet === 'add' || sheet === 'confirm' ? sheet : undefined, drug: query.get('drug') ?? undefined, symptom: query.get('symptom') ?? undefined }} {...props} />;
 }

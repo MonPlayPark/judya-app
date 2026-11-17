@@ -118,7 +118,7 @@ describe('one member (#/n/members/:id)', () => {
     expect(screen.getByRole('heading', { name: /ยาที่ใช้อยู่ \(2 รายการ\)/ })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /ยาตัวอย่าง B 20 mg/ })).toHaveAttribute('href', '#/n/meds/a2');
     expect(screen.getByRole('link', { name: 'ดูทั้งหมด' })).toHaveAttribute('href', '#/n/meds');
-    expect(screen.getByText('ไม่มีประวัติแพ้ยา (ยืนยันแล้ว)')).toBeInTheDocument();
+    expect(screen.getByText('ยืนยันแล้วว่าไม่มีประวัติแพ้ยา (บันทึก 28 ต.ค. 69)')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'แชร์ให้แพทย์' })).toHaveAttribute('aria-disabled', 'true');
     expect(screen.getByRole('button', { name: 'นำสมาชิกออก' })).toBeInTheDocument();
   });

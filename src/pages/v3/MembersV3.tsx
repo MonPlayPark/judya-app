@@ -13,6 +13,7 @@ import { buildMemberDetail, buildMembersList, removeMember, restoreMember, updat
 import { draftFromPerson, type MemberDraft } from '../../domain/v3/members';
 import type { Root } from '../../domain/v3/schema';
 import { avatarUrl, iconUrl } from '../../visual';
+import { AllergyBlock } from './AllergyBlock';
 import { MemberForm } from './MemberFormV3';
 import formStyles from './MemberFormV3.module.css';
 import styles from './MembersV3.module.css';
@@ -42,7 +43,7 @@ const go = (hash: string): void => {
   window.location.hash = hash;
 };
 
-function DemoBanner() {
+export function DemoBanner() {
   return (
     <p className={styles.demo} role="status">
       <InfoIcon />
@@ -329,10 +330,15 @@ export function MemberDetailView({ root, id, demo, persist, linkSuffix = '', now
           )}
         </section>
 
-        <p className={`${styles.card} ${styles.allergy}`}>
-          <InfoIcon />
-          {d.allergyText}
-        </p>
+        <a className={`${styles.card} ${styles.allergyCard}`} href={`${detailHref(d.id, '')}/allergy${linkSuffix}`}>
+          <span className={styles.allergyBody}>
+            <span className={styles.cardTitle}>การแพ้ยา</span>
+            <AllergyBlock status={d.allergyStatus} text={d.allergyText} items={d.allergyItems} />
+          </span>
+          <span className={styles.arrow} aria-hidden="true">
+            <ChevronRightIcon />
+          </span>
+        </a>
 
         <ComingSoon className={styles.share}>
           <img src={iconUrl('share-doctor')} alt="" width={24} height={24} />
