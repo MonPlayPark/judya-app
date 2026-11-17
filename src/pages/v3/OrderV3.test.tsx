@@ -137,12 +137,12 @@ describe('the list', () => {
     expect(document.documentElement.style.getPropertyValue('--toast-bottom')).toBe('');
   });
 
-  it('is reached from #/n/order in the app, and the route is not tied to any button of Home', () => {
+  it('is reached from #/n/order in the app, and Home links to it (since 11.6)', () => {
     window.location.hash = '#/n/order?demo=normal';
     render(<App />);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('สั่งซื้อยา');
     const home = readFileSync(resolve(__dirname, 'HomeV3.tsx'), 'utf8');
-    expect(home).not.toContain('/n/order');
+    expect(home).toContain('#/n/order');
   });
 });
 

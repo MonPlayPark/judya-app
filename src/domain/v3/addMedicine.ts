@@ -2,7 +2,7 @@
 // src/pages/v3/AddMedV3.tsx) holds the typed texts in the drafts below; every rule (what is valid, how a form turns into
 // Schedule / Pack / Stock) lives here, so the screen only draws. The result is always checked by rootSchema.
 import type { IsoDate } from '../calc';
-import { MEAL_LABEL, PERIODS, PERIOD_LABEL, formatAmount, type Meal, type Period } from './home';
+import { MEAL_LABEL, PERIODS, PERIOD_LABEL, formatAmount, formatDose, type Meal, type Period } from './home';
 import { doseTextOf, label } from './medsList';
 import { defaultNewId } from './medActions';
 import {
@@ -811,7 +811,7 @@ export function userCards(root: Root, medicationId: string, today: IsoDate): Use
     if (a.stock?.kind === 'tubes') stockText = `สำรอง ${a.stock.spare} ${SMALL_UNIT[m.kind]}`;
     else if (a.stock) {
       const now = a.status === 'active' ? stockNow(a, m, today, root.events) : null;
-      stockText = now === null ? 'ยังไม่ได้นับ' : `เหลือ ${formatAmount(now)} ${SMALL_UNIT[m.kind]}`;
+      stockText = now === null ? 'ยังไม่ได้นับ' : `เหลือ ${formatDose(m, now)} ${SMALL_UNIT[m.kind]}`;
     }
     return [{ personId: p.id, name: p.name, avatar: p.avatar, status: a.status, stockText, doseText: doseTextOf(a, m), expiry: a.expiry ?? null }];
   });

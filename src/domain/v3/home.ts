@@ -56,6 +56,9 @@ export function formatAmount(n: number): string {
   return n - whole === 0.5 ? `${whole > 0 ? whole : ''}½` : String(n);
 }
 
+/** A dose or an amount of one medicine: liquids are plain decimals ('7.5'), everything else uses the half sign ('1½'). */
+export const formatDose = (m: Pick<Medication, 'kind'>, n: number): string => (m.kind === 'liquid' ? String(n) : formatAmount(n));
+
 /** Name with the strength next to it: 'ยาตัวอย่าง A 500 mg', 'ยาตัวอย่าง D 1%'. */
 export function medicineLabel(m: Medication): string {
   if (!m.strength) return m.name;
@@ -121,7 +124,7 @@ function rowsOfAssignment(a: Assignment, m: Medication, today: IsoDate, done: Re
         key,
         period,
         periodLabel: PERIOD_LABEL[period],
-        amountText: `${formatAmount(schedule.pills)} ${unit}`,
+        amountText: `${formatDose(m, schedule.pills)} ${unit}`,
         extra: `ทุก ${schedule.everyHours} ชั่วโมง`,
         done: done[key] === true,
         sort: [PERIODS.indexOf(period), INTERVAL_MEAL_RANK, time, name],
@@ -139,7 +142,7 @@ function rowsOfAssignment(a: Assignment, m: Medication, today: IsoDate, done: Re
       key,
       period,
       periodLabel: PERIOD_LABEL[period],
-      amountText: `${formatAmount(slot.pills)} ${unit}`,
+      amountText: `${formatDose(m, slot.pills)} ${unit}`,
       extra: meal ? MEAL_LABEL[meal] : null,
       done: done[key] === true,
       sort: [PERIODS.indexOf(period), meal ? MEAL_RANK[meal] : 0, '', name],
