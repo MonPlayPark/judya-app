@@ -286,3 +286,22 @@ describe('the message after saving', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 });
+
+describe('S4 allergy warning on the name (M4 PR 10)', () => {
+  it('shows the warning when the owner has a listed drug that matches the name, follows the typed name, never blocks saving', () => {
+    let target = '';
+    let drug = '';
+    live(PERSONAL('a1'), (r) => {
+      const a = r.assignments.find((x) => x.id === 'a1')!;
+      drug = r.medications.find((m) => m.id === a.medicationId)!.name;
+      target = a.personId;
+      r.persons = r.persons.map((p) => (p.id === target ? { ...p, allergies: { status: 'listed', items: [{ drug, reaction: 'ผื่นตัวอย่าง' }] } } : p));
+    });
+    expect(screen.getByText(`ระวัง: ${drug} มีบันทึกแพ้ยา ${drug} (ผื่นตัวอย่าง) ตรวจกับแพทย์หรือเภสัชกรก่อน`)).toBeInTheDocument();
+    type(/ชื่อยา/, 'ชื่อที่ไม่เกี่ยวข้องเลย');
+    expect(screen.queryByText(/ระวัง:/)).toBeNull();
+    type(/ชื่อยา/, drug + ' ใหม่');
+    expect(screen.getByText(/ระวัง:/)).toBeInTheDocument();
+    expect(saveButton()).toBeEnabled();
+  });
+});

@@ -1,6 +1,7 @@
 // The v3 edit-medicine screen (M4 PR 8a, boards #24 - #27): fix what was typed wrongly or not completely. View only: every rule
 // (what changed, what needs the confirm sheet, the texts of the numbers, how it is written) is in src/domain/v3/editMedicine.ts.
 // An edit is not a dose change and writes nothing to the usage history. EditMedPage owns the data and the way back.
+import { allergyWarning } from '../../domain/v3/allergy';
 import { useMemo, useState, type ReactNode } from 'react';
 import { BackIcon, CheckCircleIcon, InfoIcon, WarningIcon } from '../../components/icons';
 import { ComingSoon } from '../../components/v3/ComingSoon';
@@ -104,6 +105,8 @@ export function EditMedView({ root, target, today, demo, persist, backHref, onSa
   const [open, setOpen] = useState<SheetName | null>(null);
   const [pending, setPending] = useState<MedKind | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const ownerId = target.type === 'personal' ? root.assignments.find((a) => a.id === target.assignmentId)?.personId : undefined;
+  const allergy = ownerId !== undefined && draft ? allergyWarning(root, ownerId, draft.name) : null; // S4: a warning, never a block
   if (!ctx || !draft) return <EditMedNotFound listHref={target.type === 'house' ? '#/n/meds?tab=house' : '#/n/meds'} />;
 
   const house = target.type === 'house';
@@ -221,6 +224,11 @@ export function EditMedView({ root, target, today, demo, persist, backHref, onSa
             {ev.duplicateNote && (
               <Note tone="warn" icon={<WarningIcon />}>
                 {ev.duplicateNote}
+              </Note>
+            )}
+            {allergy !== null && (
+              <Note tone="warn" icon={<WarningIcon />}>
+                {allergy}
               </Note>
             )}
           </div>
