@@ -80,6 +80,10 @@ export interface MedDetail {
   stock: StockCard;
   history: HistoryRow[];
   tubeWord: 'หลอด' | 'ขวด';
+  /** M4 PR 10: the person's note about side effects (null = none yet). */
+  sideEffects: string | null;
+  /** M4 PR 10: set for a medicine stopped because of an allergy / side effect: what the allergy page opens with. */
+  allergyStop: { personId: string; personName: string; drug: string; symptom: string } | null;
 }
 
 const tubeWordOf = (m: Medication): 'หลอด' | 'ขวด' => (m.kind === 'drops' ? 'ขวด' : 'หลอด');
@@ -291,6 +295,11 @@ export function buildMedDetail(root: Root, assignmentId: string, today: IsoDate)
     stock: stockCard(a, m, root, today),
     history: events.map((e) => historyRow(e, m)),
     tubeWord: tubeWordOf(m),
+    sideEffects: a.sideEffects ?? null,
+    allergyStop:
+      a.status === 'stopped' && lastStop && lastStop.type === 'stop' && (lastStop.reason === 'แพ้ยา' || lastStop.reason === 'ใช้ยาไม่ได้ / ผลข้างเคียง')
+        ? { personId: person.id, personName: person.name, drug: m.name, symptom: lastStop.note ?? '' }
+        : null,
   };
 }
 

@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('virtual:pwa-register', () => ({ registerSW: () => async () => {} }));
@@ -404,5 +404,78 @@ describe('house medicine sheets on the list', () => {
   it('deleted rows and member heads stay not pressable', () => {
     list('&tab=house&open=deleted');
     expect(screen.getByText('ยาหม่อง').closest('a,button')).toBeNull();
+  });
+});
+
+describe('side effects card (M4 PR 10)', () => {
+  const liveDetail = (id = 'a4') => {
+    const store = memoryStore();
+    saveRoot(medsDemoRoot('normal'), store);
+    window.location.hash = `#/n/meds/${id}`;
+    render(<MedDetailV3Route id={id} store={store} getToday={() => '2026-10-28'} />);
+    return store;
+  };
+  const storedRoot = (store: ReturnType<typeof memoryStore>) => {
+    const r = loadRoot(store);
+    if (r.status !== 'ok') throw new Error('not readable');
+    return r.root;
+  };
+  it('card with "ยังไม่ได้บันทึก" and an edit button; the sheet has a textarea with a counter', () => {
+    liveDetail();
+    const card = screen.getByRole('region', { name: 'ผลข้างเคียงที่สังเกตได้ (ไม่บังคับ)' });
+    expect(card).toHaveTextContent('ยังไม่ได้บันทึก');
+    fireEvent.click(within(card).getByRole('button', { name: 'แก้' }));
+    const d = dialog();
+    expect(within(d).getByText('0/500')).toBeInTheDocument();
+    fireEvent.change(within(d).getByRole('textbox'), { target: { value: 'ง่วงนอน' } });
+    expect(within(d).getByText('7/500')).toBeInTheDocument();
+  });
+  it('save: one write, text shown, no MedEvent made', () => {
+    const store = liveDetail();
+    const before = storedRoot(store).events.length;
+    fireEvent.click(screen.getByRole('button', { name: 'แก้' }));
+    fireEvent.change(within(dialog()).getByRole('textbox'), { target: { value: '  ง่วงนอน  ' } });
+    fireEvent.click(within(dialog()).getByRole('button', { name: 'บันทึก' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('region', { name: 'ผลข้างเคียงที่สังเกตได้ (ไม่บังคับ)' })).toHaveTextContent('ง่วงนอน');
+    const root = storedRoot(store);
+    expect(root.assignments.find((a) => a.id === 'a4')?.sideEffects).toBe('ง่วงนอน');
+    expect(root.events).toHaveLength(before);
+  });
+  it('the text box stops at 500 characters', () => {
+    demo('a4', 'normal', '&sheet=effects');
+    expect(within(dialog()).getByRole('textbox')).toHaveAttribute('maxlength', '500');
+  });
+  it('a demo saves nothing', () => {
+    const save = vi.spyOn(storage, 'saveRoot');
+    demo('a4', 'normal', '&sheet=effects');
+    fireEvent.change(within(dialog()).getByRole('textbox'), { target: { value: 'x' } });
+    fireEvent.click(within(dialog()).getByRole('button', { name: 'บันทึก' }));
+    expect(save).not.toHaveBeenCalled();
+  });
+});
+
+describe('stop for an allergy: link to the allergy page (M4 PR 10)', () => {
+  const stopFor = (reason: string, symptom: string) => {
+    demo('a1', 'normal', '&sheet=stop');
+    const d = dialog();
+    fireEvent.click(within(d).getByRole('button', { name: reason }));
+    if (symptom) fireEvent.change(within(d).getByPlaceholderText('เช่น ผื่นคัน บวม คลื่นไส้ ใจสั่น'), { target: { value: symptom } });
+    fireEvent.click(within(d).getByRole('button', { name: 'ยืนยันหยุดยา' }));
+  };
+  it('after stopping for "แพ้ยา": a link with the person name, to the allergy page with the add sheet, drug and symptom', () => {
+    stopFor('แพ้ยา', 'ผื่นคัน');
+    const link = screen.getByRole('link', { name: /บันทึกในหัวข้อการแพ้ยาของ/ });
+    const href = link.getAttribute('href') ?? '';
+    expect(href).toMatch(/^#\/n\/members\/[^/?]+\/allergy\?sheet=add&drug=.+&symptom=/);
+    expect(href).toContain('demo=normal');
+    expect(decodeURIComponent(href)).toContain('symptom=ผื่นคัน');
+  });
+  it('also for "ใช้ยาไม่ได้ / ผลข้างเคียง"; not for other reasons', () => {
+    stopFor('ใช้ยาไม่ได้ / ผลข้างเคียง', '');
+    expect(screen.getByRole('link', { name: /บันทึกในหัวข้อการแพ้ยาของ/ })).toBeInTheDocument();
+    cleanup();
+    stopFor('หมอสั่งหยุด', '');
+    expect(screen.queryByRole('link', { name: /บันทึกในหัวข้อการแพ้ยาของ/ })).toBeNull();
   });
 });

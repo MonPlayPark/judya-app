@@ -265,3 +265,27 @@ describe('history: a dose change (M4 PR 8b)', () => {
     expect(rowOf(withAdjust({}, before, m1))?.line1).toBe('เช้า 1 เม็ด ก่อนอาหาร · ทุกวัน → เช้า 1 เม็ด หลังอาหาร · ทุกวัน');
   });
 });
+
+describe('side effects and allergy stop (M4 PR 10)', () => {
+  it('sideEffects: the saved text, or null', () => {
+    const root = normal();
+    expect(detail(root, 'a4')?.sideEffects).toBeNull();
+    const next: Root = { ...root, assignments: root.assignments.map((a) => (a.id === 'a4' ? { ...a, sideEffects: 'ง่วง' } : a)) };
+    expect(detail(next, 'a4')?.sideEffects).toBe('ง่วง');
+  });
+  it('allergyStop is set only after a stop for an allergy or a side effect, with the symptom from the note', () => {
+    const root = normal();
+    expect(detail(root, 'a4')?.allergyStop).toBeNull();
+    for (const reason of ['แพ้ยา', 'ใช้ยาไม่ได้ / ผลข้างเคียง'] as const) {
+      const r = stopMedication(root, 'a4', { reason, note: 'ผื่นคัน' }, '2026-10-28', '2026-10-28T09:00:00+07:00');
+      if (!r.ok) throw new Error(r.error);
+      expect(detail(r.root, 'a4')?.allergyStop).toMatchObject({ drug: expect.any(String), symptom: 'ผื่นคัน' });
+    }
+    const other = stopMedication(root, 'a4', { reason: 'หมอสั่ง' }, '2026-10-28', '2026-10-28T09:00:00+07:00');
+    if (!other.ok) throw new Error(other.error);
+    expect(detail(other.root, 'a4')?.allergyStop).toBeNull();
+    const noNote = stopMedication(root, 'a4', { reason: 'แพ้ยา' }, '2026-10-28', '2026-10-28T09:00:00+07:00');
+    if (!noNote.ok) throw new Error(noNote.error);
+    expect(detail(noNote.root, 'a4')?.allergyStop?.symptom).toBe('');
+  });
+});

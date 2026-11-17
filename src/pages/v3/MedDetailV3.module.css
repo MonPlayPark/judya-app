@@ -471,3 +471,61 @@
 .editRow > span {
   justify-content: flex-start;
 }
+
+/* ---------- side effects card + allergy link (M4 PR 10) ---------- */
+.effectsEdit {
+  flex: none;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+  font-family: inherit;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+.effectsText {
+  margin: 0;
+  padding: 4px 12px 12px;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.effectsValue {
+  color: var(--color-ink);
+}
+.effectsInput {
+  min-height: 112px;
+  padding: 10px 12px;
+  line-height: calc(22px * var(--fs));
+  resize: vertical;
+}
+.counter {
+  align-self: flex-end;
+}
+.allergyLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 8px 16px;
+  box-sizing: border-box;
+  border-radius: var(--radius-pill);
+  background: var(--color-error-tint);
+  color: var(--color-error-ink);
+  font-size: calc(15px * var(--fs));
+  line-height: calc(22px * var(--fs));
+  font-weight: var(--weight-semibold);
+  text-align: center;
+  text-decoration: none;
+}
+.allergyLink svg {
+  flex: none;
+  width: 22px;
+  height: 22px;
+}
