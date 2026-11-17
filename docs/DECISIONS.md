@@ -1173,3 +1173,30 @@ Items 2, 3 (days), 6 above; rule a (days per schedule instead of per meal), c (3
 
 ### Missing tokens
 None new. Board colours map to existing tokens: #006DF5 `--color-primary`, #E4F0FE `--color-primary-tint`, #005FD6 `--color-primary-ink`, #80868B `--color-border-strong`, #E3E8EF `--color-border`, #013073 `--color-navy`, #C5221F `--color-error-ink`, #5F6368 `--color-ink-muted`; the white button text `#fff` is the one the add form already uses. The board's sheet shadow comes from the existing Sheet component; the bottom bar's shadow `0 -1px 3px rgba(60,64,67,0.16)` has no token (the only elevations point downwards), so the bar uses the 1px `--color-border` line on top, like the edit page.
+
+## M4 PR 13 — price per shop on the medicine page, boards #32, #35, #37, #40
+
+Text and layout follow `canvas4/price.md` (sections 1 - 4). Domain `src/domain/v3/medPrices.ts` (30 tests), shared view `components/v3/PriceCard.tsx` (card + sheet), used by the detail page (after "ยาคงเหลือ", before the history, #32) and by the house medicine info sheet. Hidden for a stopped medicine (#35). The card and the order page use ONE store, `root.prices`, through `upsertPrice`; no new data, no schema change.
+
+### Built as written
+- Rows: one per shop in `root.shops` (newest price of this medicine, any unit): "อัปเดต <date>" or "ยังไม่มีราคา"; right "฿X / <unit>" + "≈ ฿Y ต่อ<unit>" (none for cream / drops, or when the row has no count per unit) or blue "ใส่ราคา". Labels "แก้ราคาที่ …" / "ใส่ราคาที่ …".
+- Sheet #40: unit choices from the pack (box: กล่อง | แผง | เม็ด; strip: แผง | เม็ด; bottle: ขวด | เม็ด; sachet box: กล่อง | ซอง; liquid with ml: ขวด; cream หลอด, drops ขวด; no pack: the medicine's unit). Save = `upsertPrice` dated today, disabled while empty / 0. "ลบราคาร้านนี้" (only with a price) removes every price row of this shop and medicine. Toasts as the board. One `saveRoot` per save; demo writes nothing.
+- No shops: help line + link button "เพิ่มร้าน" to `#/n/shops` (board silent). In a demo the link goes to the live shops page.
+- House medicine: same card in the info sheet; unit = stock unit only, perSellUnit 1. Tapping a row replaces the info sheet by the price sheet; save / cancel return to the info sheet.
+
+### Own decisions
+1. Real shop list instead of the board's fixed ก / ข / ค.
+2. The piece word is the medicine's own unit word (`unitWord`: เม็ด, แคปซูล, ซอง, หน่วย), so a price saved here is in the same unit the order page starts with.
+3. Saving in another unit adds a row (upsert key is shop + item + unit); the card shows the newest, the order page may still use the older unit row. "ลบราคาร้านนี้" clears all of them.
+4. A saved unit the pack does not offer (e.g. from the order flow) is added as an extra choice so editing keeps it.
+5. House medicine has no `unit` field: used `stock.unit`; if not counted, a unit by its kind (tablet เม็ด, liquid / drops ขวด, cream หลอด, sachet ซอง, other หน่วย). An uncounted house medicine cannot be ordered, so such a price is only stored. House card shows no "≈ ต่อ" line (it would repeat the price).
+6. Liquid per-unit line is per มล. (bottle price / ml).
+7. Heading icon is the existing `shops` icon (the board's tag drawing uses hard-coded colours).
+8. Demo house `price` (`?demo=price`): three shops, VitaminD ก ฿180/กล่อง and ข ฿65/แผง, cream ก ฿45/หลอด, house h5 ก ฿25/แผง.
+9. `check-overflow`: 5 routes and 6 pressed scenarios added (nothing removed).
+
+### Differences from the boards
+Item 1, 5, 7 above; the board's per-unit line also shows for the single unit "เม็ด" (kept), and no "no shops" state is drawn.
+
+### Missing tokens
+None.

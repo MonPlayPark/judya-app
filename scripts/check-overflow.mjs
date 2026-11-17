@@ -53,7 +53,9 @@ const V3_ROUTES = ['/', '/n', '/no-such-page', '/old', // M4 PR 7b: an unknown o
   '/n/meds/nope/edit?demo=normal', '/n/house/h5/edit?demo=normal', '/n/house/h4/edit?demo=normal', '/n/house/h2/edit?demo=normal',
   // v3 change how to take (M4 PR 8b): clean, a cream, a syrup, four meals, an every-N-hours medicine (card, no bar), a stopped one, a missing one
   '/n/meds/a4/dose?demo=normal', '/n/meds/a9/dose?demo=cream', '/n/meds/a11/dose?demo=dose', '/n/meds/a12/dose?demo=dose', '/n/meds/a14/dose?demo=dose',
-  '/n/meds/a7/dose?demo=stopped', '/n/meds/nope/dose?demo=normal'];
+  '/n/meds/a7/dose?demo=stopped', '/n/meds/nope/dose?demo=normal',
+  // v3 price per shop (M4 PR 13): card with 3 shops (2 priced), no shops, cream, a stopped medicine (no card), the house sheet with the card
+  '/n/meds/a4?demo=price', '/n/meds/a4?demo=normal', '/n/meds/a9?demo=price', '/n/meds/a7?demo=stopped', '/n/meds?demo=price&tab=house&item=h5'];
 
 // v3 shops page (M4 PR 11.3a): states that need pressing (pick-up form, wrong values, long values, the delete question).
 const SHOPS_ADD = '/n/shops?demo=normal&sheet=add';
@@ -235,6 +237,16 @@ const ORDER_SCENARIOS = [
   ['receive done (history, toast above the menu)', RECV, async (page) => { await click(page, 'ยืนยันรับของ'); }],
   ['receive done, typed medicine goes to the add-medicine page', RECV_REST, async (page) => { await click(page, 'ยืนยันรับของ'); }],
   ['"ไม่รอแล้ว" done (toast above the menu)', HIST, async (page) => { await click(page, /^ไม่รอแล้ว/); }],
+];
+
+// v3 price per shop (M4 PR 13): the sheet, new and existing, for a box, a cream and a house medicine. Same shape as ADD_SCENARIOS.
+const PRICE_SCENARIOS = [
+  ['price sheet, new price', '/n/meds/a4?demo=price', async (page) => { await page.getByRole('button', { name: 'ใส่ราคาที่ ร้านทดสอบ ค' }).click(); }],
+  ['price sheet, new price typed (hint)', '/n/meds/a4?demo=price', async (page) => { await page.getByRole('button', { name: 'ใส่ราคาที่ ร้านทดสอบ ค' }).click(); await page.getByLabel('ราคาเป็นบาท').fill('99999999'); }],
+  ['price sheet, existing price (delete button)', '/n/meds/a4?demo=price', async (page) => { await page.getByRole('button', { name: 'แก้ราคาที่ ร้านทดสอบ ก' }).click(); }],
+  ['price sheet, cream', '/n/meds/a9?demo=price', async (page) => { await page.getByRole('button', { name: 'แก้ราคาที่ ร้านทดสอบ ก' }).click(); }],
+  ['price saved (toast)', '/n/meds/a4?demo=price', async (page) => { await page.getByRole('button', { name: 'ใส่ราคาที่ ร้านทดสอบ ค' }).click(); await page.getByLabel('ราคาเป็นบาท').fill('300'); await page.getByRole('button', { name: 'บันทึกราคา', exact: true }).click(); }],
+  ['house, price sheet', '/n/meds?demo=price&tab=house&item=h5', async (page) => { await page.getByRole('button', { name: 'ใส่ราคาที่ ร้านทดสอบ ข' }).click(); }],
 ];
 
 const chromePath = process.env.CHROMIUM_PATH
@@ -454,6 +466,17 @@ for (const width of WIDTHS) {
       const end = await page.evaluate(measureEnd);
       checked += 1;
       if (end) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 order end(${label}): ${end}`); }
+    }
+
+    // 1j) v3 price per shop after pressing (M4 PR 13)
+    for (const [label, route, act] of PRICE_SCENARIOS) {
+      await visit(route, 'v3');
+      await act(page);
+      const bad = await page.evaluate(measure);
+      checked += 1;
+      if (bad) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 price(${label}): ${bad}`); }
+      const small = await page.evaluate(measureV3, fs === 'n' ? 13.9 : 14.9);
+      if (small) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 price(${label}): ${small}`); }
     }
 
     // 1g) v3 shops page after pressing (M4 PR 11.3a)
