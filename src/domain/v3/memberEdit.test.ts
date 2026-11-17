@@ -130,12 +130,20 @@ describe('buildMemberDetail', () => {
     expect(d.birthText).toBe('พ.ศ. 2500 (อายุ 69 ปี)');
     expect(d.meds.map((x) => x.id)).toEqual(['a2', 'a5']);
     expect(d.meds[0]).toMatchObject({ name: 'ยาตัวอย่าง B 20 mg', subText: 'เช้า · 1 แคปซูล' });
-    expect(d.allergyText).toBe('ไม่มีประวัติแพ้ยา (ยืนยันแล้ว)');
+    expect(d.allergyText).toBe('ยืนยันแล้วว่าไม่มีประวัติแพ้ยา (บันทึก 28 ต.ค. 69)');
   });
   it('allergy lines: unknown, listed', () => {
     const s = sampleRootV3();
     expect(buildMemberDetail(s, 'p1')?.allergyText).toBe('ยังไม่ได้บันทึกข้อมูลการแพ้ยา');
     expect(buildMemberDetail(s, 'p3')?.allergyText).toBe('แพ้ยา 1 รายการ');
+    expect(buildMemberDetail(s, 'p3')?.allergyItems).toEqual([{ drug: 'ยาตัวอย่าง Z', reaction: 'ผื่นตัวอย่าง' }]);
+    expect(buildMemberDetail(s, 'p1')?.allergyItems).toEqual([]);
+  });
+  it('coverage row text', () => {
+    const s = sampleRootV3();
+    expect(buildMemberDetail(s, 'p1')?.coverageText).toBe('บัตรทอง');
+    expect(buildMemberDetail(s, 'p4')?.coverageText).toBe('ประกันเอกชน (บริษัทตัวอย่าง)');
+    expect(buildMemberDetail(s, 'p7')?.coverageText).toBe('ยังไม่ได้ระบุ');
   });
   it('no birth year: "ยังไม่ได้ระบุ"; no medicines: empty list', () => {
     const d = buildMemberDetail(sampleRootV3(), 'p5');

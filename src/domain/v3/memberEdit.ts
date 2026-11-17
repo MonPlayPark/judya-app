@@ -1,5 +1,6 @@
 // The members tab (M4 PR 9): edit, take out, bring back, and what the list and the one-member page show. Pure: takes a root,
 // returns a new root (checked by rootSchema), never touches storage or the clock (callers give `nowIso`).
+import { allergyStateText, coverageText } from './allergy';
 import { bangkokDate } from './backup';
 import { doseTextOf, label, shortThaiDate } from './medsList';
 import { draftState, hasSelf, type MemberDraft } from './members';
@@ -100,12 +101,14 @@ export interface MemberDetail {
   avatar: Person['avatar'];
   birthText: string; // 'พ.ศ. 2498 (อายุ 71 ปี)' | 'ยังไม่ได้ระบุ'
   meds: MemberMedRow[];
-  /** The one line about allergies (PR 10 makes it editable). */
+  /** The words of the allergy state (PR 10: allergy.ts). */
   allergyText: string;
+  allergyStatus: Person['allergies']['status'];
+  /** The listed drugs (empty unless the state is `listed`), shown inside the red block. */
+  allergyItems: { drug: string; reaction: string }[];
+  /** 'บัตรทอง' | 'ประกันเอกชน (บริษัท)' | 'ยังไม่ได้ระบุ' */
+  coverageText: string;
 }
-
-const allergyText = (a: Person['allergies']): string =>
-  a.status === 'unknown' ? 'ยังไม่ได้บันทึกข้อมูลการแพ้ยา' : a.status === 'none_confirmed' ? 'ไม่มีประวัติแพ้ยา (ยืนยันแล้ว)' : `แพ้ยา ${a.items.length} รายการ`;
 
 /** null for an unknown or removed member. */
 export function buildMemberDetail(root: Root, id: string): MemberDetail | null {
@@ -122,6 +125,9 @@ export function buildMemberDetail(root: Root, id: string): MemberDetail | null {
     avatar: p.avatar,
     birthText: p.birthYearBE === undefined || age === null ? 'ยังไม่ได้ระบุ' : `พ.ศ. ${p.birthYearBE} (อายุ ${age} ปี)`,
     meds,
-    allergyText: allergyText(p.allergies),
+    allergyText: allergyStateText(p.allergies),
+    allergyStatus: p.allergies.status,
+    allergyItems: p.allergies.status === 'listed' ? p.allergies.items : [],
+    coverageText: coverageText(p.coverage),
   };
 }
