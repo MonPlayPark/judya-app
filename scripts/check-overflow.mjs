@@ -59,7 +59,10 @@ const V3_ROUTES = ['/', '/n', '/no-such-page', '/old', // M4 PR 7b: an unknown o
   // v3 members tab (M4 PR 9): list, list with the taken-out section open, empty, one member (with / without medicines, 6 medicines of a busy person), the remove question, the edit form
   '/n/members', '/n/members?demo=members', '/n/members?demo=members&open=removed', '/n/members?demo=nomember',
   '/n/members/p1?demo=members', '/n/members/p4?demo=members', '/n/members/p1?demo=members&sheet=remove', '/n/members/p1/edit?demo=members', '/n/members/p3/edit?demo=members',
-  '/n/members/p1/edit?demo=members&sheet=remove', '/n/members/nope?demo=members'];
+  '/n/members/p1/edit?demo=members&sheet=remove', '/n/members/nope?demo=members',
+  // v3 settings (M4 PR 14): the list and the four group pages, real data (empty) and demo houses
+  '/n/settings', '/n/settings?demo=normal', '/n/settings?demo=backup', '/n/settings/font', '/n/settings/font?demo=normal', '/n/settings/reminders', '/n/settings/reminders?demo=normal',
+  '/n/settings/order', '/n/settings/order?demo=normal', '/n/settings/about', '/n/settings/about?demo=normal'];
 
 // v3 shops page (M4 PR 11.3a): states that need pressing (pick-up form, wrong values, long values, the delete question).
 const SHOPS_ADD = '/n/shops?demo=normal&sheet=add';
@@ -262,6 +265,15 @@ const PRICE_SCENARIOS = [
   ['price sheet, cream', '/n/meds/a9?demo=price', async (page) => { await page.getByRole('button', { name: 'แก้ราคาที่ ร้านทดสอบ ก' }).click(); }],
   ['price saved (toast)', '/n/meds/a4?demo=price', async (page) => { await page.getByRole('button', { name: 'ใส่ราคาที่ ร้านทดสอบ ค' }).click(); await page.getByLabel('ราคาเป็นบาท').fill('300'); await page.getByRole('button', { name: 'บันทึกราคา', exact: true }).click(); }],
   ['house, price sheet', '/n/meds?demo=price&tab=house&item=h5', async (page) => { await page.getByRole('button', { name: 'ใส่ราคาที่ ร้านทดสอบ ข' }).click(); }],
+];
+
+// v3 settings (M4 PR 14): a tap on a chip (the chosen chip with its check icon, the hint under it) and on each font size (the whole app changes size).
+const SETTINGS_SCENARIOS = [
+  ['reminders, 60 days chosen', '/n/settings/reminders?demo=normal', async (page) => { await page.getByRole('button', { name: '60 วัน' }).click(); }],
+  ['reminders, 30 days low stock chosen', '/n/settings/reminders?demo=normal', async (page) => { await page.getByRole('group', { name: 'ยาใกล้หมด', exact: true }).getByRole('button', { name: '30 วัน' }).click(); }],
+  ['order, 90 days chosen', '/n/settings/order?demo=normal', async (page) => { await page.getByRole('button', { name: '90 วัน' }).click(); }],
+  ['font, large chosen', '/n/settings/font?demo=normal', async (page) => { await page.getByRole('button', { name: /^ใหญ่/ }).click(); }],
+  ['font, medium chosen', '/n/settings/font?demo=normal', async (page) => { await page.getByRole('button', { name: /^กลาง/ }).click(); }],
 ];
 
 const chromePath = process.env.CHROMIUM_PATH
@@ -503,6 +515,17 @@ for (const width of WIDTHS) {
       if (bad) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 members(${label}): ${bad}`); }
       const small = await page.evaluate(measureV3, fs === 'n' ? 13.9 : 14.9);
       if (small) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 members(${label}): ${small}`); }
+    }
+
+    // 1l) v3 settings after pressing (M4 PR 14)
+    for (const [label, route, act] of SETTINGS_SCENARIOS) {
+      await visit(route, 'v3');
+      await act(page);
+      const bad = await page.evaluate(measure);
+      checked += 1;
+      if (bad) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 settings(${label}): ${bad}`); }
+      const small = await page.evaluate(measureV3, fs === 'n' ? 13.9 : 14.9);
+      if (small) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 settings(${label}): ${small}`); }
     }
 
     // 1g) v3 shops page after pressing (M4 PR 11.3a)

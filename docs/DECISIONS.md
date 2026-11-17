@@ -1230,3 +1230,30 @@ Text and layout follow `canvas4/members.md`. Domain `src/domain/v3/memberEdit.ts
 
 ### Missing tokens
 None. Board colours map to existing tokens: #E4F0FE `--color-primary-tint`, #005FD6 `--color-primary-ink`, #013073 `--color-navy`, #5F6368 `--color-ink-muted`, #C5221F `--color-error-ink`, #E3E8EF `--color-border`, white text on blue is the literal `#fff` as on the other pages.
+
+
+## M4 PR 14 — settings (list of 5 groups and their pages)
+
+### Boards used
+- **ตั้งค่า (list)** and **ตั้งค่า > การเตือน** (canvas Settings.dc / SettingsReminders.dc). Both boards use old v2 colours and fixed px, so they were rebuilt with v3 tokens and the v3 page frame (band header, 44px round back, `--fs` text, 48px chips, bottom menu).
+- Built **without a board**, from the same card / row / chip looks: ขนาดตัวอักษร (`#/n/settings/font`), การสั่งยาและร้านค้า (`/order`), เกี่ยวกับ JudYa (`/about`). ข้อมูลและสำรอง (`/data`) is the existing page, unchanged except that its back button always goes to `#/n/settings`.
+
+### Own decisions
+1. **Routes:** `#/n/settings` (list), `/font`, `/reminders`, `/order`, `/about`, `/data`. The bottom-menu "ตั้งค่า" tab goes to `#/n/settings` and is current on every one of them. Demo names (`?demo=...`, Home / list / shops demos) work on all pages and are carried in the links; a demo writes nothing and reads no storage.
+2. **One tap = one `saveRoot`.** The page takes the new root only if the write worked; otherwise it shows "บันทึกไม่ได้ ข้อมูลเดิมยังอยู่" and keeps the old chip. `updateSetting` (domain/v3/settingsPage.ts) validates with the schema first.
+3. **Chip not in the list** (e.g. 45 days from a backup or an older app): shown as an extra chosen chip "45 วัน" in its place (sorted), so the chosen value is always visible. Not an error.
+4. **Chosen chip / size row** = check icon + word + `aria-pressed` (never colour alone). Chip groups have `role="group"` named by the card title, because "30 วัน" appears on two cards.
+5. **Font size** is stored only in `root.settings.fontSize` (normal / medium / large); applying is the existing `data-fs` mechanism (`applyFontSize`), and only after the write worked. At start `initFontSizeFromHouse()` (main.tsx) lets a readable house decide; with no house (or an unreadable one) the old key `judya.fontsize` is still read as before, so the overflow script keeps working. The v3 pages **never write** `judya.fontsize`. Consequence: a person who chose กลาง/ใหญ่ under the old key and already has a v3 house now starts at the house value (ปกติ by default) until they choose again.
+6. **Font page samples** show "ยาของคุณแม่ เช้า 1 เม็ด หลังอาหาร" at the size each row names (16px × the `--fs` number of that size), whichever size is on now.
+7. **ข้อความสั่งยา card is read-only.** Nothing in the code edits `settings.orderTemplate`, and the order message does not read it (the text has a fixed shape in `orderMessage.ts`). The card shows the stored text, or "ใช้ข้อความมาตรฐาน" when empty. **Open question for the owner:** should the template be editable, or should the field be dropped? Until then a non-empty stored template would be shown but not used.
+8. **About sentence "ข้อมูลทั้งหมดอยู่ในเครื่องนี้เท่านั้น ไม่ส่งออกไปที่ไหน"** was checked: `src` has no `fetch`, XHR, beacon or WebSocket call; the only network use is the service-worker update check (no user data). The sentence is true and was written as asked. Version shown = the number part of `__APP_VERSION__` (from package.json).
+9. The list's backup line uses `backupStatus` of the data page ("สำรองล่าสุด 20 ต.ค. 2569" / "ยังไม่เคยสำรอง").
+10. `check-overflow`: 12 routes and 5 pressed scenarios added (nothing removed).
+
+### Differences from the boards
+- Header has the v3 band and a round back button; the list has no back (it is a tab). Colours, shadow, divider and nav sizes are the v3 tokens, not the board's v2 values (board section 4).
+- Icons: the boards' picture icons are replaced by the existing icon set (`expiry-alert`, `order`, `backup`, `shops`, `order-template`, `restock`) and two small inline glyphs (A A, info).
+- Home still links straight to the data page for its backup banner; this was not changed.
+
+### Missing tokens
+None.
