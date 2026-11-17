@@ -227,3 +227,41 @@ describe('house item sheet', () => {
     expect(refillHouseItem(root, 'zz', 1, undefined)).toEqual({ ok: false, error: 'ไม่พบยานี้' });
   });
 });
+
+describe('history: a dose change (M4 PR 8b)', () => {
+  const withAdjust = (extra: Record<string, unknown>, from: unknown, to: unknown): Root => {
+    const r = normal();
+    return {
+      ...r,
+      events: [
+        ...r.events,
+        { id: 'adj', assignmentId: 'a4', type: 'adjust', effectiveOn: '2026-10-20', at: '2026-10-20T09:00:00+07:00', reason: 'doctor', from: { schedule: from }, to: { schedule: to }, ...extra } as never,
+      ],
+    };
+  };
+  const m1: unknown = { kind: 'meal', slots: { morning: { pills: 1, meal: 'after' } }, days: { kind: 'daily' } };
+  const m2: unknown = { kind: 'meal', slots: { morning: { pills: 2, meal: 'after' } }, days: { kind: 'daily' } };
+  const rowOf = (r: Root) => detail(r, 'a4').history.find((h) => h.id === 'adj');
+
+  it('doctor: title, old -> new, "เหตุผล: หมอสั่ง", no note line', () => {
+    expect(rowOf(withAdjust({}, m1, m2))).toMatchObject({ title: 'ปรับโดส', line1: 'เช้า 1 เม็ด → เช้า 2 เม็ด', line2: 'เหตุผล: หมอสั่ง', line3: null });
+  });
+
+  it('self or other: "เหตุผล: ปรับเอง หรืออื่นๆ"; a note is shown in quotes', () => {
+    expect(rowOf(withAdjust({ reason: 'self_or_other', note: 'ลดเองเพราะง่วง' }, m2, m1))).toMatchObject({
+      line2: 'เหตุผล: ปรับเอง หรืออื่นๆ',
+      line3: '“ลดเองเพราะง่วง”',
+    });
+  });
+
+  it('the other kinds of event have no third line', () => {
+    expect(detail(normal(), 'a4').history.every((h) => h.line3 === null)).toBe(true);
+  });
+
+  it('a change of days or timing only is still readable (the two sides are not the same words)', () => {
+    const weekdays: unknown = { kind: 'meal', slots: { morning: { pills: 1, meal: 'after' } }, days: { kind: 'weekdays', days: [1, 3, 5] } };
+    const before: unknown = { kind: 'meal', slots: { morning: { pills: 1, meal: 'before' } }, days: { kind: 'daily' } };
+    expect(rowOf(withAdjust({}, m1, weekdays))?.line1).toBe('เช้า 1 เม็ด หลังอาหาร · ทุกวัน → เช้า 1 เม็ด หลังอาหาร · เฉพาะวันจันทร์ พุธ ศุกร์');
+    expect(rowOf(withAdjust({}, before, m1))?.line1).toBe('เช้า 1 เม็ด ก่อนอาหาร · ทุกวัน → เช้า 1 เม็ด หลังอาหาร · ทุกวัน');
+  });
+});

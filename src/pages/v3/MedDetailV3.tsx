@@ -357,6 +357,7 @@ function Timeline({ rows }: { rows: HistoryRow[] }) {
           <p className={styles.rowTitle}>{r.title}</p>
           {r.line1 && <p className={styles.sub}>{r.line1}</p>}
           {r.line2 && <p className={styles.sub}>{r.line2}</p>}
+          {r.line3 && <p className={styles.sub}>{r.line3}</p>}
         </li>
       ))}
     </ol>

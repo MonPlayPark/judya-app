@@ -47,6 +47,8 @@ export interface HistoryRow {
   title: string;
   line1: string | null;
   line2: string | null;
+  /** A dose change's note, in quotes. */
+  line3: string | null;
 }
 
 export interface StockCard {
@@ -111,14 +113,18 @@ function doseLines(a: Assignment, m: Medication): DoseLine[] {
   });
 }
 
-/** 'เช้า 1 เม็ด + เย็น 1 เม็ด' / 'ทุก 8 ชั่วโมง 1 เม็ด' (before / after of a dose change). */
-function scheduleBrief(s: Schedule, m: Medication): string {
+/** 'เช้า 1 เม็ด + เย็น 1 เม็ด' / 'ทุก 8 ชั่วโมง 1 เม็ด' (before / after of a dose change). `detailed` adds the meal timing and the
+ * days ('เช้า 1 เม็ด หลังอาหาร · ทุกวัน'); it is used when the short words of the two sides would be the same. */
+function scheduleBrief(s: Schedule, m: Medication, detailed = false): string {
   const unit = unitWord(m);
   if (s.kind === 'interval') return `ทุก ${s.everyHours} ชั่วโมง ${formatDose(m, s.pills)} ${unit}`;
-  return PERIODS.flatMap((p) => {
+  const text = PERIODS.flatMap((p) => {
     const slot = s.slots[p];
-    return slot ? [`${PERIOD_LABEL[p]} ${formatDose(m, slot.pills)} ${unit}`] : [];
+    if (!slot) return [];
+    const meal = detailed && 'meal' in slot ? ` ${MEAL_LABEL[slot.meal]}` : '';
+    return [`${PERIOD_LABEL[p]} ${formatDose(m, slot.pills)} ${unit}${meal}`];
   }).join(' + ');
+  return detailed ? `${text} · ${daysText(s)}` : text;
 }
 
 function reasonText(e: Extract<MedEvent, { type: 'stop' | 'resume' }>): string | null {
@@ -132,21 +138,25 @@ function historyRow(e: MedEvent, m: Medication): HistoryRow {
   const base = { id: e.id, date: fullThaiDate(e.effectiveOn) };
   switch (e.type) {
     case 'start':
-      return { ...base, title: 'เริ่มกินยา', line1: null, line2: null };
-    case 'adjust':
+      return { ...base, title: 'เริ่มกินยา', line1: null, line2: null, line3: null };
+    case 'adjust': {
+      const short = [scheduleBrief(e.from.schedule, m), scheduleBrief(e.to.schedule, m)];
+      const [from, to] = short[0] === short[1] ? [scheduleBrief(e.from.schedule, m, true), scheduleBrief(e.to.schedule, m, true)] : short;
       return {
         ...base,
         title: 'ปรับโดส',
-        line1: `${scheduleBrief(e.from.schedule, m)} → ${scheduleBrief(e.to.schedule, m)}`,
-        line2: e.reason === 'doctor' ? 'เหตุผล: หมอสั่ง' : 'เหตุผล: ปรับเองหรือไม่ใช่หมอสั่ง',
+        line1: `${from} → ${to}`,
+        line2: e.reason === 'doctor' ? 'เหตุผล: หมอสั่ง' : 'เหตุผล: ปรับเอง หรืออื่นๆ',
+        line3: e.note ? `“${e.note}”` : null,
       };
+    }
     case 'stop': {
       const r = reasonText(e);
-      return { ...base, title: 'หยุดยา', line1: null, line2: r ? `เหตุผล: ${r}` : null };
+      return { ...base, title: 'หยุดยา', line1: null, line2: r ? `เหตุผล: ${r}` : null, line3: null };
     }
     case 'resume': {
       const r = reasonText(e);
-      return { ...base, title: 'กลับมากินใหม่', line1: null, line2: r ? `เหตุผล: ${r}` : null };
+      return { ...base, title: 'กลับมากินใหม่', line1: null, line2: r ? `เหตุผล: ${r}` : null, line3: null };
     }
   }
 }
