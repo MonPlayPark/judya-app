@@ -1,0 +1,513 @@
+/* v3 members tab (M4 PR 9). Values copied from the boards Members, MemberDetail (390px): text as px at "normal" times var(--fs);
+   colours and shadows from the tokens of tokens.css. Page #F6FAFF, white cards radius 16 with --elevation-1, 10px apart. */
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--color-background);
+  font-family: var(--font-sans);
+}
+.demo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 6px var(--screen-pad);
+  background: var(--color-warning-tint);
+  color: var(--color-warning-ink);
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+}
+
+/* ---------- head ---------- */
+.topStrip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 6px 12px 8px 16px;
+}
+.headIcon {
+  flex: none;
+  width: 36px;
+  height: 36px;
+}
+.title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: calc(20px * var(--fs));
+  line-height: calc(28px * var(--fs));
+  font-weight: var(--weight-bold);
+  color: var(--color-navy);
+  overflow-wrap: anywhere;
+}
+.back {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-left: -4px;
+  border-radius: 50%;
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+}
+.back svg {
+  width: 24px;
+  height: 24px;
+}
+.editPill {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 12px 16px;
+}
+.card {
+  border-radius: 16px;
+  background: var(--color-surface);
+  box-shadow: var(--elevation-1);
+}
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.main:has(.cards) {
+  padding-bottom: 76px; /* the floating button */
+}
+
+/* ---------- list ---------- */
+.memberCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 76px;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  color: inherit;
+  text-decoration: none;
+}
+.avatar {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+}
+.memberText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+.memberName {
+  font-size: calc(16px * var(--fs));
+  line-height: calc(22px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-navy);
+  overflow-wrap: anywhere;
+}
+.memberSub {
+  font-size: calc(14px * var(--fs));
+  line-height: calc(19px * var(--fs));
+  color: var(--color-ink-muted);
+}
+.chip {
+  margin-top: 2px;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+}
+.arrow {
+  flex: none;
+  display: flex;
+  color: var(--color-ink-muted);
+}
+.arrow svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ---------- folded "taken out" ---------- */
+.foldButton {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 56px;
+  padding: 6px 12px;
+  box-sizing: border-box;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.foldIcon {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-primary-tint);
+}
+.foldTitle {
+  flex: 1;
+  min-width: 0;
+  font-size: calc(15px * var(--fs));
+  line-height: calc(22px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-navy);
+}
+.chevron {
+  flex: none;
+  display: flex;
+  color: var(--color-ink-muted);
+}
+.chevronOpen {
+  transform: rotate(90deg);
+}
+.removedRows {
+  margin: 0;
+  padding: 0 12px 4px;
+  list-style: none;
+}
+.removedRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 64px;
+  border-top: 1px solid var(--color-border);
+}
+.removedAvatar {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  opacity: 0.7;
+}
+.removedText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.removedName {
+  font-size: calc(15px * var(--fs));
+  line-height: calc(21px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
+}
+.restore {
+  flex: none;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+  font-family: inherit;
+  font-size: calc(14px * var(--fs));
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+.problem {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  padding: 4px 12px 12px;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-error-ink);
+}
+.problem svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+}
+
+/* ---------- floating add button ---------- */
+.fab {
+  position: fixed;
+  right: 16px;
+  bottom: 84px;
+  z-index: 2;
+}
+.fabButton {
+  min-height: 52px;
+  padding: 0 20px 0 16px;
+  gap: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: #fff;
+  font-size: calc(15px * var(--fs));
+  line-height: calc(22px * var(--fs));
+  font-weight: var(--weight-semibold);
+  box-shadow: var(--elevation-2);
+}
+.linkButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  text-decoration: none;
+}
+
+/* ---------- empty states ---------- */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 16px 24px;
+  text-align: center;
+}
+.emptyDisc {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  background: var(--color-primary-tint);
+}
+.emptyTitle {
+  margin: 16px 0 0;
+  font-size: calc(17px * var(--fs));
+  line-height: calc(24px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-navy);
+}
+.emptyText {
+  margin: 4px 0 0;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  color: var(--color-ink-muted);
+}
+.bigButton {
+  width: 100%;
+  max-width: 240px;
+  min-height: 48px;
+  margin-top: 20px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: #fff;
+  font-size: calc(15px * var(--fs));
+  line-height: calc(22px * var(--fs));
+  font-weight: var(--weight-semibold);
+}
+
+/* ---------- one member ---------- */
+.cardTitle {
+  margin: 0;
+  min-height: 32px;
+  font-size: calc(16px * var(--fs));
+  line-height: calc(22px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-navy);
+}
+.cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px 0;
+}
+.infoCard {
+  padding: 10px 12px 8px;
+}
+.infoBody {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.bigAvatar {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+}
+.infoRows {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+.infoRow {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 44px;
+}
+.infoLabel {
+  font-size: calc(14px * var(--fs));
+  line-height: calc(19px * var(--fs));
+  color: var(--color-ink-muted);
+}
+.infoValue {
+  margin: 0;
+  font-size: calc(15px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
+}
+.infoEmpty {
+  font-weight: var(--weight-regular);
+  color: var(--color-ink-muted);
+}
+.seeAll {
+  flex: none;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding-left: 12px;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-primary-ink);
+  text-decoration: none;
+}
+.seeAll svg {
+  width: 20px;
+  height: 20px;
+}
+.medRows {
+  margin: 0;
+  padding: 0 12px 4px;
+  list-style: none;
+}
+.medRows li + li {
+  border-top: 1px solid var(--color-border);
+}
+.medRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 64px;
+  color: inherit;
+  text-decoration: none;
+}
+.medText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.medName {
+  font-size: calc(15px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
+}
+.noMeds {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 16px 20px;
+  text-align: center;
+}
+.noMedsTitle {
+  margin: 0;
+  font-size: calc(16px * var(--fs));
+  line-height: calc(22px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-navy);
+  overflow-wrap: anywhere;
+}
+.noMeds .bigButton {
+  max-width: 280px;
+}
+.allergy {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  margin: 0;
+  padding: 8px 12px;
+  box-sizing: border-box;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(19px * var(--fs));
+  color: var(--color-ink-muted);
+}
+.allergy svg {
+  flex: none;
+  width: 22px;
+  height: 22px;
+}
+.share {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 52px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: #fff;
+  font-family: inherit;
+  font-size: calc(16px * var(--fs));
+  line-height: calc(22px * var(--fs));
+  font-weight: var(--weight-semibold);
+}
+.removeLink {
+  align-self: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  background: transparent;
+  color: var(--color-error-ink);
+  font-family: inherit;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+.removeBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.share > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
