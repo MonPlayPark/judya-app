@@ -2,18 +2,45 @@
 
 Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every session.
 
-## Overnight run (17–18 พ.ย. 2569) — status for the next session
+## Overnight run (17–18 พ.ย. 2569) — result
 
-Branch `ccr-8042e3bc-tjkpxx` = PR #39 (`m4-pr11-order`) + overnight work. Owner answered: merge PR #39 themselves ("ก"), and use the recommended answer for every open plan decision (d1–d6, saved on the plan page). Specs written by the team lead live in the session scratchpad (`specs/*.md`); the locked M4 canvas is https://claude.ai/artifact/N6CgtbBFWHYjvGtntz81dt (NOT the M2 one in BRIEF).
+Branch `ccr-8042e3bc-tjkpxx`, draft PR #40, built on top of PR #39 (`m4-pr11-order`). Merge #39 first, then change #40's base to `main`. The owner chose: merge #39 themselves; use the recommended answer for every open plan decision (d1–d6, saved on the plan page). The locked M4 canvas is https://claude.ai/artifact/N6CgtbBFWHYjvGtntz81dt (75 boards). BRIEF still links the older M2 canvas; do not use that one for M4.
 
-Story order and state:
-1. 11.5a receive domain — done (f8c7a4e)
-2. 11.5b receive screens — done, but built as a sheet before the M4 canvas was read
-3. 11.6 Home/list order buttons + small fixes (ml decimals, tubes on care card, birth-year red only at 4 digits) — in progress
-4. 11.5c receive screen per boards #67/#75/#72 — next
-5. PR 8a edit medicine data (boards #23–#27) — spec ready
-6. PR 8b change how to take (boards #41–#52) — spec ready
-7. PR 13 price per shop on medicine detail, PR 9 members, PR 10 allergy/coverage (no board: smallest safe build), PR 14 settings 5 groups, PR 15 doctor summary + whole-app check — later
+### Done (each: tests first, `npm test` + `npm run build` + `npm run check:overflow` green, DECISIONS section)
+| Story | What | DECISIONS section |
+|---|---|---|
+| 11.5 | receive screen per boards #67/#75/#72; stock goes up only by what arrived; shared medicines split by share; price and expiry typed on receive; "ไม่รอแล้ว" | M4 PR 11.5 |
+| 11.6 + small | Home "สั่งยา" button and "สั่งซื้อยา" tile, list low-stock buttons → order page; ml shown as 7.5 มล.; tubes on Home care card; birth-year red only at 4 digits (d5) | Overnight: 11.6 and small fixes |
+| PR 8a | edit medicine data, boards #23–#27 (no history entry; shared medicine changes for everyone, with a note) | M4 PR 8a |
+| PR 8b | change how to take, boards #41–#52 (one `adjust` event; stock recounted so nothing is back-dated) | M4 PR 8b |
+| PR 13 | price per shop card on medicine detail and house sheet, boards #32/#40/#37 | M4 PR 13 |
+| PR 9 | members list / detail / edit / remove / restore, boards #10–#14 #60 #61 | M4 PR 9 — members |
+| PR 14 | settings list + 5 pages (only "การเตือน" has a board) | M4 PR 14 — settings |
+| PR 10 | allergy 3 states (no board), warning when adding a medicine someone is allergic to, treatment rights, side effects per medicine | M4 PR 10 |
+| PR 15a | text summary for the doctor per member; Home tile asks which member (d6) | M4 PR 15a |
+
+### Not done
+- PR 15 part 2 (whole-app check before real use): the automated part passes tonight (1513 tests, 3810 overflow checks at 360/412px × 3 font sizes); the S24 walk-through below is the owner's part.
+- Receipt scan ("อัปเดตราคาจากใบเสร็จ") stays "เร็ว ๆ นี้" (no OCR planned).
+
+### Questions for the owner (details in DECISIONS)
+1. Receiving had boards, but the 11.5 text rules came first: check the list of differences in DECISIONS "M4 PR 11.5".
+2. Edit medicine: a medicine shared by two people changes name / kind / pack for both (data model). OK?
+3. Insurance: boards show two free-text company fields, the data has "treatment rights" type + company. Which one?
+4. Settings: the LINE order message template is shown read-only and is not used by the order page. Keep, remove or make editable?
+5. Allergy / treatment rights / doctor summary have no boards: built small with existing parts; please look.
+
+### Owner's S24 test (after merging #39 then #40 and the deploy)
+Base: https://monplaypark.github.io/judya-app/ — add the part after it. Demo links save nothing.
+- Receive: `#/n/order?demo=normal&orders=history&screen=history` → "รับของแล้ว"; rest: `#/n/order?demo=normal&orders=history&screen=receive&order=o2`
+- Edit medicine: `#/n/meds/a4?demo=normal` → pencil → "แก้ข้อมูลที่ใส่ผิดหรือไม่ครบ"; house: `#/n/house/h5/edit?demo=normal`
+- Change dose: `#/n/meds/a4/dose?demo=normal`; syrup `#/n/meds/a11/dose?demo=dose`; 4 meals `#/n/meds/a12/dose?demo=dose`
+- Prices: `#/n/meds/a4?demo=price`
+- Members: `#/n/members?demo=members`, `#/n/members/p1?demo=members`
+- Settings: tap the "ตั้งค่า" tab
+- Real run (no demo): add a test member + medicine, order it, mark ordered, receive less than ordered, then "รับของที่เหลือ" — stock must go up once per delivery, never twice.
+
+Numbers at the end: tests 1513 (1054 at the start of the night), `check:overflow` 3810 checks, 0 problems.
 
 ## M4 PR 11.4 — order history, cancel, "สั่งซ้ำ" (5 พ.ย. 2569)
 
