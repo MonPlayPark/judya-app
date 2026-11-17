@@ -55,6 +55,7 @@ import {
   type PersonalDraft,
   type ScheduleDraft,
 } from '../../domain/v3/addMedicine';
+import { allergyWarning } from '../../domain/v3/allergy';
 import { MEAL_LABEL, PERIOD_LABEL, PERIODS, formatAmount, type Meal, type Period } from '../../domain/v3/home';
 import { label } from '../../domain/v3/medsList';
 import { defaultNewId } from '../../domain/v3/medActions';
@@ -368,6 +369,7 @@ interface Step1Props {
 }
 
 function Step1({ root, type, onType, draft, set, changeKind, people, usingIds, suggestions, onName, onPick, reuse, houseDup, onAddNew, linkSuffix, medsSuffix, today }: Step1Props) {
+  const allergy = type === 'personal' && draft.personId !== null ? allergyWarning(root, draft.personId, draft.name) : null; // S4: a warning, never a block
   const TYPES: { value: MedType; title: string; text: string }[] = [
     { value: 'personal', title: 'ยาเฉพาะบุคคล', text: 'กินประจำ มีเวลากิน' },
     { value: 'house', title: 'ยาสามัญประจำบ้าน', text: 'ใช้ร่วมกันทั้งบ้าน ไม่มีเวลากิน' },
@@ -548,6 +550,11 @@ function Step1({ root, type, onType, draft, set, changeKind, people, usingIds, s
               เพิ่มสมาชิก
             </a>
           </div>
+          {allergy !== null && (
+            <Hint tone="warn" icon={<WarningIcon />}>
+              {allergy}
+            </Hint>
+          )}
         </section>
       )}
     </>

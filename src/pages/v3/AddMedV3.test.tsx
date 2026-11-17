@@ -470,3 +470,22 @@ describe('11.5c: the link from "received a typed medicine" fills the form on the
     expect(screen.getByLabelText('หน่วยความแรง')).toHaveValue('mg');
   });
 });
+
+describe('S4 allergy warning in step 1 (M4 PR 10)', () => {
+  const WARN = 'ระวัง: ยาตัวอย่าง Z 500 mg มีบันทึกแพ้ยา ยาตัวอย่าง Z (ผื่นตัวอย่าง) ตรวจกับแพทย์หรือเภสัชกรก่อน';
+  it('a person with a listed drug that matches the name: warning with drug and reaction, "ถัดไป" still works', () => {
+    open('?person=p3&name=' + encodeURIComponent('ยาตัวอย่าง Z 500 mg'), liveStore());
+    expect(screen.getByText(WARN)).toBeInTheDocument();
+    expect(btn('ถัดไป')).toBeEnabled();
+    next();
+    expect(screen.getByRole('list', { name: 'ขั้นที่ 2 จาก 3' })).toBeInTheDocument(); // warning only: not blocked
+  });
+  it('follows the typed name and the chosen person', () => {
+    open('?person=p3&name=' + encodeURIComponent('พาราตัวอย่าง'), liveStore());
+    expect(screen.queryByText(/ระวัง:/)).toBeNull();
+    typeName('ยาตัวอย่างz');
+    expect(screen.getByText(/ระวัง: ยาตัวอย่างz มีบันทึกแพ้ยา ยาตัวอย่าง Z/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /สมาชิก ก/ }));
+    expect(screen.queryByText(/ระวัง:/)).toBeNull();
+  });
+});
