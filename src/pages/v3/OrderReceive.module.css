@@ -11,7 +11,7 @@
 .summaryIcon { flex: none; width: 36px; height: 36px; border-radius: 50%; }
 .summaryText { flex: 1 1 140px; min-width: 0; }
 .summaryName { margin: 0; font-size: calc(15px * var(--fs)); line-height: calc(22px * var(--fs)); font-weight: var(--weight-semibold); color: var(--color-navy); overflow-wrap: anywhere; }
-.summarySide { flex: 0 1 auto; max-width: 100%; text-align: right; }
+.summarySide { flex: 0 1 auto; min-width: 0; max-width: 100%; text-align: right; }
 .summarySide .note { justify-content: flex-end; }
 .sum { margin: 0; font-size: calc(22px * var(--fs)); line-height: calc(28px * var(--fs)); font-weight: var(--weight-bold); color: var(--color-navy); overflow-wrap: anywhere; }
 .delivery { flex: 1 1 100%; margin: 0; font-size: calc(14px * var(--fs)); line-height: calc(20px * var(--fs)); font-weight: var(--weight-semibold); color: var(--color-navy); }
@@ -51,7 +51,7 @@
 .fieldBad { border-color: var(--color-error-ink); }
 .fieldError { display: flex; align-items: flex-start; gap: 6px; margin: 6px 0 0; font-size: calc(14px * var(--fs)); line-height: calc(20px * var(--fs)); font-weight: var(--weight-semibold); color: var(--color-error-ink); }
 .fieldError svg { flex: none; }
-.lineTotal { margin: 8px 0 0; text-align: right; font-size: calc(14px * var(--fs)); line-height: calc(20px * var(--fs)); font-weight: var(--weight-semibold); color: var(--color-navy); }
+.lineTotal { margin: 8px 0 0; overflow-wrap: anywhere; text-align: right; font-size: calc(14px * var(--fs)); line-height: calc(20px * var(--fs)); font-weight: var(--weight-semibold); color: var(--color-navy); }
 
 .shortBox { margin-top: 10px; padding: 10px; border-radius: var(--radius-md); background: var(--color-warning-tint); }
 .shortText { margin: 0 0 8px; font-size: calc(14px * var(--fs)); line-height: calc(20px * var(--fs)); font-weight: var(--weight-semibold); color: var(--color-warning-ink); overflow-wrap: anywhere; }

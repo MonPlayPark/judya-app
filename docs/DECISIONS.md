@@ -1037,9 +1037,9 @@ Tests 1054 (1014 before); JS gzip 161.29 kB (158.69 before); `check:overflow` se
 
 ## M4 PR 11.5 — receiving
 
-No board for receiving on the canvas; layout follows the order sheets (decided by the team lead overnight, owner to check)
+Built from boards #67 / #75 / #72 of the M4 canvas (11.5c). 11.5a (domain) and 11.5b (a bottom sheet from a text spec, because the wrong canvas was read) came first; 11.5c replaced the sheet by the screen of the boards. Text of the boards: `receive.md` of the canvas export.
 
-### Domain choices (made in 11.5a, `orderReceive.ts`)
+### Domain choices (11.5a, `orderReceive.ts`)
 1. A line left out of the input counts as 0 received.
 2. A stopped or missing share is skipped (named in `skipped`) and the received amount is split over the remaining people.
 3. Tubes / drops are handed out one whole tube at a time, to the largest share first; people left without one are named in `noTube`.
@@ -1050,21 +1050,42 @@ No board for receiving on the canvas; layout follows the order sheets (decided b
 8. Receiving 0 everywhere keeps the order partial.
 9. `dropRest` also drops short lines that have no leftover decision yet.
 
-### Screens (11.5b: `OrderReceive.tsx`, `OrderHistory.tsx`, `OrderV3.tsx`)
-1. **Cannot receive more than ordered** (decided by the owner): the stepper is limited to what is still left (+ is faded at the limit, - at 0).
-2. **Rows** are only the lines that are not finished and not dropped; a finished line has no row. Sub line of a medicine line adds "ของ <names>" from the people of its shares (not shown for house and typed lines).
-3. **Failure text** is always "บันทึกไม่สำเร็จ ลองอีกครั้ง" in the receive and drop sheets (the spec gave this exact text), not the cause-specific text the cancel sheet shows. A domain error (for example the unit mismatch of a house item) shows its own Thai text in the receive sheet and nothing is saved.
-4. **"ไม่รอแล้ว" pill** only counts when the number is below what is left; going back up to the full amount hides the pills (the choice is kept if you come back down).
-5. **Save button** is disabled and faded when every number is 0 and no line below its remaining amount is set to "ไม่รอแล้ว" (a plain `disabled` button, like the order bar).
-6. **Notes** (yellow `warn` box with icon: not-counted-yet, skipped, no tube; one grey line with an info icon for "ไม่อัปเดตสต็อก") come from a dry run of `receiveOrder` on the current numbers, so they change as the numbers change. If the dry run fails, no yellow note is shown. "ไม่อัปเดตสต็อก" lists lines with a number above 0 that are typed, house without a stock count, or kind `other` whose people have no stock kind.
-7. **Toast** is chosen from the saved order: partial = "บันทึกรับของแล้ว ยังรอ N รายการ" (N counted as on the card), else "บันทึกรับของแล้ว สต็อกอัปเดตแล้ว".
-8. **Main buttons** on the history card ("รับของแล้ว", "รับของที่เหลือ") are solid primary (white text); "ไม่รอแล้ว" on a partial card is the outlined button like "ยกเลิกใบสั่ง". The sheet is `tall`, with the round X, like the order sheet.
-9. **"เพิ่มยาเข้ารายการไหม"** opens after the receive sheet has closed and only when typed lines arrived (> 0). "เพิ่ม" is a link (44px) to `#/n/meds/new?name=<encoded>`; in a demo the link also carries `demo=<name>` so the add page stays in the demo. `AddMedPage` already reads `name`; nothing changed there.
-10. **Demo** works like the cancel sheet: the root changes in memory only, nothing is written to storage.
-11. **Test link** `&sheet=receive` (with `screen=history`) opens the receive sheet of the first waiting order of the history.
-12. **"ไม่รอแล้ว" confirm sheet** shows "<shop> · N รายการที่ยังไม่มา" with N = the lines still waited for (as on the card). On a failed write it shows the same failure text and stays open.
-13. After a receive or a drop the order page's lines go through `clearOnOrder` (as after a cancel): a medicine whose order is closed now loses the "สั่งแล้ว รอรับ" badge; one still on another open order keeps it.
-14. `check-overflow` has 10 new receive / drop scenarios (the receive sheet in 5 states, typed-line note, both toasts, the add-medicine question, the drop sheet) plus the `sheet=receive` route.
+### Domain changes in 11.5c
+1. `ReceiveInput.unitPrice` (> 0): becomes `line.unitPrice` and is remembered for the order's shop through `upsertPrice` (same sell unit and per-unit count as `placeOrder`), dated today. 0 or empty keeps the old price. A typed (`free`) line only gets `line.unitPrice` (rule 2 of 11.1: no place for a remembered price). A negative or non-finite price is refused (nothing saved).
+2. The price is saved even when 0 arrived (the board writes every typed price). If the shop was deleted, or the medicine / house item is gone, the line price is kept and no remembered price is made (a price row pointing nowhere would make the whole root invalid and block the receive).
+3. `ReceiveInput.expiry`: passed as `newExpiry` to `refillStock` for every share of the line; a house item gets the same nearer-date rule (`mergeExpiry`) but only when its stock is counted (a house item with no count is "no update", as before). Used only when something arrived.
+4. No maximum: the line is complete when `qtyReceived >= qtyOrdered`; stock adds what arrived (the 11.5b cap was the owner's answer for the sheet; the board says "no maximum").
+5. `stockGainOf(root, line, got)` gives the stock line of a card (amount and unit, or "not counted"). Same rules as `receiveOrder` (stopped people, kind `other`, tubes).
+6. `receiveOrder(..., newId)` takes the id maker for a new price row (default `defaultNewId`; the screen's dry run passes a counter).
+
+### Screen (11.5c: `OrderReceive.tsx`, `OrderHistory.tsx`, `OrderV3.tsx`)
+1. A full screen inside `OrderView` like the history: `?screen=receive&order=<id>`. Header: round back (to the history), cart icon, "รับของแล้ว"; no bottom menu. A waiting order = all its cards; a partial one = "rest" mode. An unknown or already closed order opens the history instead.
+2. Summary card (board 3.1), h2 "รายการยา (N รายการ)", one card per line (3.3), the receipt button (3.4), sticky bar "ยืนยันรับของ" (3.5). The bar is drawn into the page's `.dock` (a portal into the box the page keeps there), so the floating message still floats above it.
+3. Save = ONE `saveRoot`. Success: history (pill "ทั้งหมด") and the toast "บันทึกรับของแล้ว สต็อกอัปเดตแล้ว", the order page's lines go through `clearOnOrder`. Failure: stay, "บันทึกไม่สำเร็จ ลองอีกครั้ง" (or the domain's own text) in a red message just above the button.
+4. History card "ไม่รอแล้ว" (board #72 has no confirm sheet): one press = `dropRest`, one write, toast "ปิดใบสั่ง ไม่รอของที่เหลือแล้ว". A failed write shows "บันทึกไม่สำเร็จ ลองอีกครั้ง" above the list. The 11.5b confirm sheet and the 11.5b receive sheet are gone.
+5. Typed (`free`) lines that arrived (> 0) and are ticked "เพิ่มเข้ารายการยา": exactly one goes straight to `#/n/meds/new?name=…&kind=…&strength=…&unit=…` (demo link keeps `demo=`); more than one stay on the history and the 11.5b sheet "เพิ่มยาเข้ารายการไหม" lists all of them (the first one too, because the page is not left). None ticked: just the history.
+6. `AddMedPage` now reads `name`, `kind`, `strength` (a number) and `unit` also on the live page (before: demo only); `step` stays demo-only. A wrong kind, unit or number is ignored. Pack size and count are NOT filled (the page has no such parameter; see below).
+7. Test links: `#/n/order?demo=normal&screen=receive&orders=history&order=o1` (normal) and `…&order=o2` (rest). `&sheet=receive` is gone. Demo writes nothing (as before).
+8. `check-overflow`: routes and 13 scenarios (normal, rest, short line, "ไม่รับแล้ว", price, long price + long numbers, expiry, wrong-price message, all 0, rest short line, done toast, done to the add page, "ไม่รอแล้ว" toast) at 360 / 412 x 3 font sizes.
+
+### Differences from the boards
+1. **Receipt scan** ("อัปเดตราคาจากใบเสร็จ", board #71) is not built (no OCR): the button is the faded "เร็ว ๆ นี้" one.
+2. **"ยอดรวมที่จ่าย"** is the live sum of got x typed price (no shipping fee). Rest mode adds the old total of the order (`orderTotal`, fee included if the order had it). The board saves this as the order's new total; here there is no `total` field: the history card still shows `orderTotal` = sum of `line.unitPrice x qtyOrdered` (+ fee), so the typed prices change it but "got" vs "ordered" is not reflected.
+3. **Stock line unit** follows the medicine kind (เม็ด / แคปซูล / ซอง / มล. / หลอด / ขวด) or the stock unit of a house item, where the board always says "เม็ด" or the order unit. Lines that will not change stock (kind `other` with no stock rule, house item with no count, nobody left to count for) show the grey "ไม่นับสต็อก ยานี้ไม่อัปเดตสต็อก" (the board shows nothing; the spec asked for it).
+4. **Prefilled price** is the newest remembered price of the shop for the item in the line's own sell unit; a price in another unit is not converted.
+5. **Typed lines** have the price box as in the board, but the price only sets `line.unitPrice`; nothing is remembered for them (no place for it).
+6. **"(M เม็ด)"** is the kind's small unit word, left out when the sell unit is that word or the box size is unknown; house and kindless typed lines never show it.
+7. **"เพิ่มเข้ารายการยา"** opens the add-medicine page with name, kind and strength only. The board says the app fills "ชื่อ ความแรง ชนิด ขนาดบรรจุ และจำนวน"; pack size and count need the page to take more parameters and were not added.
+8. **Toast** is always the board's text. The 11.5b variant "ยังรอ N รายการ" for a partial result is gone.
+9. **Rest mode rows** are the lines not finished and not dropped (11.5b rule), a bit wider than "leftover = waiting": a line a partial order never got to (leftover still null) has a card too.
+10. **Safety notes** (never counted / skipped / not enough tubes) are the yellow box at the end of the list, above the bar (the board is silent).
+11. **"ยืนยันรับของ" is faded** while every number is 0 and nothing is set to "ไม่รับแล้ว" (board: always on). A price that is not a number marks the box (red border + text) and stops the save with a message.
+12. **Expiry** field is on every card of a medicine or house item (as the board); for a house item with no stock count the date is ignored (no update).
+13. **Sheet "เพิ่มยาเข้ารายการไหม"** is kept from 11.5b only for the "more than one" case (see Screen 5); with one item the toast is not seen because the page changes.
+14. **Phone line** is plain text with the icon (not a call link); not shown when the shop was deleted or has no phone. The delivery line comes from the shop, or from the order's `shippingFee` if the shop is gone.
+
+### Missing tokens (no colour was made)
+Board colours not in `tokens.css`, replaced by the nearest token: #FFF7E0 (short box) -> `--color-warning-tint` (#FEF7E0); #6B4400 (short box text) -> `--color-warning-ink` (#8A5300); #0D652D (stock line) -> `--color-success-ink` (#137333); #BFD3EE / #4A5568 / #EEF1F5 (faded button) -> `--color-border` / `--color-ink-muted`; amber chip "ยาใหม่" -> `--color-warning-tint` / `--color-warning-ink`; white text on the primary button and the pressed pill is the literal `#fff`, as in the other order pages.
 
 ## Overnight: 11.6 and small fixes
 
