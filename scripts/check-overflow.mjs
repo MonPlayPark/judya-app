@@ -50,7 +50,10 @@ const V3_ROUTES = ['/', '/n', '/no-such-page', '/old', // M4 PR 7b: an unknown o
   '/n/shops?demo=normal&sheet=edit&item=s3',
   // v3 edit medicine (M4 PR 8a): the edit sheet on the detail page, the page for a tablet box, a cream, a medicine other people use, and two house medicines
   '/n/meds/a4?demo=normal&sheet=edit', '/n/meds/a4/edit?demo=normal', '/n/meds/a9/edit?demo=cream', '/n/meds/a3/edit?demo=normal', '/n/meds/a7/edit?demo=stopped',
-  '/n/meds/nope/edit?demo=normal', '/n/house/h5/edit?demo=normal', '/n/house/h4/edit?demo=normal', '/n/house/h2/edit?demo=normal'];
+  '/n/meds/nope/edit?demo=normal', '/n/house/h5/edit?demo=normal', '/n/house/h4/edit?demo=normal', '/n/house/h2/edit?demo=normal',
+  // v3 change how to take (M4 PR 8b): clean, a cream, a syrup, four meals, an every-N-hours medicine (card, no bar), a stopped one, a missing one
+  '/n/meds/a4/dose?demo=normal', '/n/meds/a9/dose?demo=cream', '/n/meds/a11/dose?demo=dose', '/n/meds/a12/dose?demo=dose', '/n/meds/a14/dose?demo=dose',
+  '/n/meds/a7/dose?demo=stopped', '/n/meds/nope/dose?demo=normal'];
 
 // v3 shops page (M4 PR 11.3a): states that need pressing (pick-up form, wrong values, long values, the delete question).
 const SHOPS_ADD = '/n/shops?demo=normal&sheet=add';
@@ -101,7 +104,7 @@ const EDIT_SCENARIOS = [
   ['house liquid, kind changed to tablet', '/n/house/h2/edit?demo=normal', async (page) => { await page.getByRole('button', { name: /ยาเม็ด/ }).click(); await click(page, 'เปลี่ยนชนิดยา'); }],
   ['saved (back to the medicine page, message)', EDIT, async (page) => { await page.getByLabel(/^ชื่อยา/).fill('Vitamin D3'); await click(page, 'บันทึกการแก้ไข'); }],
   ['saved house (back to the list, message)', EDIT_HOUSE, async (page) => { await page.getByLabel(/^ชื่อยา/).fill('พาราเซตามอล'); await click(page, 'บันทึกการแก้ไข'); }],
-  ['detail edit sheet, dose row pressed (message)', '/n/meds/a4?demo=normal&sheet=edit', async (page) => { await page.getByRole('button', { name: /เปลี่ยนวิธีกิน/ }).click({ force: true }); }],
+  ['detail edit sheet, dose row pressed (message)', '/n/meds/a4?demo=normal&sheet=edit', async (page) => { await page.getByRole('link', { name: /เปลี่ยนวิธีกิน/ }).waitFor(); }], // 8b: the faded row became a link, so it is no longer pressed here
   ['house info sheet with the edit link', '/n/meds?demo=normal&tab=house&item=h5', async () => {}],
 ];
 
@@ -128,6 +131,29 @@ const ADD_SCENARIOS = [
   ['step 3, house', '/n/meds/new?demo=normal&type=house&name=ยาสามัญใหม่&step=2', async (page) => { await click(page, 'แผง'); }],
   ['step 3, existing medicine', '/n/meds/new?demo=normal&name=VitaminD', async (page) => { await page.getByRole('button', { name: /คุณแม่/ }).click(); await page.getByRole('button', { name: 'เพิ่มให้คุณแม่ด้วย' }).click(); await page.getByRole('button', { name: 'ถัดไป' }).click(); }],
   ['dose confirm sheet', `${ADD}&step=2&kind=liquid`, async (page) => { for (let i = 0; i < 11; i += 1) await click(page, 'เพิ่ม เช้า'); await click(page, 'ถัดไป'); await click(page, 'ไม่นับสต็อก'); await click(page, 'บันทึกยา'); }],
+];
+
+// v3 change how to take (M4 PR 8b): states that need pressing (boards #42 - #49, #52 and the cases the board does not draw). Same shape as ADD_SCENARIOS.
+const DOSE = '/n/meds/a4/dose?demo=normal';
+const plusTwice = async (page) => { await click(page, 'เพิ่มจำนวน เช้า'); await click(page, 'เพิ่มจำนวน เช้า'); };
+const pickDays = async (page, names) => { await click(page, 'ตั้งเช้าเพิ่มเติม'); for (const n of names) await click(page, n); };
+const DOSE_SCENARIOS = [
+  ['edited (chip, summary, enabled bar)', DOSE, plusTwice],
+  ['new meal (chip เพิ่มใหม่)', DOSE, async (page) => { await click(page, 'กลางวัน'); }],
+  ['removed meal (ตัดออก)', DOSE, async (page) => { await click(page, 'เย็น'); }],
+  ['low stock (yellow chip)', '/n/meds/a13/dose?demo=dose', plusTwice],
+  ['chosen days, shown in weeks', DOSE, async (page) => { await pickDays(page, ['อาทิตย์', 'อังคาร', 'พฤหัสบดี', 'เสาร์']); await click(page, 'เสร็จ'); }],
+  ['liquid edited', '/n/meds/a11/dose?demo=dose', plusTwice],
+  ['liquid, meal sheet (spoon pills)', '/n/meds/a11/dose?demo=dose', async (page) => { await click(page, 'ตั้งเช้าเพิ่มเติม'); }],
+  ['cream, all four meals', '/n/meds/a9/dose?demo=cream', async (page) => { await click(page, 'เย็น'); await click(page, 'กลางวัน'); await click(page, 'ก่อนนอน'); }],
+  ['4 meals edited', '/n/meds/a12/dose?demo=dose', plusTwice],
+  ['4 meals, long sub-lines (chosen days)', '/n/meds/a12/dose?demo=dose', async (page) => { await pickDays(page, ['อาทิตย์']); await click(page, 'เสร็จ'); }],
+  ['discard sheet', DOSE, async (page) => { await plusTwice(page); await click(page, 'กลับ (มีการแก้ค้างอยู่)'); }],
+  ['meal sheet open', DOSE, async (page) => { await click(page, 'ตั้งเช้าเพิ่มเติม'); }],
+  ['meal sheet, days chosen', DOSE, async (page) => { await pickDays(page, ['อาทิตย์', 'เสาร์']); }],
+  ['stepper at the lowest and the highest', DOSE, async (page) => { await click(page, 'ลดจำนวน เช้า'); for (let i = 0; i < 6; i += 1) await click(page, 'เพิ่มจำนวน เย็น'); }],
+  ['reason "ปรับเอง", a 200-letter note', DOSE, async (page) => { await plusTwice(page); await page.getByRole('radio', { name: 'ปรับเอง หรืออื่นๆ' }).click(); await page.getByLabel('หมายเหตุ (ไม่บังคับ)').fill('ก'.repeat(200)); }],
+  ['saved (back to the medicine page, message)', DOSE, async (page) => { await plusTwice(page); await click(page, 'บันทึกการเปลี่ยนแปลง'); }],
 ];
 
 // v3 order draft (M4 PR 11.2): states that need pressing. Same shape as ADD_SCENARIOS.
@@ -400,6 +426,17 @@ for (const width of WIDTHS) {
       if (bad) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 edit-med(${label}): ${bad}`); }
       const small = await page.evaluate(measureV3, fs === 'n' ? 13.9 : 14.9);
       if (small) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 edit-med(${label}): ${small}`); }
+    }
+
+    // 1i) v3 change how to take after pressing (M4 PR 8b)
+    for (const [label, route, act] of DOSE_SCENARIOS) {
+      await visit(route, 'v3');
+      await act(page);
+      const bad = await page.evaluate(measure);
+      checked += 1;
+      if (bad) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 dose(${label}): ${bad}`); }
+      const small = await page.evaluate(measureV3, fs === 'n' ? 13.9 : 14.9);
+      if (small) { problems += 1; console.log(`FAIL ${width}px fs=${fs} v3 dose(${label}): ${small}`); }
     }
 
     // 1f) v3 order draft after pressing (M4 PR 11.2)

@@ -1135,3 +1135,41 @@ Items 2, 3, 4, 5, 9, 10 above; the board's fixed "แก้เฉพาะยา
 
 ### Missing tokens
 None new. The board colours map to existing tokens (#E4F0FE `--color-primary-tint`, #005FD6 `--color-primary-ink`, #E6F4EA / #137333 `--color-success-*`, #FEF7E0 / #8A5300 `--color-warning-*`, #C5221F `--color-error-ink`, #E3E8EF `--color-border`, #80868B `--color-border-strong`). The button text colour `#fff` is the one the add form already uses.
+
+## M4 PR 8b — change how to take ("เปลี่ยนวิธีกิน"), boards #41 - #49, #52
+
+Boards: #41 clean, #42 edited, #43 new meal, #44 removed meal, #45 low stock, #46 chosen days (weeks), #47 discard sheet, #48 liquid, #49 cream, #52 four meals (layout A: one row per meal + a bottom sheet). Text and layout follow `canvas4/dose.md`. Page `DoseChangeV3.tsx` + `DoseChangePage.tsx`, route `#/n/meds/:assignmentId/dose`; the faded row "เปลี่ยนวิธีกิน (หมอสั่งใหม่)" of the edit sheet is now a link (hidden for a stopped medicine).
+
+### What was built
+- Domain `src/domain/v3/doseChange.ts` (40 tests): `draftFromSchedule`, `toggleMeal` / `stepMeal` / `setTiming` / `setSpoon` / `toggleDay` / `setAltDays`, `isChanged`, `mealStatus` (chips), `mealSub`, `buildDoseSchedule`, `summarize` (the "สรุปก่อนบันทึก" texts), `applyDoseChange`.
+- `applyDoseChange(root, assignmentId, newSchedule, reason, note, today, nowIso)` writes ONE `adjust` MedEvent (`from` / `to` snapshots, `effectiveOn` = today, `at` = now, reason `doctor` | `self_or_other`, trimmed note up to 200) and the assignment's new schedule, all or nothing: the whole root goes through `rootSchema` first and nothing is returned if it fails.
+- **Never back-dated.** `walkUsed` (stock.ts) walks the PAST days with the schedule that is saved now. So before the new schedule is written, the stock is **recounted**: `count` / `volume` stock gets today's amount (`stockNow`, which still skips paused days) and `countedOn = today`. Tubes, no stock, and a count already made today (or later) are left as they are. Tested explicitly: counted 10 days ago, 2 a day, 100 pills: today 80 before and after the change to 3 a day; tomorrow 77 (a plain schedule swap would have said 70 today). Also tested for removing a meal, changing days, adding a meal, stop + resume in between, volume, and "no pack" stock. The recount writes whole strips + loose pieces (e.g. 5 strips + 3 loose may become 4 strips + 13 loose with the same total).
+- After a save: back to the medicine page, toast "บันทึกวิธีกินใหม่แล้ว" (the board draws none), history card shows the entry.
+- Demo (`?demo=...`, new demo house `dose` with a syrup a11, four meals a12, low stock a13, every 8 hours a14 on top of the normal one) writes nothing and reads no storage; it still goes back with the message.
+
+### Rules from the team lead (built as written)
+a. Days are per SCHEDULE: the day chips in the meal sheet change the days for ALL meals; hint "วันที่กินใช้กับทุกมื้อ" under the chips; every row's sub-line shows the shared days.
+b. A saved every-other-day (`alt`) schedule shows a third pill "วันเว้นวัน" (selected). Tapping a day chip switches to chosen days with only that day; the pill takes it back (the saved anchor is kept); all 7 chips = daily.
+c. The timing segment has THREE options ก่อนอาหาร | พร้อมอาหาร | หลังอาหาร (the board draws 2) so "with meal" from the add form is never lost. Bedtime has no timing.
+d. Interval schedules (ทุก N ชั่วโมง): the page shows the card "ยานี้กินทุก N ชั่วโมง ยังเปลี่ยนวิธีกินในหน้านี้ไม่ได้", no save bar, a link back.
+e. Stopped medicines: the entry row is hidden. If the address is opened anyway the page says "ยานี้หยุดแล้ว กลับมากินยาก่อน ถึงจะเปลี่ยนวิธีกินได้" (no save bar).
+f. Dose limits of `rootSchema` apply through `doseRules`: tablets / capsules / other up to 4 a time, step 0.5 (sachet step 1), liquid step 2.5 ml from 2.5 to 100. The + button is disabled at the limit; the − at the minimum. (Dose.md says "no maximum"; the data model wins.)
+
+### Own decisions while building
+1. **Low-stock chip uses the setting `lowStockDays`** (default 14) through `isLowStock` of stock.ts, not a fixed 14. "หมด" = 0 days left today. The chip counts days even when the texts are in weeks.
+2. **Texts of the lines.** Old / new line: `เช้า 1 เม็ด · เย็น 1 เม็ด (รวม 2 เม็ด/วัน)`; a removed meal `เย็น: ตัดออก` in its place; cream: names only. Because days are shared, chosen days are written once at the end of the line, `… · เฉพาะ จ พ ศ (รวม 9 เม็ด/สัปดาห์)` (the board writes them per meal); every-other-day is `วันเว้นวัน` and counts 3.5 days a week. When ANY side is not daily both lines use weeks. Days left: `daysLeft` of stock.ts (day by day with the real schedule) for the old schedule and for the new one on the recounted stock; the sentence is `พอใช้ประมาณ A → B` (or `พอใช้ ไม่ถึง 2 สัปดาห์ → …` when a side is 14 days or less in weeks).
+3. **Chips on rows.** "เพิ่มใหม่" for a meal that did not exist; "แก้แล้ว" when its dose or timing changed, and also on every kept meal when the shared days changed.
+4. **Turning a meal ON again gives 1 unit (liquid 5 ml)**, even if it had another dose before (as written in the brief). The new meal is "after meal".
+5. **A cream keeps what the data has** (stand-in dose 1, timing): nothing shows for those; a cream meal turned on gets 1 and "after". Cream stock line is `ยาคงเหลือ สำรอง N หลอด` (ขวด for drops) with the sub-line "ครีมไม่นับวันที่พอใช้" / "ยาหยอดไม่นับวันที่พอใช้" (the board's "2 หลอด" cannot be told apart from the opened tube in the data, so it says "สำรอง", as the detail page does). A medicine never counted: `ยังไม่ได้นับยา`, no days, no chip.
+6. **Stepper labels** are `ลดจำนวน เช้า` / `เพิ่มจำนวน เช้า` (the board has no meal in the label; four identical names are hard for a screen reader). The value is a read-out (`output`) named like `เช้า 2 เม็ด`.
+7. **The last ON tile** stays pressed and does nothing when tapped (`aria-disabled`, not `disabled`, so it keeps its contrast and tap area).
+8. **Kind labels** under the medicine are the add form's (ยาเม็ด, ยาน้ำ, ครีม ...), as in 8a decision 9.
+9. **History card** (changed in this PR, tests updated): `เหตุผล: หมอสั่ง` / `เหตุผล: ปรับเอง หรืออื่นๆ` (the older guess "ปรับเองหรือไม่ใช่หมอสั่ง" of M4 PR 5b is replaced), the note on a third line in quotes “…”. If the two sides read the same in short words (only the days or the timing changed) both sides are written with timing and days. `HistoryRow` got `line3`.
+10. **Not done / left for the owner**: the kind sheet of the edit page still has the faded link "ไปที่ เปลี่ยนวิธีกิน (หมอสั่งใหม่)" (a tablet -> liquid change needs the dose in ml, but this page works on the SAVED kind, so the two pages cannot yet be chained; question for the next step). Layout B / C and the compact / v77 boards are not built (not in the canvas as chosen layouts).
+11. `check-overflow`: 7 new routes and 16 new pressed scenarios at 360 / 412 x 3 font sizes. One older 8a scenario ("detail edit sheet, dose row pressed") pressed the faded button; the row is a link now, so that scenario waits for the link instead of pressing it (nothing deleted).
+
+### Differences from the boards
+Items 2, 3 (days), 6 above; rule a (days per schedule instead of per meal), c (3 timing options), f (limit 4 / 100); the board has no toast after saving; the board draws no "stopped" or "interval" page.
+
+### Missing tokens
+None new. Board colours map to existing tokens: #006DF5 `--color-primary`, #E4F0FE `--color-primary-tint`, #005FD6 `--color-primary-ink`, #80868B `--color-border-strong`, #E3E8EF `--color-border`, #013073 `--color-navy`, #C5221F `--color-error-ink`, #5F6368 `--color-ink-muted`; the white button text `#fff` is the one the add form already uses. The board's sheet shadow comes from the existing Sheet component; the bottom bar's shadow `0 -1px 3px rgba(60,64,67,0.16)` has no token (the only elevations point downwards), so the bar uses the 1px `--color-border` line on top, like the edit page.
