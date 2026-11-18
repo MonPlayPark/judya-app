@@ -2,7 +2,7 @@
 // Pure. Stock, days left, low stock and expiry are NOT calculated here; they come from stock.ts, stockText.ts and
 // calc.ts, with the same limits as the medicine list, so the two pages never disagree.
 import { expiryStatus, type IsoDate } from '../calc';
-import { MEAL_LABEL, MONTHS, PERIOD_LABEL, PERIODS, formatAmount, intervalTimes, unitWord, type Period } from './home';
+import { MEAL_LABEL, MONTHS, PERIOD_LABEL, PERIODS, formatDose, intervalTimes, unitWord, type Period } from './home';
 import { label as medLabel } from './medsList';
 import {
   RESUME_REASON_LABEL,
@@ -47,6 +47,8 @@ export interface HistoryRow {
   title: string;
   line1: string | null;
   line2: string | null;
+  /** A dose change's note, in quotes. */
+  line3: string | null;
 }
 
 export interface StockCard {
@@ -78,6 +80,10 @@ export interface MedDetail {
   stock: StockCard;
   history: HistoryRow[];
   tubeWord: 'หลอด' | 'ขวด';
+  /** M4 PR 10: the person's note about side effects (null = none yet). */
+  sideEffects: string | null;
+  /** M4 PR 10: set for a medicine stopped because of an allergy / side effect: what the allergy page opens with. */
+  allergyStop: { personId: string; personName: string; drug: string; symptom: string } | null;
 }
 
 const tubeWordOf = (m: Medication): 'หลอด' | 'ขวด' => (m.kind === 'drops' ? 'ขวด' : 'หลอด');
@@ -100,25 +106,29 @@ function doseLines(a: Assignment, m: Medication): DoseLine[] {
   if (s.kind === 'interval') {
     const course = s.course.kind === 'days' ? `${s.course.days} วัน` : 'ต่อเนื่อง';
     const times = intervalTimes(s.everyHours, s.firstTime);
-    return [{ period: 'interval', title: `ทุก ${s.everyHours} ชั่วโมง`, sub: `${formatAmount(s.pills)} ${unit} · เริ่ม ${times[0] ?? s.firstTime} น. · ${course}` }];
+    return [{ period: 'interval', title: `ทุก ${s.everyHours} ชั่วโมง`, sub: `${formatDose(m, s.pills)} ${unit} · เริ่ม ${times[0] ?? s.firstTime} น. · ${course}` }];
   }
   const days = daysText(s);
   return PERIODS.flatMap((p): DoseLine[] => {
     const slot = s.slots[p];
     if (!slot) return [];
     const meal = 'meal' in slot ? MEAL_LABEL[slot.meal] : null;
-    return [{ period: p, title: PERIOD_LABEL[p], sub: [`${formatAmount(slot.pills)} ${unit}`, meal, days].filter(Boolean).join(' · ') }];
+    return [{ period: p, title: PERIOD_LABEL[p], sub: [`${formatDose(m, slot.pills)} ${unit}`, meal, days].filter(Boolean).join(' · ') }];
   });
 }
 
-/** 'เช้า 1 เม็ด + เย็น 1 เม็ด' / 'ทุก 8 ชั่วโมง 1 เม็ด' (before / after of a dose change). */
-function scheduleBrief(s: Schedule, m: Medication): string {
+/** 'เช้า 1 เม็ด + เย็น 1 เม็ด' / 'ทุก 8 ชั่วโมง 1 เม็ด' (before / after of a dose change). `detailed` adds the meal timing and the
+ * days ('เช้า 1 เม็ด หลังอาหาร · ทุกวัน'); it is used when the short words of the two sides would be the same. */
+function scheduleBrief(s: Schedule, m: Medication, detailed = false): string {
   const unit = unitWord(m);
-  if (s.kind === 'interval') return `ทุก ${s.everyHours} ชั่วโมง ${formatAmount(s.pills)} ${unit}`;
-  return PERIODS.flatMap((p) => {
+  if (s.kind === 'interval') return `ทุก ${s.everyHours} ชั่วโมง ${formatDose(m, s.pills)} ${unit}`;
+  const text = PERIODS.flatMap((p) => {
     const slot = s.slots[p];
-    return slot ? [`${PERIOD_LABEL[p]} ${formatAmount(slot.pills)} ${unit}`] : [];
+    if (!slot) return [];
+    const meal = detailed && 'meal' in slot ? ` ${MEAL_LABEL[slot.meal]}` : '';
+    return [`${PERIOD_LABEL[p]} ${formatDose(m, slot.pills)} ${unit}${meal}`];
   }).join(' + ');
+  return detailed ? `${text} · ${daysText(s)}` : text;
 }
 
 function reasonText(e: Extract<MedEvent, { type: 'stop' | 'resume' }>): string | null {
@@ -128,25 +138,29 @@ function reasonText(e: Extract<MedEvent, { type: 'stop' | 'resume' }>): string |
   return e.type === 'stop' && e.note ? `${base} · อาการ: ${e.note}` : base;
 }
 
-function historyRow(e: MedEvent, m: Medication): HistoryRow {
+export function historyRow(e: MedEvent, m: Medication): HistoryRow {
   const base = { id: e.id, date: fullThaiDate(e.effectiveOn) };
   switch (e.type) {
     case 'start':
-      return { ...base, title: 'เริ่มกินยา', line1: null, line2: null };
-    case 'adjust':
+      return { ...base, title: 'เริ่มกินยา', line1: null, line2: null, line3: null };
+    case 'adjust': {
+      const short = [scheduleBrief(e.from.schedule, m), scheduleBrief(e.to.schedule, m)];
+      const [from, to] = short[0] === short[1] ? [scheduleBrief(e.from.schedule, m, true), scheduleBrief(e.to.schedule, m, true)] : short;
       return {
         ...base,
         title: 'ปรับโดส',
-        line1: `${scheduleBrief(e.from.schedule, m)} → ${scheduleBrief(e.to.schedule, m)}`,
-        line2: e.reason === 'doctor' ? 'เหตุผล: หมอสั่ง' : 'เหตุผล: ปรับเองหรือไม่ใช่หมอสั่ง',
+        line1: `${from} → ${to}`,
+        line2: e.reason === 'doctor' ? 'เหตุผล: หมอสั่ง' : 'เหตุผล: ปรับเอง หรืออื่นๆ',
+        line3: e.note ? `“${e.note}”` : null,
       };
+    }
     case 'stop': {
       const r = reasonText(e);
-      return { ...base, title: 'หยุดยา', line1: null, line2: r ? `เหตุผล: ${r}` : null };
+      return { ...base, title: 'หยุดยา', line1: null, line2: r ? `เหตุผล: ${r}` : null, line3: null };
     }
     case 'resume': {
       const r = reasonText(e);
-      return { ...base, title: 'กลับมากินใหม่', line1: null, line2: r ? `เหตุผล: ${r}` : null };
+      return { ...base, title: 'กลับมากินใหม่', line1: null, line2: r ? `เหตุผล: ${r}` : null, line3: null };
     }
   }
 }
@@ -188,7 +202,7 @@ function breakdown(qty: number, m: Medication): string | null {
     rest -= boxes * per;
     if (boxes > 0) parts.push(`${boxes} กล่อง`);
   }
-  if (rest > 0) parts.push(`${formatAmount(rest)} ${unit}`);
+  if (rest > 0) parts.push(`${formatDose(m, rest)} ${unit}`);
   return parts.length === 0 ? 'ไม่มียาเหลือ' : parts.join(' + ');
 }
 
@@ -234,7 +248,7 @@ function stockCard(a: Assignment, m: Medication, root: Root, today: IsoDate): St
   // count / volume: quantity at the start of today; a stopped medicine is walked as if active (paused days are skipped)
   const qty = stockNow({ ...a, status: 'active' }, m, today, root.events) ?? u.qty;
   const mode = u.unit === 'ml' ? 'volume' : 'count';
-  const big = u.unit === 'ml' ? `${formatAmount(qty)} มล.` : `${formatAmount(qty)} ${unitWord(m)}`;
+  const big = u.unit === 'ml' ? `${qty} มล.` : `${formatDose(m, qty)} ${unitWord(m)}`;
   const sub = u.unit === 'ml' ? (qty === 0 ? 'ไม่มียาเหลือ' : null) : qty === 0 ? 'ไม่มียาเหลือ' : breakdown(qty, m);
   if (!active) return { mode, big, sub, note: null, chip: null, left: null, canRefill: false, openTube: null, expiry };
 
@@ -281,6 +295,11 @@ export function buildMedDetail(root: Root, assignmentId: string, today: IsoDate)
     stock: stockCard(a, m, root, today),
     history: events.map((e) => historyRow(e, m)),
     tubeWord: tubeWordOf(m),
+    sideEffects: a.sideEffects ?? null,
+    allergyStop:
+      a.status === 'stopped' && lastStop && lastStop.type === 'stop' && (lastStop.reason === 'แพ้ยา' || lastStop.reason === 'ใช้ยาไม่ได้ / ผลข้างเคียง')
+        ? { personId: person.id, personName: person.name, drug: m.name, symptom: lastStop.note ?? '' }
+        : null,
   };
 }
 
@@ -371,7 +390,7 @@ export function previewRefill(root: Root, assignmentId: string, add: RefillAmoun
   } else {
     const q = (x: Assignment): string => {
       const v = stockNow(x, m, today, root.events);
-      return v === null ? 'ยังไม่ได้นับ' : `${formatAmount(v)} ${add.kind === 'volume' ? 'มล.' : unitWord(m)}`;
+      return v === null ? 'ยังไม่ได้นับ' : `${add.kind === 'volume' ? String(v) : formatDose(m, v)} ${add.kind === 'volume' ? 'มล.' : unitWord(m)}`;
     };
     rows.push({ label: 'จำนวนรวม', value: `${q(a)} → ${q(next)}` });
     rows.push({ label: 'พอใช้ประมาณ', value: formatDaysLeftChange(daysLeft(a, m, today, root.events), daysLeft(next, m, today, root.events), unit) });

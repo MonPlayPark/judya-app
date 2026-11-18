@@ -1,0 +1,49 @@
+/* The look of the allergy state (M4 PR 10), shared by the member page card and the allergy page.
+   No board draws it: tokens only. `listed` uses --color-error-tint (the design system reserves it for the allergy block). */
+.state {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  color: var(--color-ink-muted);
+}
+.line {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+.line svg {
+  flex: none;
+  width: 22px;
+  height: 22px;
+}
+.listed {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--color-error-tint);
+  color: var(--color-error-ink);
+}
+.word {
+  font-weight: var(--weight-bold);
+}
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0 0 0 30px;
+  list-style: none;
+  color: var(--color-ink);
+}
+.drug {
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+.reaction {
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
+}

@@ -342,9 +342,8 @@ describe('demo mode never touches storage', () => {
     expect(window.location.hash).toBe('#/n/meds?demo=normal');
     for (const c of calls) expect(c).not.toHaveBeenCalled();
   });
-  it('name / kind / step are only read in a demo', () => {
+  it('step is only read in a demo (name / kind / strength are read everywhere since 11.5c)', () => {
     open('?name=ยาลับ&kind=liquid&step=3', liveStore());
-    expect(screen.getByLabelText('ชื่อยา')).toHaveValue('');
     expect(screen.getByRole('list', { name: 'ขั้นที่ 1 จาก 3' })).toBeInTheDocument();
   });
   it('a Home demo name goes on to the nearest list demo', () => {
@@ -452,5 +451,41 @@ describe('route in the app', () => {
     vi.spyOn(window.history, 'length', 'get').mockReturnValue(1);
     fireEvent.click(btn('กลับ'));
     expect(window.location.hash).toBe('#/n/meds?demo=normal');
+  });
+});
+
+describe('11.5c: the link from "received a typed medicine" fills the form on the live page too', () => {
+  it('name, kind and strength (value + unit) are read without ?demo; step still only in a demo', () => {
+    open('?name=ยาพิมพ์เองตัวอย่าง&kind=liquid&strength=250&unit=mg/5 ml&step=3', liveStore());
+    expect(screen.getByLabelText('ชื่อยา')).toHaveValue('ยาพิมพ์เองตัวอย่าง');
+    expect(btn(/ยาน้ำ/)).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByLabelText(/^ความแรง/)).toHaveValue('250');
+    expect(screen.getByLabelText('หน่วยความแรง')).toHaveValue('mg/5 ml');
+    expect(screen.getByRole('list', { name: 'ขั้นที่ 1 จาก 3' })).toBeInTheDocument(); // the live page ignores step
+  });
+  it('a wrong kind, a wrong unit or a text strength is ignored', () => {
+    open('?name=ยาตัวอย่าง&kind=nope&strength=abc&unit=zz', liveStore());
+    expect(btn(/ยาเม็ด/)).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByLabelText(/^ความแรง/)).toHaveValue('');
+    expect(screen.getByLabelText('หน่วยความแรง')).toHaveValue('mg');
+  });
+});
+
+describe('S4 allergy warning in step 1 (M4 PR 10)', () => {
+  const WARN = 'ระวัง: ยาตัวอย่าง Z 500 mg มีบันทึกแพ้ยา ยาตัวอย่าง Z (ผื่นตัวอย่าง) ตรวจกับแพทย์หรือเภสัชกรก่อน';
+  it('a person with a listed drug that matches the name: warning with drug and reaction, "ถัดไป" still works', () => {
+    open('?person=p3&name=' + encodeURIComponent('ยาตัวอย่าง Z 500 mg'), liveStore());
+    expect(screen.getByText(WARN)).toBeInTheDocument();
+    expect(btn('ถัดไป')).toBeEnabled();
+    next();
+    expect(screen.getByRole('list', { name: 'ขั้นที่ 2 จาก 3' })).toBeInTheDocument(); // warning only: not blocked
+  });
+  it('follows the typed name and the chosen person', () => {
+    open('?person=p3&name=' + encodeURIComponent('พาราตัวอย่าง'), liveStore());
+    expect(screen.queryByText(/ระวัง:/)).toBeNull();
+    typeName('ยาตัวอย่างz');
+    expect(screen.getByText(/ระวัง: ยาตัวอย่างz มีบันทึกแพ้ยา ยาตัวอย่าง Z/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /สมาชิก ก/ }));
+    expect(screen.queryByText(/ระวัง:/)).toBeNull();
   });
 });

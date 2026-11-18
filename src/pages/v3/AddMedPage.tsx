@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useRoute } from '../../router';
 import { DEMO_TODAY, demoRoot, isDemoName } from '../../domain/v3/homeDemo';
 import { isMedsDemoName, medsDemoRoot, type MedsDemoName } from '../../domain/v3/medsListDemo';
-import { MED_KINDS, type MedKind, type Root } from '../../domain/v3/schema';
+import { MED_KINDS, STRENGTH_UNITS, type Root } from '../../domain/v3/schema';
 import { loadRoot, saveRoot } from '../../domain/v3/storage';
 import { requestPersistence } from '../../state/persist';
 import { openRoot, saveErrorText, useBangkokToday, type HomePageProps, type Loaded } from './HomeV3Page';
@@ -24,20 +24,26 @@ function goBack(fallback: string): void {
 const HOME_TO_MEDS: Record<string, MedsDemoName> = { empty0: 'nomember', empty1: 'nomeds' };
 const medsDemoOf = (demo: string): MedsDemoName => (isMedsDemoName(demo) ? demo : (HOME_TO_MEDS[demo] ?? 'normal'));
 
-/** `type=house` and `person=<id>` work everywhere; `name`, `kind` and `step` only in a demo. */
+/** `type=house`, `person=<id>`, `name`, `kind`, `strength` (a number) and `unit` (its unit) work everywhere (the last four: the link from a typed medicine that
+ * arrived on an order, M4 PR 11.5c); `step` only in a demo. A wrong kind, unit or number is ignored. */
 function initialFrom(query: URLSearchParams, demo: boolean): Initial {
   const type = query.get('type');
   const person = query.get('person');
-  const initial: Initial = { ...(type === 'house' || type === 'personal' ? { type } : {}), ...(person ? { person } : {}) };
-  if (!demo) return initial;
   const name = query.get('name');
-  const kind = query.get('kind');
+  const kindText = query.get('kind');
+  const kind = MED_KINDS.find((k) => k === kindText);
+  const strengthText = query.get('strength');
+  const unitText = query.get('unit');
+  const unit = STRENGTH_UNITS.find((u) => u === unitText);
+  const strengthOk = strengthText !== null && /^\d*\.?\d+$/.test(strengthText) && Number(strengthText) > 0;
   const step = Number(query.get('step'));
   return {
-    ...initial,
+    ...(type === 'house' || type === 'personal' ? { type } : {}),
+    ...(person ? { person } : {}),
     ...(name ? { name } : {}),
-    ...(MED_KINDS.includes(kind as MedKind) ? { kind: kind as MedKind } : {}),
-    ...(Number.isInteger(step) && step >= 1 && step <= 3 ? { step } : {}),
+    ...(kind ? { kind } : {}),
+    ...(strengthOk ? { strength: { value: strengthText, ...(unit ? { unit } : {}) } } : {}),
+    ...(demo && Number.isInteger(step) && step >= 1 && step <= 3 ? { step } : {}),
   };
 }
 

@@ -137,12 +137,12 @@ describe('the list', () => {
     expect(document.documentElement.style.getPropertyValue('--toast-bottom')).toBe('');
   });
 
-  it('is reached from #/n/order in the app, and the route is not tied to any button of Home', () => {
+  it('is reached from #/n/order in the app, and Home links to it (since 11.6)', () => {
     window.location.hash = '#/n/order?demo=normal';
     render(<App />);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('สั่งซื้อยา');
     const home = readFileSync(resolve(__dirname, 'HomeV3.tsx'), 'utf8');
-    expect(home).not.toContain('/n/order');
+    expect(home).toContain('#/n/order');
   });
 });
 
@@ -538,37 +538,23 @@ describe('history (M4 PR 11.4)', () => {
     expect(within(card('5 ต.ค. 2569')).getByText('ยังไม่มีราคา')).toBeInTheDocument();
   });
 
-  it('buttons by status: waiting = faded "รับของแล้ว" + working "ยกเลิกใบสั่ง"; partial = chip "ยังรอ N รายการ" + two faded, no cancel; received / cancelled = "สั่งซ้ำ"', () => {
+  it('buttons by status: waiting = "รับของแล้ว" + "ยกเลิกใบสั่ง"; partial = chip "ยังรอ N รายการ" + "รับของที่เหลือ" + "ไม่รอแล้ว", no cancel; received / cancelled = "สั่งซ้ำ"; none is faded', () => {
     demo('normal', HIST);
     const w = within(card('28 ต.ค. 2569'));
-    expect(w.getByRole('button', { name: /รับของแล้ว/ })).toHaveAttribute('aria-disabled', 'true');
+    expect(w.getByRole('button', { name: /รับของแล้ว/ })).not.toHaveAttribute('aria-disabled');
     expect(w.getByRole('button', { name: 'ยกเลิกใบสั่ง' })).not.toHaveAttribute('aria-disabled');
     expect(w.queryByRole('button', { name: /สั่งซ้ำ/ })).not.toBeInTheDocument();
     const p = within(card('20 ต.ค. 2569'));
     expect(p.getByText('ยังรอ 2 รายการ')).toBeInTheDocument();
-    expect(p.getByRole('button', { name: /รับของที่เหลือ/ })).toHaveAttribute('aria-disabled', 'true');
-    expect(p.getByRole('button', { name: /ไม่รอแล้ว/ })).toHaveAttribute('aria-disabled', 'true');
+    expect(p.getByRole('button', { name: /รับของที่เหลือ/ })).not.toHaveAttribute('aria-disabled');
+    expect(p.getByRole('button', { name: /ไม่รอแล้ว/ })).not.toHaveAttribute('aria-disabled');
     expect(p.queryByRole('button', { name: 'ยกเลิกใบสั่ง' })).not.toBeInTheDocument();
     expect(p.queryByRole('button', { name: /สั่งซ้ำ/ })).not.toBeInTheDocument();
     for (const d of ['12 ต.ค. 2569', '5 ต.ค. 2569']) {
       expect(within(card(d)).getByRole('button', { name: /สั่งซ้ำ/ })).not.toHaveAttribute('aria-disabled');
       expect(within(card(d)).queryByRole('button', { name: 'ยกเลิกใบสั่ง' })).not.toBeInTheDocument();
     }
-    expect(within(card('28 ต.ค. 2569')).getByRole('button', { name: /รับของแล้ว/ })).toHaveTextContent('เร็ว ๆ นี้');
-  });
-
-  it('the three faded buttons do nothing when pressed: no message, no sheet, no write', () => {
-    const setItem = vi.spyOn(Storage.prototype, 'setItem');
-    demo('normal', HIST);
-    const pressed = [
-      within(card('28 ต.ค. 2569')).getByRole('button', { name: /รับของแล้ว/ }),
-      within(card('20 ต.ค. 2569')).getByRole('button', { name: /รับของที่เหลือ/ }),
-      within(card('20 ต.ค. 2569')).getByRole('button', { name: /ไม่รอแล้ว/ }),
-    ];
-    for (const b of pressed) fireEvent.click(b);
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(screen.getAllByRole('status')).toHaveLength(1); // only the demo banner: no floating message
-    expect(setItem).not.toHaveBeenCalled();
+    expect(screen.queryByText('เร็ว ๆ นี้')).not.toBeInTheDocument();
   });
 
   it('cancel sheet: the title, the line "<shop> · <date> · N รายการ", the small line; "ไม่ยกเลิก" closes it and writes nothing', () => {

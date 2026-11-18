@@ -1,6 +1,6 @@
 // The v3 add-member screen (M4 PR 6a): view only. What is valid, what is saved and the colour come from
 // src/domain/v3/members.ts; MemberFormPage owns the data. `MemberForm` takes starting values, so the edit page
-// (PR 9) can use it again. Today only the "add" mode is built.
+// (PR 9, MembersV3.tsx) uses it again.
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { BackIcon, CheckIcon, InfoIcon, PlusIcon, WarningIcon } from '../../components/icons';
 import { Sheet } from '../../components/v3/Sheet';
@@ -26,14 +26,17 @@ export interface MemberFormProps {
   onSubmit: (draft: MemberDraft) => void;
   initialSheet?: 'avatars';
   banner?: ReactNode;
+  /** Shown under the "จัดยาทานเอง" card (the edit page puts "นำสมาชิกออก" here). */
+  extra?: ReactNode;
   /** Sheets or other overlays drawn inside the page. */
   children?: ReactNode;
 }
 
-export function MemberForm({ initial, persons, title, saveError, onBack, onSubmit, initialSheet, banner, children }: MemberFormProps) {
+export function MemberForm({ initial, persons, title, saveError, onBack, onSubmit, initialSheet, banner, extra, children }: MemberFormProps) {
   const [draft, setDraft] = useState<MemberDraft>(() => ({ ...emptyDraft(), ...initial }));
   const [switchTouched, setSwitchTouched] = useState(initial?.selfManaged !== undefined);
   const [avatarSheet, setAvatarSheet] = useState(initialSheet === 'avatars');
+  const [triedSave, setTriedSave] = useState(false);
   const state = draftState(draft, persons);
   const selfTaken = hasSelf(persons);
 
@@ -43,12 +46,18 @@ export function MemberForm({ initial, persons, title, saveError, onBack, onSubmi
   const submit = (e: FormEvent): void => {
     e.preventDefault();
     if (state.blocker === null) onSubmit(draft);
+    else if (onlyYearBlocks) setTriedSave(true);
   };
 
   // the first pictures; a chosen one that is not among them takes the 4th place
   const first = AVATAR_NAMES_V3.slice(0, SHOWN);
   const row = first.includes(draft.avatar) ? [...first] : [...first.slice(0, SHOWN - 1), draft.avatar];
   const birth = state.birth;
+  // d5: a year with fewer than 4 digits is still being typed: neutral hint, not red, and "บันทึก" can be pressed. It turns red at 4+ digits or when save is pressed.
+  const onlyYearBlocks = birth.kind === 'bad' && state.nameOk && state.relationOk;
+  const yearTyping = birth.kind === 'bad' && draft.birthYear.trim().length < 4 && !triedSave;
+  const yearRed = birth.kind === 'bad' && !yearTyping;
+  const blocker = onlyYearBlocks && yearTyping ? null : state.blocker;
 
   return (
     <div className={styles.page}>
@@ -142,20 +151,20 @@ export function MemberForm({ initial, persons, title, saveError, onBack, onSubmi
               </label>
               <input
                 id="mf-year"
-                className={`${styles.input} ${styles.year} ${birth.kind === 'bad' ? styles.inputError : ''}`}
+                className={`${styles.input} ${styles.year} ${yearRed ? styles.inputError : ''}`}
                 type="text"
                 inputMode="numeric"
                 autoComplete="off"
                 placeholder="เช่น 2503"
                 maxLength={4}
                 value={draft.birthYear}
-                aria-invalid={birth.kind === 'bad'}
+                aria-invalid={yearRed}
                 aria-describedby="mf-year-note"
                 onChange={(e) => set({ birthYear: e.target.value.replace(/\D/g, '').slice(0, 4) })}
               />
-              <p id="mf-year-note" className={birth.kind === 'bad' ? `${styles.hint} ${styles.hintError}` : styles.hint}>
-                {birth.kind === 'bad' && <WarningIcon />}
-                {birth.kind === 'ok' ? `อายุ ${birth.age} ปี` : birth.kind === 'empty' ? 'ใช้คำนวณอายุ ไม่บังคับ' : `ปีเกิดต้องเป็น พ.ศ. 4 หลัก ตั้งแต่ 2400 ถึง ${maxBirthYearBE()}`}
+              <p id="mf-year-note" className={yearRed ? `${styles.hint} ${styles.hintError}` : styles.hint}>
+                {yearRed && <WarningIcon />}
+                {birth.kind === 'ok' ? `อายุ ${birth.age} ปี` : birth.kind === 'empty' ? 'ใช้คำนวณอายุ ไม่บังคับ' : yearTyping ? `พิมพ์ปี พ.ศ. 4 หลัก ตั้งแต่ 2400 ถึง ${maxBirthYearBE()}` : `ปีเกิดต้องเป็น พ.ศ. 4 หลัก ตั้งแต่ 2400 ถึง ${maxBirthYearBE()}`}
               </p>
             </div>
           </section>
@@ -185,6 +194,7 @@ export function MemberForm({ initial, persons, title, saveError, onBack, onSubmi
               </span>
             </button>
           </section>
+          {extra}
         </div>
 
         <div className={styles.bar}>
@@ -194,13 +204,13 @@ export function MemberForm({ initial, persons, title, saveError, onBack, onSubmi
               {saveError}
             </p>
           )}
-          {state.blocker !== null && (
+          {blocker !== null && (
             <p className={styles.reason}>
               <InfoIcon />
-              {state.blocker}
+              {blocker}
             </p>
           )}
-          <button type="submit" className={styles.save} disabled={state.blocker !== null}>
+          <button type="submit" className={styles.save} disabled={blocker !== null}>
             บันทึก
           </button>
         </div>

@@ -59,7 +59,7 @@ export interface OrderMessageProps {
 }
 
 /** Puts the text on the clipboard; false when the browser refuses or has no clipboard. */
-async function copyText(text: string): Promise<boolean> {
+export async function copyText(text: string): Promise<boolean> {
   try {
     if (!navigator.clipboard) return false;
     await navigator.clipboard.writeText(text);

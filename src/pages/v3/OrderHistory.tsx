@@ -1,10 +1,10 @@
 // The order history view (M4 PR 11.4): filter pills, one card per saved order, the cancel sheet and "สั่งซ้ำ". View only: OrderView owns the draft
-// and the write. Buttons for steps that come later (receiving, 11.5) are faded with the chip "เร็ว ๆ นี้" and do nothing.
+// and the write. Receiving (M4 PR 11.5c): the screen is in OrderReceive.tsx; "รับของแล้ว" / "รับของที่เหลือ" only open it, "ไม่รอแล้ว" closes the order at once.
 import { useState } from 'react';
 import { CheckCircleIcon, ClockIcon, WarningIcon, XCircleIcon } from '../../components/icons';
 import { Sheet } from '../../components/v3/Sheet';
 import { sheetStyles } from '../../components/v3/sheetParts';
-import { COMING_SOON_TEXT } from '../../components/v3/ComingSoon';
+import { AddAskSheet, SAVE_FAILED_TEXT, type AddItem, type ReceiveOutcome } from './OrderReceive';
 import { FILTER_LABEL, HISTORY_FILTERS, filterOrders, orderDateText, orderTotal, stillWaiting, type HistoryFilter } from '../../domain/v3/orderHistory';
 import { baht } from '../../domain/v3/orderShops';
 import type { Order, Root } from '../../domain/v3/schema';
@@ -26,11 +26,29 @@ const RepeatGlyph = () => (
 
 export type CancelOutcome = { ok: true } | { ok: false; text: string };
 
-export function OrderHistory({ root, onAgain, onCancel }: { root: Root; onAgain: (orderId: string) => void; onCancel: (orderId: string) => CancelOutcome }) {
+export interface OrderHistoryProps {
+  root: Root;
+  /** Opens the receiving screen of an order. */
+  onReceive: (orderId: string) => void;
+  /** After receiving: the typed medicines the owner wants to add (more than one); the sheet "เพิ่มยาเข้ารายการไหม" lists them. null = no sheet. */
+  addAsk: readonly AddItem[] | null;
+  onCloseAddAsk: () => void;
+  onAgain: (orderId: string) => void;
+  onCancel: (orderId: string) => CancelOutcome;
+  /** "ไม่รอแล้ว": drops what is still waited for, ONE write, toast "ปิดใบสั่ง ไม่รอของที่เหลือแล้ว" (board #72: no question first). */
+  onDrop: (orderId: string) => ReceiveOutcome;
+}
+
+export function OrderHistory({ root, onReceive, addAsk, onCloseAddAsk, onAgain, onCancel, onDrop }: OrderHistoryProps) {
   const [filter, setFilter] = useState<HistoryFilter>('all');
   const [askId, setAskId] = useState<string | null>(null);
+  const [dropError, setDropError] = useState<string | null>(null);
   const orders = filterOrders(root.orders, filter);
   const asked = askId === null ? undefined : root.orders.find((o) => o.id === askId);
+  const drop = (orderId: string): void => {
+    const res = onDrop(orderId);
+    setDropError(res.ok ? null : SAVE_FAILED_TEXT);
+  };
   return (
     <>
       <div className={styles.filters} role="group" aria-label="กรองใบสั่ง">
@@ -40,6 +58,12 @@ export function OrderHistory({ root, onAgain, onCancel }: { root: Root; onAgain:
           </button>
         ))}
       </div>
+      {dropError !== null && (
+        <p className={styles.sheetError} role="alert">
+          <WarningIcon />
+          {dropError}
+        </p>
+      )}
       {orders.length === 0 ? (
         <div className={styles.empty}>
           <p className={styles.emptyTitle}>ยังไม่มีใบสั่งในหมวดนี้</p>
@@ -47,26 +71,17 @@ export function OrderHistory({ root, onAgain, onCancel }: { root: Root; onAgain:
       ) : (
         <ul className={styles.list}>
           {orders.map((o) => (
-            <Card key={o.id} order={o} onAgain={() => onAgain(o.id)} onAskCancel={() => setAskId(o.id)} />
+            <Card key={o.id} order={o} onAgain={() => onAgain(o.id)} onAskCancel={() => setAskId(o.id)} onReceive={() => onReceive(o.id)} onDrop={() => drop(o.id)} />
           ))}
         </ul>
       )}
       {asked && <CancelSheet order={asked} onClose={() => setAskId(null)} onConfirm={() => onCancel(asked.id)} onDone={() => setAskId(null)} />}
+      {addAsk && <AddAskSheet items={addAsk} onClose={onCloseAddAsk} />}
     </>
   );
 }
 
-/** A button of a later step: faded, with the chip "เร็ว ๆ นี้"; pressing it does nothing (no message, no write). */
-function Later({ children, main }: { children: string; main: boolean }) {
-  return (
-    <button type="button" aria-disabled="true" className={`${styles.later} ${main ? styles.laterMain : styles.laterGrey}`}>
-      {children}
-      <span className={styles.soonChip}>{COMING_SOON_TEXT}</span>
-    </button>
-  );
-}
-
-function Card({ order: o, onAgain, onAskCancel }: { order: Order; onAgain: () => void; onAskCancel: () => void }) {
+function Card({ order: o, onAgain, onAskCancel, onReceive, onDrop }: { order: Order; onAgain: () => void; onAskCancel: () => void; onReceive: () => void; onDrop: () => void }) {
   const Icon = STATUS_ICON[o.status];
   const total = orderTotal(o);
   const waiting = stillWaiting(o);
@@ -104,7 +119,9 @@ function Card({ order: o, onAgain, onAskCancel }: { order: Order; onAgain: () =>
       <div className={styles.buttons}>
         {o.status === 'waiting' && (
           <>
-            <Later main>รับของแล้ว</Later>
+            <button type="button" className={styles.receive} onClick={onReceive}>
+              รับของแล้ว
+            </button>
             <button type="button" className={styles.cancel} onClick={onAskCancel}>
               ยกเลิกใบสั่ง
             </button>
@@ -112,8 +129,12 @@ function Card({ order: o, onAgain, onAskCancel }: { order: Order; onAgain: () =>
         )}
         {o.status === 'partial' && (
           <>
-            <Later main>รับของที่เหลือ</Later>
-            <Later main={false}>ไม่รอแล้ว</Later>
+            <button type="button" className={styles.receive} onClick={onReceive}>
+              รับของที่เหลือ
+            </button>
+            <button type="button" className={styles.cancel} onClick={onDrop}>
+              ไม่รอแล้ว
+            </button>
           </>
         )}
         {(o.status === 'received' || o.status === 'cancelled') && (

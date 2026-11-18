@@ -110,3 +110,12 @@ export function createMember(root: Root, draft: MemberDraft, newId: () => string
   if (!rootSchema.safeParse(next).success) return fail('ข้อมูลไม่ถูกต้อง บันทึกไม่ได้ ลองใหม่อีกครั้ง');
   return { ok: true, root: next, person, duplicateName: state.duplicate };
 }
+
+/** The form values of an existing member (edit page). The birth year becomes the text of the box. */
+export const draftFromPerson = (p: Person): MemberDraft => ({
+  name: p.name,
+  relation: p.relation,
+  birthYear: p.birthYearBE === undefined ? '' : String(p.birthYearBE),
+  avatar: p.avatar,
+  selfManaged: p.selfManaged,
+});

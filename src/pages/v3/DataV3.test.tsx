@@ -458,7 +458,7 @@ describe('ways in', () => {
   it('the Settings tab of the bottom menu opens this page', () => {
     window.location.hash = '#/n?demo=normal';
     render(<HomeV3Route />);
-    expect(screen.getByRole('link', { name: 'ตั้งค่า' })).toHaveAttribute('href', '#/n/settings/data');
+    expect(screen.getByRole('link', { name: 'ตั้งค่า' })).toHaveAttribute('href', '#/n/settings');
   });
 
   it('the backup reminder on Home is a link to this page (and keeps the demo)', () => {
@@ -482,11 +482,11 @@ describe('ways in', () => {
     expect(get.mock.calls.map((c) => c[0]).filter((k) => String(k).startsWith('old.app'))).toEqual([]);
   });
 
-  it('back button goes to Home when there is no page before', () => {
+  it('back button always goes to the list of settings (a demo stays a demo)', () => {
     open(store0(), '?demo=normal');
-    Object.defineProperty(window.history, 'length', { configurable: true, value: 1 });
+    Object.defineProperty(window.history, 'length', { configurable: true, value: 5 });
     press('กลับ');
-    expect(window.location.hash).toBe('#/n?demo=normal');
+    expect(window.location.hash).toBe('#/n/settings?demo=normal');
   });
 });
 

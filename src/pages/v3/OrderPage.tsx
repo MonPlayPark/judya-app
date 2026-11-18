@@ -12,7 +12,7 @@ import { ProblemV3 } from './ProblemV3';
 
 /** Test links: `&sheet=add&tab=meds|new[&name=<typed name>]` opens the add sheet, `&sheet=unit[&item=<line key>]` the unit sheet,
  * `&shops=three` (demo) gives three made-up shops, `&orders=waiting` (demo) one shop and a medicine on a waiting order, `&orders=history` (demo) four orders (one of each status), `&screen=history` opens the history, `&shop=<id>` starts with that shop chosen, `&sheet=prices&shop=<id>` opens its price sheet,
- * `&sheet=shop` the new-shop form, `&shipping=off` the switch off. */
+ * `&screen=receive&order=<id>` the receiving screen of that order (a waiting one = everything, a partial one = the rest), `&sheet=shop` the new-shop form, `&shipping=off` the switch off. */
 function initialFrom(query: URLSearchParams): OrderViewProps['initial'] {
   const sheet = query.get('sheet');
   const tab = query.get('tab');

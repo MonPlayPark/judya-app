@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { sampleRootV3 } from '../../domain/v3/fixtures';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -63,7 +64,7 @@ describe('the six states render', () => {
     const care = screen.getByRole('region', { name: 'ยาที่ต้องดูแล' });
     expect(within(care).getByText('เลิกใช้')).toBeInTheDocument();
     expect(within(care).getByText('7 วัน')).toBeInTheDocument();
-    expect(within(care).getByText('สั่งยา').closest('button')).toHaveAttribute('aria-disabled', 'true');
+    expect(within(care).getByText('สั่งยา').closest('a')).toHaveAttribute('href', '#/n/order');
   });
   it('empty0 (S0): start card, step 2 locked, no members card, no today card, no shortcuts', () => {
     renderDemo('empty0');
@@ -102,12 +103,14 @@ describe('no "ตารางยา" and no dead controls', () => {
     // only real links exist; nothing else is a link, so nothing can be a dead link
     // the "รายการยา" shortcut and the three nav tabs (Settings since PR 6c)
     const hrefs = Array.from(container.querySelectorAll('a')).map((a) => a.getAttribute('href'));
-    expect(hrefs.slice(-3)).toEqual(['#/n', '#/n/meds', '#/n/settings/data']);
+    expect(hrefs.slice(-4)).toEqual(['#/n', '#/n/meds', '#/n/members', '#/n/settings']); // PR 9: the Members tab is a link too
     // the other links are the "รายการยา" shortcut and (since PR 6a) the add-member links and (since PR 6b) the add-medicine link, which carry ?demo=
     // and (since PR 6c) the backup reminder, which links to the data page and carries ?demo=
-    expect(hrefs.slice(0, -3).every((h) => h === '#/n/meds' || h === `#/n/settings/data?demo=${name}` || h === `#/n/members/new?demo=${name}` || h === `#/n/meds/new?demo=${name}`)).toBe(true);
+    expect(hrefs.slice(0, -4).every((h) => h === `#/n/members?demo=${name}` || h === '#/n/meds' || h === '#/n/order' || h === `#/n/settings/data?demo=${name}` || h === `#/n/members/new?demo=${name}` || /^#\/n\/members\/[^/]+\/summary\?demo=/.test(h ?? '') || h === `#/n/meds/new?demo=${name}`)).toBe(true);
     for (const b of Array.from(container.querySelectorAll('button'))) {
-      if (b.hasAttribute('aria-pressed')) {
+      if (b.textContent?.includes('แชร์ให้แพทย์')) {
+        expect(b).toBeEnabled(); // PR 15a: opens the member sheet
+      } else if (b.hasAttribute('aria-pressed')) {
         expect(b).toBeEnabled(); // member picker or tick: a real handler (tested below)
       } else {
         expect(b).toHaveAttribute('aria-disabled', 'true'); // coming soon: faded, says "เร็ว ๆ นี้" when pressed
@@ -134,18 +137,32 @@ describe('no "ตารางยา" and no dead controls', () => {
       vi.useRealTimers();
     }
   });
-  it('the "รายการยา" shortcut is a real link without a badge; the other shortcuts and tabs are coming soon', () => {
+  it('the "สั่งซื้อยา" tile is a real link to the order page, no badge and no coming-soon button', () => {
+    const { container } = renderDemo('normal');
+    const tile = container.querySelector('main a[href="#/n/order"]');
+    expect(tile).not.toBeNull();
+    expect(tile).toHaveAttribute('href', '#/n/order');
+    expect(tile).toHaveTextContent('สั่งซื้อยาเปรียบเทียบราคา');
+    expect(tile).not.toHaveTextContent('เร็ว ๆ นี้');
+    expect(screen.queryByRole('button', { name: /สั่งซื้อยา/ })).toBeNull();
+  });
+  it('the "สั่งยา" button in the care card is a real link to the order page', () => {
+    renderDemo('alert');
+    const care = screen.getByRole('region', { name: 'ยาที่ต้องดูแล' });
+    const link = within(care).getByRole('link', { name: /สั่งยา/ });
+    expect(link).toHaveAttribute('href', '#/n/order');
+    expect(link).not.toHaveTextContent('เร็ว ๆ นี้');
+    expect(within(care).queryByRole('button')).toBeNull();
+  });
+  it('the "รายการยา" shortcut is a real link without a badge', () => {
     const { container } = renderDemo('normal');
     const tile = container.querySelector('main a[href="#/n/meds"]');
     expect(tile).not.toBeNull();
     expect(tile).toHaveTextContent('รายการยาดูและจัดการยา');
     expect(tile).not.toHaveTextContent('เร็ว ๆ นี้');
-    expect(screen.getByRole('link', { name: 'ตั้งค่า' })).toHaveAttribute('href', '#/n/settings/data'); // PR 6c: the Settings tab is a real link
-    for (const t of ['สั่งซื้อยา', 'แชร์ให้แพทย์', 'สมาชิก', 'จัดการ']) {
-      const hit = screen.getAllByText(t).map((e) => e.closest('button')).filter((b) => b !== null);
-      expect(hit.length, t).toBeGreaterThan(0);
-      for (const b of hit) expect(b).toHaveAttribute('aria-disabled', 'true');
-    }
+    expect(screen.getByRole('link', { name: 'ตั้งค่า' })).toHaveAttribute('href', '#/n/settings'); // PR 14: the Settings tab opens the list of groups
+    expect(screen.getByRole('link', { name: 'สมาชิก' })).toHaveAttribute('href', '#/n/members'); // PR 9: the Members tab is a real link
+    expect(screen.getByText('แชร์ให้แพทย์').closest('[aria-disabled="true"]')).toBeNull(); // PR 15a: a real tile now
     expect(screen.getByText('หน้าหลัก').closest('[aria-current="page"]')).not.toBeNull();
   });
 });
@@ -167,9 +184,9 @@ describe('add-member buttons are real links (PR 6a)', () => {
     render(<HomeV3Route store={memoryStore()} />);
     expect(screen.getByText('เพิ่มสมาชิก').closest('a')).toHaveAttribute('href', '#/n/members/new');
   });
-  it('the "จัดการ" button of the members card stays coming soon (PR 9)', () => {
+  it('the "จัดการ" link of the members card opens the members list (PR 9)', () => {
     renderDemo('normal');
-    expect(screen.getByText('จัดการ').closest('button')).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('link', { name: 'จัดการ' })).toHaveAttribute('href', '#/n/members?demo=normal');
   });
 });
 
@@ -322,5 +339,36 @@ describe('period icons follow the locked board (canvas v87)', () => {
   });
   it('the greeting uses the navy token', () => {
     expect(homeCss).toMatch(/\.greeting\s*\{[^}]*color:\s*var\(--color-navy\)/);
+  });
+});
+
+describe('share-to-doctor tile (PR 15a, owner decision d6)', () => {
+  it('several members: the tile opens the sheet "สรุปยาของใคร" with each member; a member opens that summary', () => {
+    renderDemo('normal');
+    fireEvent.click(screen.getByText('แชร์ให้แพทย์').closest('button') as HTMLElement);
+    const dialog = screen.getByRole('dialog', { name: 'สรุปยาของใคร' });
+    const links = within(dialog).getAllByRole('link');
+    expect(links.length).toBeGreaterThan(1);
+    expect(links[0]).toHaveAttribute('href', expect.stringMatching(/^#\/n\/members\/[^/]+\/summary\?demo=normal$/));
+    expect(dialog).toHaveTextContent(/ยา \d+ รายการ/);
+  });
+  it('?sheet=doctor opens the sheet', () => {
+    window.location.hash = '#/n?demo=normal&sheet=doctor';
+    render(<HomeV3Route />);
+    expect(screen.getByRole('dialog', { name: 'สรุปยาของใคร' })).toBeInTheDocument();
+  });
+  it('exactly one member: the tile links straight to that summary', () => {
+    const r = sampleRootV3();
+    const keep = 'p1';
+    r.persons = r.persons.filter((p) => p.id === keep);
+    r.assignments = r.assignments.filter((a) => a.personId === keep);
+    r.events = r.events.filter((e) => r.assignments.some((a) => a.id === e.assignmentId));
+    r.orders = [];
+    r.prices = [];
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(r));
+    window.location.hash = '#/n';
+    render(<HomeV3Route getToday={() => '2026-10-28'} />);
+    expect(screen.getByText('แชร์ให้แพทย์').closest('a')).toHaveAttribute('href', '#/n/members/p1/summary');
+    window.localStorage.clear();
   });
 });

@@ -1,0 +1,214 @@
+/* "ราคาตามร้าน" card and sheet (M4 PR 13). Board MedDetail (card) and MedDetailPrice (sheet); tokens only. */
+.card {
+  border-radius: 16px;
+  background: var(--color-surface);
+  box-shadow: var(--elevation-1);
+  padding: 12px;
+}
+.flat {
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+.icon {
+  flex: none;
+  width: 32px;
+  height: 32px;
+}
+.title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: calc(16px * var(--fs));
+  line-height: calc(22px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-navy);
+}
+.chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-border);
+  color: var(--color-ink-muted);
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+}
+.help {
+  margin: 0 0 6px;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  color: var(--color-ink-muted);
+}
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 58px;
+  padding: 8px 0;
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+.left {
+  flex: 1;
+  min-width: 0;
+}
+.right {
+  flex: none;
+  max-width: 50%;
+  text-align: right;
+}
+.name,
+.main {
+  display: block;
+  font-size: calc(15px * var(--fs));
+  line-height: calc(21px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
+}
+.mainAdd {
+  color: var(--color-primary-ink);
+}
+.sub {
+  display: block;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  color: var(--color-ink-muted);
+}
+.chev {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--color-border-strong);
+}
+.addShop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 48px;
+  margin-top: 4px;
+  padding: 0 16px;
+  border-radius: 12px;
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+  font-size: calc(15px * var(--fs));
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+}
+
+/* ----- sheet ----- */
+.label {
+  margin: 14px 0 6px;
+  font-size: calc(15px * var(--fs));
+  line-height: calc(21px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-navy);
+}
+.units {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.unit {
+  flex: 1 1 0;
+  min-width: 72px;
+  min-height: 52px;
+  padding: 0 8px;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: 12px;
+  background: var(--color-surface);
+  color: var(--color-navy);
+  font-family: inherit;
+  font-size: calc(15px * var(--fs));
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.unitOn {
+  border: 2px solid var(--color-primary);
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+}
+.box {
+  display: flex;
+  align-items: stretch;
+  min-height: 48px;
+  overflow: hidden;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: 12px;
+  background: var(--color-surface);
+}
+.box:focus-within {
+  border-color: var(--color-primary);
+}
+.input {
+  flex: 1;
+  min-width: 0;
+  padding: 0 12px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: calc(18px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-ink);
+}
+.suffix {
+  display: flex;
+  align-items: center;
+  max-width: 55%;
+  padding: 0 12px;
+  border-left: 1.5px solid var(--color-border);
+  background: var(--color-background);
+  font-size: calc(14px * var(--fs));
+  color: var(--color-ink-muted);
+  overflow-wrap: anywhere;
+}
+.hint {
+  margin: 8px 0 0;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  color: var(--color-ink-muted);
+}
+.remove {
+  min-height: 52px;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: 12px;
+  background: var(--color-surface);
+  color: var(--color-error-ink);
+  font-family: inherit;
+  font-size: calc(16px * var(--fs));
+  font-weight: var(--weight-bold);
+  cursor: pointer;
+}
+.error {
+  margin: 8px 0 0;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-error-ink);
+}

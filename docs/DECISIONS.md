@@ -1034,3 +1034,272 @@ Branch `m4-pr11-order` (PR #39, draft, status unchanged). Scope: history, cancel
 
 ### Numbers
 Tests 1054 (1014 before); JS gzip 161.29 kB (158.69 before); `check:overflow` see HANDOFF. Pictures: branch `shots-pr11-4`.
+
+## M4 PR 11.5 — receiving
+
+Built from boards #67 / #75 / #72 of the M4 canvas (11.5c). 11.5a (domain) and 11.5b (a bottom sheet from a text spec, because the wrong canvas was read) came first; 11.5c replaced the sheet by the screen of the boards. Text of the boards: `receive.md` of the canvas export.
+
+### Domain choices (11.5a, `orderReceive.ts`)
+1. A line left out of the input counts as 0 received.
+2. A stopped or missing share is skipped (named in `skipped`) and the received amount is split over the remaining people.
+3. Tubes / drops are handed out one whole tube at a time, to the largest share first; people left without one are named in `noTube`.
+4. No `perSellUnit` = 1; the amount of medicine is floored to whole units.
+5. Kind `other` is never counted = no stock update.
+6. A house item whose order unit differs from its stock unit = error, nothing is saved. A missing house item is ignored.
+7. The result is re-checked with `rootSchema` before it is returned.
+8. Receiving 0 everywhere keeps the order partial.
+9. `dropRest` also drops short lines that have no leftover decision yet.
+
+### Domain changes in 11.5c
+1. `ReceiveInput.unitPrice` (> 0): becomes `line.unitPrice` and is remembered for the order's shop through `upsertPrice` (same sell unit and per-unit count as `placeOrder`), dated today. 0 or empty keeps the old price. A typed (`free`) line only gets `line.unitPrice` (rule 2 of 11.1: no place for a remembered price). A negative or non-finite price is refused (nothing saved).
+2. The price is saved even when 0 arrived (the board writes every typed price). If the shop was deleted, or the medicine / house item is gone, the line price is kept and no remembered price is made (a price row pointing nowhere would make the whole root invalid and block the receive).
+3. `ReceiveInput.expiry`: passed as `newExpiry` to `refillStock` for every share of the line; a house item gets the same nearer-date rule (`mergeExpiry`) but only when its stock is counted (a house item with no count is "no update", as before). Used only when something arrived.
+4. No maximum: the line is complete when `qtyReceived >= qtyOrdered`; stock adds what arrived (the 11.5b cap was the owner's answer for the sheet; the board says "no maximum").
+5. `stockGainOf(root, line, got)` gives the stock line of a card (amount and unit, or "not counted"). Same rules as `receiveOrder` (stopped people, kind `other`, tubes).
+6. `receiveOrder(..., newId)` takes the id maker for a new price row (default `defaultNewId`; the screen's dry run passes a counter).
+
+### Screen (11.5c: `OrderReceive.tsx`, `OrderHistory.tsx`, `OrderV3.tsx`)
+1. A full screen inside `OrderView` like the history: `?screen=receive&order=<id>`. Header: round back (to the history), cart icon, "รับของแล้ว"; no bottom menu. A waiting order = all its cards; a partial one = "rest" mode. An unknown or already closed order opens the history instead.
+2. Summary card (board 3.1), h2 "รายการยา (N รายการ)", one card per line (3.3), the receipt button (3.4), sticky bar "ยืนยันรับของ" (3.5). The bar is drawn into the page's `.dock` (a portal into the box the page keeps there), so the floating message still floats above it.
+3. Save = ONE `saveRoot`. Success: history (pill "ทั้งหมด") and the toast "บันทึกรับของแล้ว สต็อกอัปเดตแล้ว", the order page's lines go through `clearOnOrder`. Failure: stay, "บันทึกไม่สำเร็จ ลองอีกครั้ง" (or the domain's own text) in a red message just above the button.
+4. History card "ไม่รอแล้ว" (board #72 has no confirm sheet): one press = `dropRest`, one write, toast "ปิดใบสั่ง ไม่รอของที่เหลือแล้ว". A failed write shows "บันทึกไม่สำเร็จ ลองอีกครั้ง" above the list. The 11.5b confirm sheet and the 11.5b receive sheet are gone.
+5. Typed (`free`) lines that arrived (> 0) and are ticked "เพิ่มเข้ารายการยา": exactly one goes straight to `#/n/meds/new?name=…&kind=…&strength=…&unit=…` (demo link keeps `demo=`); more than one stay on the history and the 11.5b sheet "เพิ่มยาเข้ารายการไหม" lists all of them (the first one too, because the page is not left). None ticked: just the history.
+6. `AddMedPage` now reads `name`, `kind`, `strength` (a number) and `unit` also on the live page (before: demo only); `step` stays demo-only. A wrong kind, unit or number is ignored. Pack size and count are NOT filled (the page has no such parameter; see below).
+7. Test links: `#/n/order?demo=normal&screen=receive&orders=history&order=o1` (normal) and `…&order=o2` (rest). `&sheet=receive` is gone. Demo writes nothing (as before).
+8. `check-overflow`: routes and 13 scenarios (normal, rest, short line, "ไม่รับแล้ว", price, long price + long numbers, expiry, wrong-price message, all 0, rest short line, done toast, done to the add page, "ไม่รอแล้ว" toast) at 360 / 412 x 3 font sizes.
+
+### Differences from the boards
+1. **Receipt scan** ("อัปเดตราคาจากใบเสร็จ", board #71) is not built (no OCR): the button is the faded "เร็ว ๆ นี้" one.
+2. **"ยอดรวมที่จ่าย"** is the live sum of got x typed price (no shipping fee). Rest mode adds the old total of the order (`orderTotal`, fee included if the order had it). The board saves this as the order's new total; here there is no `total` field: the history card still shows `orderTotal` = sum of `line.unitPrice x qtyOrdered` (+ fee), so the typed prices change it but "got" vs "ordered" is not reflected.
+3. **Stock line unit** follows the medicine kind (เม็ด / แคปซูล / ซอง / มล. / หลอด / ขวด) or the stock unit of a house item, where the board always says "เม็ด" or the order unit. Lines that will not change stock (kind `other` with no stock rule, house item with no count, nobody left to count for) show the grey "ไม่นับสต็อก ยานี้ไม่อัปเดตสต็อก" (the board shows nothing; the spec asked for it).
+4. **Prefilled price** is the newest remembered price of the shop for the item in the line's own sell unit; a price in another unit is not converted.
+5. **Typed lines** have the price box as in the board, but the price only sets `line.unitPrice`; nothing is remembered for them (no place for it).
+6. **"(M เม็ด)"** is the kind's small unit word, left out when the sell unit is that word or the box size is unknown; house and kindless typed lines never show it.
+7. **"เพิ่มเข้ารายการยา"** opens the add-medicine page with name, kind and strength only. The board says the app fills "ชื่อ ความแรง ชนิด ขนาดบรรจุ และจำนวน"; pack size and count need the page to take more parameters and were not added.
+8. **Toast** is always the board's text. The 11.5b variant "ยังรอ N รายการ" for a partial result is gone.
+9. **Rest mode rows** are the lines not finished and not dropped (11.5b rule), a bit wider than "leftover = waiting": a line a partial order never got to (leftover still null) has a card too.
+10. **Safety notes** (never counted / skipped / not enough tubes) are the yellow box at the end of the list, above the bar (the board is silent).
+11. **"ยืนยันรับของ" is faded** while every number is 0 and nothing is set to "ไม่รับแล้ว" (board: always on). A price that is not a number marks the box (red border + text) and stops the save with a message.
+12. **Expiry** field is on every card of a medicine or house item (as the board); for a house item with no stock count the date is ignored (no update).
+13. **Sheet "เพิ่มยาเข้ารายการไหม"** is kept from 11.5b only for the "more than one" case (see Screen 5); with one item the toast is not seen because the page changes.
+14. **Phone line** is plain text with the icon (not a call link); not shown when the shop was deleted or has no phone. The delivery line comes from the shop, or from the order's `shippingFee` if the shop is gone.
+
+### Missing tokens (no colour was made)
+Board colours not in `tokens.css`, replaced by the nearest token: #FFF7E0 (short box) -> `--color-warning-tint` (#FEF7E0); #6B4400 (short box text) -> `--color-warning-ink` (#8A5300); #0D652D (stock line) -> `--color-success-ink` (#137333); #BFD3EE / #4A5568 / #EEF1F5 (faded button) -> `--color-border` / `--color-ink-muted`; amber chip "ยาใหม่" -> `--color-warning-tint` / `--color-warning-ink`; white text on the primary button and the pressed pill is the literal `#fff`, as in the other order pages.
+
+## Overnight: 11.6 and small fixes
+
+Decided while building (no owner answer yet):
+- Home links (item 1) are plain `#/n/order` with no `?demo=` suffix, like the "รายการยา" tile. The old test "Home does not contain /n/order" in `OrderV3.test.tsx` was turned round (Home now links to it).
+- The "สั่งยา" link and the list's low-stock link keep their look but are links, not faded buttons; the faded look of the coming-soon wrapper is gone for them.
+- Liquids (item 3): new `formatDose(med, n)` in `home.ts` (liquid = plain decimal, else `formatAmount`). Used for doses on Home, the medicine list, the detail, the refill preview, ml stock on the detail and the owner list's "เหลือ …" line. Not changed: house items (`houseDetail.ts`) and the pack size line "1 ขวด = N มล." in `addMedicine.ts`, because they are not doses of a liquid medicine assignment.
+- Tubes (item 4): chip words are the medicine list's words: "ใกล้หมด" (opened, no spare, kind low) and "หมด" (none, kind out, so it also counts in the "ยาหมดแล้ว" warning line). `isLowStock` is untouched. An expired tube is still listed as expired first.
+- Birth year (item 5): while 1-3 digits are typed the hint reads "พิมพ์ปี พ.ศ. 4 หลัก ตั้งแต่ 2400 ถึง <ปีล่าสุด>" (neutral) and "บันทึก" stays pressable; pressing it with that value turns the field red and saves nothing. After that the field stays red until the year is valid. Other blockers (name, relation) still grey the button as before. The old test that typed "25" and expected a grey button was changed to "1999".
+
+## M4 PR 8a — edit medicine data (typo fixes), boards #23 - #27, #38
+
+Boards: #23 the "แก้ไขยานี้" sheet on the detail page, #24 edit page (personal), #25 "ตรวจก่อนบันทึก", #26 edit page (house), #27 kind-change sheet, #38 the house sheet whose "แก้ข้อมูลยา" is now a link. Text and layout follow `canvas4/edit-med.md`.
+
+### What was built
+- Domain `src/domain/v3/editMedicine.ts` (47 tests): `draftFromCurrent`, `changedFields`, `needsConfirm`, `evaluateEdit` (pack line, "ตอนนี้มีรวม N …", "พอใช้ประมาณ N วัน", confirm rows, notes, the grey bar sentence), `changeKind` / `resetForKind`, `applyEdit`. An edit is **not** a MedEvent: `events` is never touched, one `saveRoot` on save.
+- Screens: `EditMedV3.tsx` + `EditMedPage.tsx`, routes `#/n/meds/:assignmentId/edit` and `#/n/house/:houseItemId/edit` (house items are addressed by their id, as `&item=<id>` on the list). The pencil on the detail page opens the sheet; the house info sheet's button is a link. Reused from the add form: `planStock`, `sizeFields`, `countFields`, `packLine`, `nameProblem`, `strengthOf`, tiles and number-box styles (`parseNum`, `nameProblem`, `validDate` are now exported and `sizeDraftOfPack` was split out of `planStockWithPack`; no behaviour change).
+- `components/v3/flash.ts`: a one-time message in memory carried to the next page (not storage).
+
+### Rules from the team lead (built as written)
+a. Shared medicine: pack-card note "ยานี้ใช้ร่วมกับ <names> ชื่อ ชนิด ความแรง และขนาดบรรจุจะเปลี่ยนของทุกคน" and stock-card note "จำนวนที่มีและวันหมดอายุ แก้เฉพาะของ <owner>"; none when nobody else uses it. "Others" = any other assignment of the same medication (active or stopped); a person taken out of the house is left out of the names ("คนอื่น" if only such people are left).
+b. When the pack changes, every other assignment's `count` stock keeps its TOTAL pieces, written with the new strip size (whole strips + loose); its counting day is kept. Tested.
+c. Cross-group kind change only when nobody else uses the medicine; otherwise the sheet says "ยานี้มีคนอื่นใช้ด้วย …" with only "ตกลง". Pack and counts are cleared and "buy as" goes to the default of the group.
+d. A stock written here is a recount: `countedOn = today`; "ไม่นับสต็อก" = `stock: null` and pack `none`.
+e. After saving: back to the medicine page (house: the house list, sheet closed) with the toast "บันทึกการแก้ไขแล้ว". The edit sheet's second row ("เปลี่ยนวิธีกิน") is a faded "เร็ว ๆ นี้" row.
+f. Duplicate name (same person, ignoring case and spaces): a yellow note, saving allowed.
+g. Allergy hint: not built.
+
+### Own decisions while building
+1. **Prefilled counts are what is there TODAY** (saved count minus the doses since the counting day, `stockNow`), not the count of the counting day, so the numbers equal the detail page. If buy-as, pack and counts are all untouched, the stock row is **not** rewritten (its counting day stays). Any change of those three, or a cross-group kind, rewrites it with `countedOn = today`. Stopped medicine: the saved count as it is.
+2. **A medicine with no pack but a count** (`pack: none`, many in the demo data) shows a "นับเป็นเม็ด/ซอง/มล./ชิ้น" tile (`buy = loose`) next to the board's tiles, so its count is not lost on opening.
+3. **House medicines have no pack size in the data** (`stock: { qty, unit }` only). So the house page has no "ขนาดบรรจุ" card; "นับเป็นอะไร" is "ไม่นับสต็อก" + the units of the kind (+ the saved unit, even an unusual one like "ตลับ"), and "จำนวนที่มีตอนนี้" is one number in that unit. The board's "10 เม็ดต่อแผง" and "40 เม็ด" cannot be shown. Changing the unit or number asks the confirm sheet (rows "นับเป็น" / "จำนวนที่มีรวม"). The low-stock mark `lowAt` is kept only while the unit stays the same (and the kind group); an empty number means not counted.
+4. **A dose that does not fit the new kind blocks the save** (e.g. 1 pill per time cannot become a liquid dose; the schema's `doseProblem` would refuse the root). The page shows an amber note "วิธีกินเดิมใช้หน่วยของชนิดเดิม ต้องปรับวิธีกินก่อนถึงจะเปลี่ยนเป็นชนิดนี้ได้" and the grey bar says "กรอกข้อมูลที่จำเป็นให้ครบก่อน". Until the dose change step exists, tablet -> liquid is therefore not savable; tablet -> sachet / other / capsule is. The dose is never converted for the person. **Question for the owner / next step (8b).**
+5. **Days line** ("พอใช้ประมาณ N วัน") is shown for every counted personal medicine in pieces or ml that is in use (the board says solid only); uses `daysLeft` / `leftTextFor` with the current schedule. The words are never doubled ("พอใช้ประมาณ 3 สัปดาห์").
+6. **Confirm rows** are shown only when the text changes; a row of "พอใช้ประมาณ" only with a pack/count change. The fallback row "จำนวนที่มี / ค่าเดิม / ค่าที่แก้แล้ว" is used when a confirm is needed but no row differs.
+7. **Duplicate name for a house medicine**: "มียาสามัญชื่อนี้อยู่แล้ว" (rule f has no owner there).
+8. **Name rules** are the add form's (2 - 60 letters); an empty name says "ต้องกรอกช่องนี้", a one-letter name the add form's sentence. A wrong strength ("ความแรงต้องเป็นตัวเลขมากกว่า 0") stops the save like the add form.
+9. **Kind labels** are the add form's (ยาเม็ด, ยาน้ำ, ผงชงดื่ม ...), not the board's short ones (เม็ด, น้ำ/น้ำเชื่อม ...), so one name is used everywhere. The sheet title uses the same word.
+10. **Default "buy as" after a group change** is the add form's `DEFAULT_BUY` (drops -> ขวด; the board says หลอด for the tube group).
+11. The kind sheet's link "ไปที่ เปลี่ยนวิธีกิน (หมอสั่งใหม่)" is a faded "เร็ว ๆ นี้" button (dose change is the next step); the board's href was a wrong link anyway.
+12. Back arrow on the edit page leaves without asking (the board draws no "discard?" question).
+13. Test links: `#/n/meds/a4/edit?demo=normal`, `#/n/house/h5/edit?demo=normal`, `#/n/meds/a4?demo=normal&sheet=edit`. A demo saves nothing (not even a read of storage) and goes back with the message.
+14. `check-overflow`: 9 routes and 33 pressed scenarios (tablet box, strip, bottle, not counted, required missing, duplicate name, long numbers, confirm sheet x 3, kind sheet, liquid / sachet / cream / other after the kind sheet, cream, shared medicine, house x 9, saved x 2, the detail sheet, the house info sheet) at 360 / 412 x 3 font sizes.
+
+### Differences from the boards
+Items 2, 3, 4, 5, 9, 10 above; the board's fixed "แก้เฉพาะยาของ พ่อ ยาของ แม่ ไม่เปลี่ยน" is replaced by rule a; the board jumps to MedsList after saving (rule e); the board draws no toast.
+
+### Missing tokens
+None new. The board colours map to existing tokens (#E4F0FE `--color-primary-tint`, #005FD6 `--color-primary-ink`, #E6F4EA / #137333 `--color-success-*`, #FEF7E0 / #8A5300 `--color-warning-*`, #C5221F `--color-error-ink`, #E3E8EF `--color-border`, #80868B `--color-border-strong`). The button text colour `#fff` is the one the add form already uses.
+
+## M4 PR 8b — change how to take ("เปลี่ยนวิธีกิน"), boards #41 - #49, #52
+
+Boards: #41 clean, #42 edited, #43 new meal, #44 removed meal, #45 low stock, #46 chosen days (weeks), #47 discard sheet, #48 liquid, #49 cream, #52 four meals (layout A: one row per meal + a bottom sheet). Text and layout follow `canvas4/dose.md`. Page `DoseChangeV3.tsx` + `DoseChangePage.tsx`, route `#/n/meds/:assignmentId/dose`; the faded row "เปลี่ยนวิธีกิน (หมอสั่งใหม่)" of the edit sheet is now a link (hidden for a stopped medicine).
+
+### What was built
+- Domain `src/domain/v3/doseChange.ts` (40 tests): `draftFromSchedule`, `toggleMeal` / `stepMeal` / `setTiming` / `setSpoon` / `toggleDay` / `setAltDays`, `isChanged`, `mealStatus` (chips), `mealSub`, `buildDoseSchedule`, `summarize` (the "สรุปก่อนบันทึก" texts), `applyDoseChange`.
+- `applyDoseChange(root, assignmentId, newSchedule, reason, note, today, nowIso)` writes ONE `adjust` MedEvent (`from` / `to` snapshots, `effectiveOn` = today, `at` = now, reason `doctor` | `self_or_other`, trimmed note up to 200) and the assignment's new schedule, all or nothing: the whole root goes through `rootSchema` first and nothing is returned if it fails.
+- **Never back-dated.** `walkUsed` (stock.ts) walks the PAST days with the schedule that is saved now. So before the new schedule is written, the stock is **recounted**: `count` / `volume` stock gets today's amount (`stockNow`, which still skips paused days) and `countedOn = today`. Tubes, no stock, and a count already made today (or later) are left as they are. Tested explicitly: counted 10 days ago, 2 a day, 100 pills: today 80 before and after the change to 3 a day; tomorrow 77 (a plain schedule swap would have said 70 today). Also tested for removing a meal, changing days, adding a meal, stop + resume in between, volume, and "no pack" stock. The recount writes whole strips + loose pieces (e.g. 5 strips + 3 loose may become 4 strips + 13 loose with the same total).
+- After a save: back to the medicine page, toast "บันทึกวิธีกินใหม่แล้ว" (the board draws none), history card shows the entry.
+- Demo (`?demo=...`, new demo house `dose` with a syrup a11, four meals a12, low stock a13, every 8 hours a14 on top of the normal one) writes nothing and reads no storage; it still goes back with the message.
+
+### Rules from the team lead (built as written)
+a. Days are per SCHEDULE: the day chips in the meal sheet change the days for ALL meals; hint "วันที่กินใช้กับทุกมื้อ" under the chips; every row's sub-line shows the shared days.
+b. A saved every-other-day (`alt`) schedule shows a third pill "วันเว้นวัน" (selected). Tapping a day chip switches to chosen days with only that day; the pill takes it back (the saved anchor is kept); all 7 chips = daily.
+c. The timing segment has THREE options ก่อนอาหาร | พร้อมอาหาร | หลังอาหาร (the board draws 2) so "with meal" from the add form is never lost. Bedtime has no timing.
+d. Interval schedules (ทุก N ชั่วโมง): the page shows the card "ยานี้กินทุก N ชั่วโมง ยังเปลี่ยนวิธีกินในหน้านี้ไม่ได้", no save bar, a link back.
+e. Stopped medicines: the entry row is hidden. If the address is opened anyway the page says "ยานี้หยุดแล้ว กลับมากินยาก่อน ถึงจะเปลี่ยนวิธีกินได้" (no save bar).
+f. Dose limits of `rootSchema` apply through `doseRules`: tablets / capsules / other up to 4 a time, step 0.5 (sachet step 1), liquid step 2.5 ml from 2.5 to 100. The + button is disabled at the limit; the − at the minimum. (Dose.md says "no maximum"; the data model wins.)
+
+### Own decisions while building
+1. **Low-stock chip uses the setting `lowStockDays`** (default 14) through `isLowStock` of stock.ts, not a fixed 14. "หมด" = 0 days left today. The chip counts days even when the texts are in weeks.
+2. **Texts of the lines.** Old / new line: `เช้า 1 เม็ด · เย็น 1 เม็ด (รวม 2 เม็ด/วัน)`; a removed meal `เย็น: ตัดออก` in its place; cream: names only. Because days are shared, chosen days are written once at the end of the line, `… · เฉพาะ จ พ ศ (รวม 9 เม็ด/สัปดาห์)` (the board writes them per meal); every-other-day is `วันเว้นวัน` and counts 3.5 days a week. When ANY side is not daily both lines use weeks. Days left: `daysLeft` of stock.ts (day by day with the real schedule) for the old schedule and for the new one on the recounted stock; the sentence is `พอใช้ประมาณ A → B` (or `พอใช้ ไม่ถึง 2 สัปดาห์ → …` when a side is 14 days or less in weeks).
+3. **Chips on rows.** "เพิ่มใหม่" for a meal that did not exist; "แก้แล้ว" when its dose or timing changed, and also on every kept meal when the shared days changed.
+4. **Turning a meal ON again gives 1 unit (liquid 5 ml)**, even if it had another dose before (as written in the brief). The new meal is "after meal".
+5. **A cream keeps what the data has** (stand-in dose 1, timing): nothing shows for those; a cream meal turned on gets 1 and "after". Cream stock line is `ยาคงเหลือ สำรอง N หลอด` (ขวด for drops) with the sub-line "ครีมไม่นับวันที่พอใช้" / "ยาหยอดไม่นับวันที่พอใช้" (the board's "2 หลอด" cannot be told apart from the opened tube in the data, so it says "สำรอง", as the detail page does). A medicine never counted: `ยังไม่ได้นับยา`, no days, no chip.
+6. **Stepper labels** are `ลดจำนวน เช้า` / `เพิ่มจำนวน เช้า` (the board has no meal in the label; four identical names are hard for a screen reader). The value is a read-out (`output`) named like `เช้า 2 เม็ด`.
+7. **The last ON tile** stays pressed and does nothing when tapped (`aria-disabled`, not `disabled`, so it keeps its contrast and tap area).
+8. **Kind labels** under the medicine are the add form's (ยาเม็ด, ยาน้ำ, ครีม ...), as in 8a decision 9.
+9. **History card** (changed in this PR, tests updated): `เหตุผล: หมอสั่ง` / `เหตุผล: ปรับเอง หรืออื่นๆ` (the older guess "ปรับเองหรือไม่ใช่หมอสั่ง" of M4 PR 5b is replaced), the note on a third line in quotes “…”. If the two sides read the same in short words (only the days or the timing changed) both sides are written with timing and days. `HistoryRow` got `line3`.
+10. **Not done / left for the owner**: the kind sheet of the edit page still has the faded link "ไปที่ เปลี่ยนวิธีกิน (หมอสั่งใหม่)" (a tablet -> liquid change needs the dose in ml, but this page works on the SAVED kind, so the two pages cannot yet be chained; question for the next step). Layout B / C and the compact / v77 boards are not built (not in the canvas as chosen layouts).
+11. `check-overflow`: 7 new routes and 16 new pressed scenarios at 360 / 412 x 3 font sizes. One older 8a scenario ("detail edit sheet, dose row pressed") pressed the faded button; the row is a link now, so that scenario waits for the link instead of pressing it (nothing deleted).
+
+### Differences from the boards
+Items 2, 3 (days), 6 above; rule a (days per schedule instead of per meal), c (3 timing options), f (limit 4 / 100); the board has no toast after saving; the board draws no "stopped" or "interval" page.
+
+### Missing tokens
+None new. Board colours map to existing tokens: #006DF5 `--color-primary`, #E4F0FE `--color-primary-tint`, #005FD6 `--color-primary-ink`, #80868B `--color-border-strong`, #E3E8EF `--color-border`, #013073 `--color-navy`, #C5221F `--color-error-ink`, #5F6368 `--color-ink-muted`; the white button text `#fff` is the one the add form already uses. The board's sheet shadow comes from the existing Sheet component; the bottom bar's shadow `0 -1px 3px rgba(60,64,67,0.16)` has no token (the only elevations point downwards), so the bar uses the 1px `--color-border` line on top, like the edit page.
+
+## M4 PR 13 — price per shop on the medicine page, boards #32, #35, #37, #40
+
+Text and layout follow `canvas4/price.md` (sections 1 - 4). Domain `src/domain/v3/medPrices.ts` (30 tests), shared view `components/v3/PriceCard.tsx` (card + sheet), used by the detail page (after "ยาคงเหลือ", before the history, #32) and by the house medicine info sheet. Hidden for a stopped medicine (#35). The card and the order page use ONE store, `root.prices`, through `upsertPrice`; no new data, no schema change.
+
+### Built as written
+- Rows: one per shop in `root.shops` (newest price of this medicine, any unit): "อัปเดต <date>" or "ยังไม่มีราคา"; right "฿X / <unit>" + "≈ ฿Y ต่อ<unit>" (none for cream / drops, or when the row has no count per unit) or blue "ใส่ราคา". Labels "แก้ราคาที่ …" / "ใส่ราคาที่ …".
+- Sheet #40: unit choices from the pack (box: กล่อง | แผง | เม็ด; strip: แผง | เม็ด; bottle: ขวด | เม็ด; sachet box: กล่อง | ซอง; liquid with ml: ขวด; cream หลอด, drops ขวด; no pack: the medicine's unit). Save = `upsertPrice` dated today, disabled while empty / 0. "ลบราคาร้านนี้" (only with a price) removes every price row of this shop and medicine. Toasts as the board. One `saveRoot` per save; demo writes nothing.
+- No shops: help line + link button "เพิ่มร้าน" to `#/n/shops` (board silent). In a demo the link goes to the live shops page.
+- House medicine: same card in the info sheet; unit = stock unit only, perSellUnit 1. Tapping a row replaces the info sheet by the price sheet; save / cancel return to the info sheet.
+
+### Own decisions
+1. Real shop list instead of the board's fixed ก / ข / ค.
+2. The piece word is the medicine's own unit word (`unitWord`: เม็ด, แคปซูล, ซอง, หน่วย), so a price saved here is in the same unit the order page starts with.
+3. Saving in another unit adds a row (upsert key is shop + item + unit); the card shows the newest, the order page may still use the older unit row. "ลบราคาร้านนี้" clears all of them.
+4. A saved unit the pack does not offer (e.g. from the order flow) is added as an extra choice so editing keeps it.
+5. House medicine has no `unit` field: used `stock.unit`; if not counted, a unit by its kind (tablet เม็ด, liquid / drops ขวด, cream หลอด, sachet ซอง, other หน่วย). An uncounted house medicine cannot be ordered, so such a price is only stored. House card shows no "≈ ต่อ" line (it would repeat the price).
+6. Liquid per-unit line is per มล. (bottle price / ml).
+7. Heading icon is the existing `shops` icon (the board's tag drawing uses hard-coded colours).
+8. Demo house `price` (`?demo=price`): three shops, VitaminD ก ฿180/กล่อง and ข ฿65/แผง, cream ก ฿45/หลอด, house h5 ก ฿25/แผง.
+9. `check-overflow`: 5 routes and 6 pressed scenarios added (nothing removed).
+
+### Differences from the boards
+Item 1, 5, 7 above; the board's per-unit line also shows for the single unit "เม็ด" (kept), and no "no shops" state is drawn.
+
+### Missing tokens
+None.
+
+## M4 PR 9 — members tab: list, one member, edit member (boards #10, #11, #12, #14, #60, #61, Home "จัดการ")
+
+Text and layout follow `canvas4/members.md`. Domain `src/domain/v3/memberEdit.ts` (`updateMember`, `removeMember`, `restoreMember`, `buildMembersList`, `buildMemberDetail`; 20 tests) and `draftFromPerson` in `members.ts`. Screens `pages/v3/MembersV3.tsx` (list, one member, edit, the remove question) and `MembersPage.tsx` (data). Routes `#/n/members`, `#/n/members/:id`, `#/n/members/:id/edit` (`/new` is still checked first). The edit page is the add form of PR 6a (`MemberForm` got an `extra` slot); it is not a copy.
+
+### Built as written
+- List: cards with avatar, name, "อายุ N ปี · ยา N รายการ" (age left out without a birth year; count = active assignments), chip "จัดยาทานเอง", fold "สมาชิกที่นำออก (N)" with removal date (short year, Thai date) and "นำกลับ", floating "เพิ่มสมาชิก" (hidden when empty), empty state #60.
+- One member: header (back, name, "แก้ไข"), card "ข้อมูลสมาชิก", card "ยาที่ใช้อยู่ (N รายการ)" with "ดูทั้งหมด", empty block #61 with "เพิ่มยาให้<name>", allergy line, faded "แชร์ให้แพทย์", red "นำสมาชิกออก".
+- Edit: title "แก้ไขข้อมูลสมาชิก", prefilled, edit-only red "นำสมาชิกออก" + note. Save goes to the detail page with "บันทึกแล้ว".
+- The Members tab of the bottom bar and Home "จัดการ" are links (Home's keeps `?demo=` in a demo). A tap on a member in the Home strip still switches the "ยาของวันนี้" card (it was not coming soon), so it is unchanged.
+
+### Own decisions
+1. **Remove question** (the board has none): sheet "นำ<name>ออกจากรายชื่อไหม" + the sentence from the brief + red "นำออก" / "ไม่นำออก". Also reachable from the edit page.
+2. **Remove = `removedAt` now** (soft). Assignments, history and prices stay. Home, the medicine list, the order page and the add forms already skip removed people, so nothing else was changed. After removing: back to the list, message "นำ<name>ออกแล้ว" (through `flash.ts`).
+3. **"นำกลับ"** clears `removedAt`, message "นำ<name>กลับแล้ว". If the person is "ตัวฉัน" and another active "ตัวฉัน" exists, it is refused with "นำ<name>กลับไม่ได้ เพราะมี 'ตัวฉัน' อยู่ในรายชื่อแล้ว" under the list (role alert); nothing is saved.
+4. **`updateMember`** has the same checks as `createMember`; the person is left out of the same-name warning and of the "ตัวฉัน" rule. It changes the five form fields only (colour, allergies, coverage, id, `removedAt` stay). A removed or unknown member gives "ไม่พบสมาชิกคนนี้" (page with a way back to the list).
+5. **Removal date** is the Thai date of the saved time (`bangkokDate`), not the UTC date.
+6. **Allergy line** shows the saved status words ("ยังไม่ได้บันทึกข้อมูลการแพ้ยา" / "ไม่มีประวัติแพ้ยา (ยืนยันแล้ว)" / "แพ้ยา N รายการ"); PR 10 makes it editable.
+7. **Medicine rows** link to `#/n/meds/:assignmentId` (the board's href is "#"); the sub line is the list's dose line ("เช้า · 1 เม็ด"), without the board's "หลังอาหาร" (the list line does not carry the meal). No period icon column.
+8. **Demo:** `?demo=members` (five people: one self-managed, one without a birth year or medicine, one taken out). Every list demo and Home demo name also works on these pages; a demo reads and writes nothing, and its removals are not kept when the page changes.
+9. Test-only links: `?open=removed` (list), `?sheet=remove` (detail, edit), `?sheet=avatars` (edit).
+10. `check-overflow`: 11 routes and 7 pressed scenarios added (nothing removed).
+
+### Differences from the boards
+- **Insurance** (boards #12 and #14 show "ประกันสุขภาพ / ประกันอุบัติเหตุ" free text): not built, no rows and no fields. The schema has `coverage {type, company?}` (M4 PR 1); insurance / coverage is left to PR 10.
+- Left out because they have no destination: the "ประวัติการปรับยา" row and the "สั่งยาที่ใกล้หมด" button of the medicines card.
+- The medicine rows link (item 7); "แชร์ให้แพทย์" stays faded ComingSoon (PR 15), as asked.
+
+### Missing tokens
+None. Board colours map to existing tokens: #E4F0FE `--color-primary-tint`, #005FD6 `--color-primary-ink`, #013073 `--color-navy`, #5F6368 `--color-ink-muted`, #C5221F `--color-error-ink`, #E3E8EF `--color-border`, white text on blue is the literal `#fff` as on the other pages.
+
+
+## M4 PR 14 — settings (list of 5 groups and their pages)
+
+### Boards used
+- **ตั้งค่า (list)** and **ตั้งค่า > การเตือน** (canvas Settings.dc / SettingsReminders.dc). Both boards use old v2 colours and fixed px, so they were rebuilt with v3 tokens and the v3 page frame (band header, 44px round back, `--fs` text, 48px chips, bottom menu).
+- Built **without a board**, from the same card / row / chip looks: ขนาดตัวอักษร (`#/n/settings/font`), การสั่งยาและร้านค้า (`/order`), เกี่ยวกับ JudYa (`/about`). ข้อมูลและสำรอง (`/data`) is the existing page, unchanged except that its back button always goes to `#/n/settings`.
+
+### Own decisions
+1. **Routes:** `#/n/settings` (list), `/font`, `/reminders`, `/order`, `/about`, `/data`. The bottom-menu "ตั้งค่า" tab goes to `#/n/settings` and is current on every one of them. Demo names (`?demo=...`, Home / list / shops demos) work on all pages and are carried in the links; a demo writes nothing and reads no storage.
+2. **One tap = one `saveRoot`.** The page takes the new root only if the write worked; otherwise it shows "บันทึกไม่ได้ ข้อมูลเดิมยังอยู่" and keeps the old chip. `updateSetting` (domain/v3/settingsPage.ts) validates with the schema first.
+3. **Chip not in the list** (e.g. 45 days from a backup or an older app): shown as an extra chosen chip "45 วัน" in its place (sorted), so the chosen value is always visible. Not an error.
+4. **Chosen chip / size row** = check icon + word + `aria-pressed` (never colour alone). Chip groups have `role="group"` named by the card title, because "30 วัน" appears on two cards.
+5. **Font size** is stored only in `root.settings.fontSize` (normal / medium / large); applying is the existing `data-fs` mechanism (`applyFontSize`), and only after the write worked. At start `initFontSizeFromHouse()` (main.tsx) lets a readable house decide; with no house (or an unreadable one) the old key `judya.fontsize` is still read as before, so the overflow script keeps working. The v3 pages **never write** `judya.fontsize`. Consequence: a person who chose กลาง/ใหญ่ under the old key and already has a v3 house now starts at the house value (ปกติ by default) until they choose again.
+6. **Font page samples** show "ยาของคุณแม่ เช้า 1 เม็ด หลังอาหาร" at the size each row names (16px × the `--fs` number of that size), whichever size is on now.
+7. **ข้อความสั่งยา card is read-only.** Nothing in the code edits `settings.orderTemplate`, and the order message does not read it (the text has a fixed shape in `orderMessage.ts`). The card shows the stored text, or "ใช้ข้อความมาตรฐาน" when empty. **Open question for the owner:** should the template be editable, or should the field be dropped? Until then a non-empty stored template would be shown but not used.
+8. **About sentence "ข้อมูลทั้งหมดอยู่ในเครื่องนี้เท่านั้น ไม่ส่งออกไปที่ไหน"** was checked: `src` has no `fetch`, XHR, beacon or WebSocket call; the only network use is the service-worker update check (no user data). The sentence is true and was written as asked. Version shown = the number part of `__APP_VERSION__` (from package.json).
+9. The list's backup line uses `backupStatus` of the data page ("สำรองล่าสุด 20 ต.ค. 2569" / "ยังไม่เคยสำรอง").
+10. `check-overflow`: 12 routes and 5 pressed scenarios added (nothing removed).
+
+### Differences from the boards
+- Header has the v3 band and a round back button; the list has no back (it is a tab). Colours, shadow, divider and nav sizes are the v3 tokens, not the board's v2 values (board section 4).
+- Icons: the boards' picture icons are replaced by the existing icon set (`expiry-alert`, `order`, `backup`, `shops`, `order-template`, `restock`) and two small inline glyphs (A A, info).
+- Home still links straight to the data page for its backup banner; this was not changed.
+
+### Missing tokens
+None.
+
+
+## M4 PR 10 — allergy, treatment rights, side effects
+
+**No board in the M4 canvas: built with existing components, decided by the team lead overnight, owner to check.** Text and layout follow `canvas4/allergy.md` (only the old static line existed) and the spec of the PR. Domain `src/domain/v3/allergy.ts` (allergy items, the three states, coverage, side effects, the add-medicine warning; 19 tests). Screens: `pages/v3/AllergyV3.tsx` + `AllergyBlock.tsx` (route `#/n/members/:id/allergy`), the allergy card and the coverage row on the member page, the coverage card on the member edit form, the side-effects card on the medicine page.
+
+### Safety rules (all have tests)
+- **S1** unknown = exactly "ยังไม่ได้บันทึกข้อมูลการแพ้ยา"; the words "ไม่แพ้" / "ไม่มีประวัติแพ้" are never in the unknown state card (tested on the allergy page and on the whole member page).
+- **S2** `none_confirmed` = "ยืนยันแล้วว่าไม่มีประวัติแพ้ยา (บันทึก <วันที่สั้น>)". Only `confirmNoAllergy` makes it, only from `unknown`, only from the button "ยืนยันว่าไม่มีประวัติแพ้ยา" + the confirm sheet. Date = Thai date of the save.
+- **S3** `listed`: red-tint block (`--color-error-tint`) with the warning icon and the word "แพ้ยา" + each drug and reaction. First item switches unknown / none_confirmed to listed. Deleting the last item gives `unknown` (the delete question says so), never `none_confirmed`.
+- **S4** warning "ระวัง: <ชื่อ> มีบันทึกแพ้ยา <ยา> (<อาการ>) ตรวจกับแพทย์หรือเภสัชกรก่อน" in the add-medicine step 1 (after "ยานี้ของใคร") and on the edit-medicine name. A warning only; saving and "ถัดไป" stay allowed.
+- **S5** the coverage form has only the type pills and one company box; the schema is strict. Tested.
+
+### Own decisions
+1. **Match rule for S4:** case and spaces ignored, either name contains the other, and both at least 3 letters (the rule of `allergyHits` in calc.ts; the spec's rule alone would match one letter against everything).
+2. **Stop link:** the link "บันทึกในหัวข้อการแพ้ยาของ<name>" is shown on the medicine page whenever the last stop of that medicine has reason "แพ้ยา" or "ใช้ยาไม่ได้ / ผลข้างเคียง" (the app has two reasons, the board's "แพ้ยา / ผลข้างเคียง" is one). It is derived from the history, so it stays after a reload. It opens `#/n/members/:id/allergy?sheet=add&drug=&symptom=` (drug = medicine name without strength, symptom = the stop note). Nothing is saved until the person presses "บันทึก".
+3. **Treatment rights REPLACE the board's two free-text insurance fields** ("ประกันสุขภาพ" / "ประกันอุบัติเหตุ"), as decided in M4 PR 1 (schema `coverage {type, company?}`). **Difference from the boards: ask the owner.** Pills: บัตรทอง, ประกันสังคม, ข้าราชการ, ประกันเอกชน, จ่ายเอง, อื่นๆ, "ไม่ระบุ" (removes it). The company box shows only for ประกันเอกชน, kept only then and only when not empty. `updateMember` got an optional third argument (left out = coverage unchanged); one save for the whole form.
+4. **Allergy edit** is separate from the member edit form (own page, one save per action: add, edit, delete, confirm, cancel confirmation). The member page card is a link (chevron) showing the state and the listed drugs.
+5. **Side effects:** a card with "แก้" and a sheet (textarea, counter in UTF-16 units like the 500 limit); empty text removes the field; saving writes no MedEvent and does not touch the history. Shown for active and stopped medicines, after the history card.
+6. **Demo `members`** now shows each state: คุณแม่ confirmed + private insurance with a long company, พี่ชาย two listed drugs (one 60 letters), คุณลุง social security.
+7. Test links: `?sheet=add|confirm` (+ `&drug=` `&symptom=`) on the allergy page, `?sheet=effects` on the medicine page.
+8. `check-overflow`: routes and pressed scenarios added (nothing removed): allergy page in 3 states, add and confirm sheets, delete question, member page with each state, coverage form, side-effect card and sheet, add-medicine warning, the stop link.
+
+### Not built
+- Allergy is not shown on Home or in the order message; the doctor summary (PR 15) will read `allergies` itself.
+
+## M4 PR 15a — summary for the doctor (text only)
+
+**No board in the M4 canvas shows the summary: content comes from the owner's step 3.4 decisions, text only (no picture, no board), decided by the team lead, owner to check.** Domain `src/domain/v3/doctorSummary.ts` (tests first, `doctorSummary.test.ts`); page `pages/v3/SummaryV3.tsx` (route `#/n/members/:id/summary`); entries: member page button and the Home tile.
+
+### Content (fixed order)
+1. "สรุปยาของ <name>", then "อายุ N ปี · ข้อมูล ณ <date>" (no age part when there is no birth year).
+2. "การแพ้ยา:" — always second. Listed: "- <drug>: <reaction>" per item. Confirmed none: "ไม่มีประวัติแพ้ยาที่ทราบ (ยืนยันเมื่อ <date>)". Unknown: "ยังไม่ได้บันทึกข้อมูลการแพ้ยา โปรดสอบถามผู้ป่วยหรือญาติ" (tested: never "ไม่แพ้ยา", "ไม่มีประวัติแพ้", "ไม่พบ").
+3. "สิทธิ์รักษา: …" only when set. 4. "ยาที่ใช้อยู่ (N รายการ)" with วิธีกิน (the same words as the medicine page), เริ่ม, ผลข้างเคียง when recorded. 5. "การปรับยาล่าสุด": last 3 adjust / stop / resume of this member's medicines, newest first. 6. "ยาที่หยุดใน 90 วันที่ผ่านมา" (90 days included; omitted when none). 7. Footer sentence from step 3.4.
+- No medicine in use and none stopped within 90 days: the page says "ยังไม่มียาให้สรุป", no text box, no buttons.
+
+### Own decisions
+1. **Screen:** the text is in a textarea; editing is free and is NOT saved anywhere (no storage write; "คืนค่าข้อความเดิม" appears once edited). "คัดลอกข้อความ" / "เปิด LINE" reuse the order message's `copyText`, toasts, `lineLink` and the long-message LINE warning (the page shows the warning line under the text and a toast on LINE).
+2. **Wording of the lines** that the spec left open: stop = "หยุดยา (เหตุผล <reason>[, อาการ <symptom>])" (reason "อื่น ๆ" shows its note); a stopped medicine with no stop event is left out of the 90-day list (as in step 3.4); the medicine is written with its strength.
+3. **Member page button:** a link when the summary has something to say (a medicine in use or stopped within 90 days); otherwise a faded button (aria-disabled) with the line "ยังไม่มียาให้สรุป".
+4. **Home tile (owner decision d6):** several members open the sheet "สรุปยาของใคร" (avatar, name, "ยา N รายการ" = medicines in use; members with 0 are listed too and open the "ยังไม่มียาให้สรุป" page); exactly one member goes straight to that summary; none links to add a member (the tile is shown only on a ready Home, so that case is for safety). `?sheet=doctor` opens the sheet (test link). The list is built in the domain (`doctorPeople`) and given to `HomeView` by the page, so `home.ts` is unchanged.
+3b. Small changes elsewhere: `historyRow` (medDetail.ts) and `copyText` (OrderMessage.tsx) are now exported, nothing else changed in them. Two old Home / member tests turned round (the tile and the button are no longer "coming soon").
+4. `check-overflow`: routes and scenarios added only (summary normal, with allergies, no medicines, missing member, 3000-letter text, edited text, Home picker sheet).
+
+### Not built
+- No picture, PDF or print; no way to save the edited text; the allergy page is not linked from the summary.

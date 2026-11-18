@@ -1,7 +1,7 @@
 // The v3 medicine list (M4 PR 5a): turns the data into what the screen shows. Pure. Stock, days left, low stock and
 // expiry are NOT calculated here; they come from stock.ts, stockText.ts and calc.ts (same rules as Home).
 import { expiryStatus, type IsoDate } from '../calc';
-import { MONTHS, PERIODS, PERIOD_LABEL, formatAmount, intervalTimes, periodOfTime, unitWord, type Period } from './home';
+import { MONTHS, PERIODS, PERIOD_LABEL, formatDose, intervalTimes, periodOfTime, unitWord, type Period } from './home';
 import type { Assignment, HouseItem, MedKind, Medication, MedEvent, Person, Root } from './schema';
 import { daysLeft, houseStatus, isLowStock, tubeLevel } from './stock';
 import { formatDaysLeft, unitFor } from './stockText';
@@ -115,15 +115,15 @@ function periodsOf(a: Assignment): Period[] {
 export function doseTextOf(a: Assignment, m: Medication): string {
   const unit = unitWord(m);
   const s = a.schedule;
-  if (s.kind === 'interval') return `ทุก ${s.everyHours} ชั่วโมง · ${formatAmount(s.pills)} ${unit}`;
+  if (s.kind === 'interval') return `ทุก ${s.everyHours} ชั่วโมง · ${formatDose(m, s.pills)} ${unit}`;
   const slots = PERIODS.flatMap((p) => {
     const slot = s.slots[p];
     return slot ? [{ p, pills: slot.pills }] : [];
   });
   if (slots.every((x) => x.pills === slots[0]?.pills)) {
-    return `${slots.map((x) => PERIOD_LABEL[x.p]).join(' · ')} · ${formatAmount(slots[0]?.pills ?? 0)} ${unit}`;
+    return `${slots.map((x) => PERIOD_LABEL[x.p]).join(' · ')} · ${formatDose(m, slots[0]?.pills ?? 0)} ${unit}`;
   }
-  return slots.map((x) => `${PERIOD_LABEL[x.p]} ${formatAmount(x.pills)} ${unit}`).join(' · ');
+  return slots.map((x) => `${PERIOD_LABEL[x.p]} ${formatDose(m, x.pills)} ${unit}`).join(' · ');
 }
 
 function medRow(a: Assignment, m: Medication, root: Root, today: IsoDate): MedRow {
