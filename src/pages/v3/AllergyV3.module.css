@@ -1,0 +1,113 @@
+/* The allergy page (M4 PR 10): page frame, cards and buttons come from MembersV3.module.css; only the pieces below are new. */
+.owner {
+  margin: -4px 0 0;
+  padding: 0 4px;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  color: var(--color-ink-muted);
+}
+.stateCard {
+  padding: 12px;
+}
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+}
+.rowText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.drug {
+  font-size: calc(16px * var(--fs));
+  line-height: calc(22px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-navy);
+  overflow-wrap: anywhere;
+}
+.reaction {
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
+}
+.rowButtons {
+  display: flex;
+  gap: 8px;
+}
+.small {
+  flex: 1;
+  min-height: 44px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+  font-family: inherit;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+.smallDanger {
+  background: transparent;
+  color: var(--color-error-ink);
+  box-shadow: inset 0 0 0 1.5px var(--color-error-ink);
+}
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.primary,
+.outline,
+.linkLike {
+  min-height: 52px;
+  border-radius: var(--radius-pill);
+  font-family: inherit;
+  font-size: calc(16px * var(--fs));
+  font-weight: var(--weight-bold);
+  cursor: pointer;
+}
+.primary {
+  border: 0;
+  background: var(--color-primary);
+  color: #fff;
+}
+.outline {
+  border: 1.5px solid var(--color-primary);
+  background: var(--color-surface);
+  color: var(--color-primary-ink);
+}
+.linkLike {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--color-primary-ink);
+  font-size: calc(14px * var(--fs));
+  text-decoration: underline;
+}
+.textarea {
+  min-height: 112px;
+  padding: 10px 12px;
+  resize: vertical;
+  line-height: calc(22px * var(--fs));
+}
+.counter {
+  align-self: flex-end;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}

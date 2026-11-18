@@ -1,0 +1,224 @@
+/* v3 edit-medicine page (M4 PR 8a, boards #24 - #27). Cards, tiles, number boxes and notes come from AddMedV3.module.css and
+   the header from MedDetailV3.module.css; this file only has what the edit page adds. Text as px at "normal" times var(--fs);
+   colours from the tokens of tokens.css. Every tap target >= 44px. */
+.body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 12px 16px;
+}
+.star {
+  color: var(--color-error-ink);
+}
+.strong {
+  color: var(--color-navy);
+}
+.labelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chg {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  padding: 0 10px 0 6px;
+  border-radius: 999px;
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+}
+.chg svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ----- owner / house badge ----- */
+.owner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+.ownerAvatar {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+}
+.ownerName {
+  margin: 0;
+  font-size: calc(16px * var(--fs));
+  line-height: calc(22px * var(--fs));
+  font-weight: var(--weight-bold);
+  color: var(--color-navy);
+  overflow-wrap: anywhere;
+}
+.houseBadge {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  margin: 0;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+  font-size: calc(14px * var(--fs));
+  font-weight: var(--weight-semibold);
+}
+
+/* ----- number boxes joined by x or + ----- */
+.joined {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+}
+.part {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+.box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  width: 150px;
+}
+.joiner {
+  flex: none;
+  display: flex;
+  align-items: center;
+  height: 48px;
+  font-size: calc(18px * var(--fs));
+  font-weight: var(--weight-bold);
+  color: var(--color-ink-muted);
+}
+
+/* ----- the result strip ----- */
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--color-success-tint);
+  color: var(--color-success-ink);
+}
+.resultMain {
+  margin: 0;
+  font-size: calc(15px * var(--fs));
+  line-height: calc(22px * var(--fs));
+  font-weight: var(--weight-bold);
+}
+.resultSub {
+  margin: 0;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+}
+
+/* ----- the bar ----- */
+.bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px calc(16px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+.save,
+.saveOff {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+  border: 0;
+  border-radius: 26px;
+  font-family: inherit;
+  font-size: calc(16px * var(--fs));
+  font-weight: var(--weight-bold);
+}
+.save {
+  background: var(--color-primary);
+  color: #fff;
+  cursor: pointer;
+}
+.saveOff {
+  background: var(--color-border);
+  color: var(--color-ink-muted);
+  cursor: not-allowed;
+}
+.barNote {
+  margin: 0;
+  text-align: center;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-ink-muted);
+}
+
+/* ----- confirm sheet ----- */
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.row {
+  padding: 10px 4px;
+  border-top: 1px solid var(--color-border);
+}
+.rowLabel {
+  margin: 0;
+  font-size: calc(15px * var(--fs));
+  line-height: calc(22px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-navy);
+}
+.rowOld,
+.rowNew {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.rowOld {
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  color: var(--color-ink-muted);
+}
+.rowNew {
+  font-size: calc(15px * var(--fs));
+  line-height: calc(22px * var(--fs));
+  font-weight: var(--weight-bold);
+  color: var(--color-ink);
+}
+.rowNew span {
+  font-weight: var(--weight-semibold);
+  color: var(--color-navy);
+}
+.sheetText {
+  margin: 0;
+  font-size: calc(15px * var(--fs));
+  line-height: calc(22px * var(--fs));
+  color: var(--color-ink);
+}
+.sheetLink {
+  min-height: 44px;
+  font-size: calc(14px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-primary-ink);
+  text-decoration: underline;
+}

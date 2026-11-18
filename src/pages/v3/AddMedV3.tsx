@@ -47,6 +47,7 @@ import {
   stepAmount,
   strengthOf,
   suggestNames,
+  type StrengthUnit,
   userCards,
   type EveryHours,
   type FreqKind,
@@ -54,6 +55,7 @@ import {
   type PersonalDraft,
   type ScheduleDraft,
 } from '../../domain/v3/addMedicine';
+import { allergyWarning } from '../../domain/v3/allergy';
 import { MEAL_LABEL, PERIOD_LABEL, PERIODS, formatAmount, type Meal, type Period } from '../../domain/v3/home';
 import { label } from '../../domain/v3/medsList';
 import { defaultNewId } from '../../domain/v3/medActions';
@@ -84,8 +86,8 @@ export interface AddMedViewProps {
   linkSuffix?: string;
   /** Same for links to the medicine list (it knows only its own demo names). */
   medsSuffix?: string;
-  /** Starting values (from the link): the page's own `type=house` and `person=<id>`; in a demo also name / kind / step. */
-  initial?: { type?: MedType; person?: string; name?: string; kind?: MedKind; step?: number };
+  /** Starting values (from the link): `type=house`, `person=<id>`, name, kind, strength (value, and its unit when given); in a demo also step. */
+  initial?: { type?: MedType; person?: string; name?: string; kind?: MedKind; strength?: { value: string; unit?: StrengthUnit }; step?: number };
   onBack: () => void;
   /** Called after a (pretend, in a demo) successful save. */
   onSaved: (type: MedType) => void;
@@ -101,7 +103,7 @@ export function AddMedView({ root, today, demo, persist, linkSuffix = '', medsSu
     const kind = initial?.kind ?? 'tablet';
     const base = emptyPersonalDraft();
     const person = initial?.person && people.some((p) => p.id === initial.person) ? initial.person : null;
-    return { ...base, name: initial?.name ?? '', kind, strength: { value: '', unit: defaultStrengthUnit(kind) }, personId: person, schedule: emptyScheduleDraft(kind), stock: emptyStockDraft(kind) };
+    return { ...base, name: initial?.name ?? '', kind, strength: { value: initial?.strength?.value ?? '', unit: initial?.strength?.unit ?? defaultStrengthUnit(kind) }, personId: person, schedule: emptyScheduleDraft(kind), stock: emptyStockDraft(kind) };
   });
   const [listOpen, setListOpen] = useState(false); // suggestion list: open while typing, closed after a pick
   const [newFor, setNewFor] = useState<string | null>(null); // the name for which "add as a new one" was pressed
@@ -367,6 +369,7 @@ interface Step1Props {
 }
 
 function Step1({ root, type, onType, draft, set, changeKind, people, usingIds, suggestions, onName, onPick, reuse, houseDup, onAddNew, linkSuffix, medsSuffix, today }: Step1Props) {
+  const allergy = type === 'personal' && draft.personId !== null ? allergyWarning(root, draft.personId, draft.name) : null; // S4: a warning, never a block
   const TYPES: { value: MedType; title: string; text: string }[] = [
     { value: 'personal', title: 'ยาเฉพาะบุคคล', text: 'กินประจำ มีเวลากิน' },
     { value: 'house', title: 'ยาสามัญประจำบ้าน', text: 'ใช้ร่วมกันทั้งบ้าน ไม่มีเวลากิน' },
@@ -547,6 +550,11 @@ function Step1({ root, type, onType, draft, set, changeKind, people, usingIds, s
               เพิ่มสมาชิก
             </a>
           </div>
+          {allergy !== null && (
+            <Hint tone="warn" icon={<WarningIcon />}>
+              {allergy}
+            </Hint>
+          )}
         </section>
       )}
     </>

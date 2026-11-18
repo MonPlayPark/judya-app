@@ -1,0 +1,319 @@
+/* v3 settings pages (M4 PR 14). Boards: "ตั้งค่า" list and "การเตือน" only (canvas Settings.dc / SettingsReminders.dc); the other pages have no
+   board and reuse the same card / row / chip looks. Built with v3 tokens and the v3 page frame (band header, 44px round back), not the
+   old v2 colours of the boards. Text is px at "normal" times var(--fs); tap targets 44px or more; a chosen chip = check icon + word. */
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--color-background);
+  font-family: var(--font-sans);
+}
+.demo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 6px var(--screen-pad);
+  background: var(--color-warning-tint);
+  color: var(--color-warning-ink);
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+}
+.head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 6px 12px 12px;
+  background: var(--color-band);
+}
+.round {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: var(--color-navy);
+}
+.title {
+  min-width: 0;
+  margin: 0;
+  font-size: calc(20px * var(--fs));
+  line-height: calc(28px * var(--fs));
+  font-weight: var(--weight-bold);
+  color: var(--color-navy);
+  overflow-wrap: anywhere;
+}
+.body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 12px 24px;
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 14px 16px;
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  box-shadow: var(--elevation-1);
+}
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cardIcon {
+  flex: none;
+  width: 32px;
+  height: 32px;
+}
+.cardTitle {
+  margin: 0;
+  font-size: calc(17px * var(--fs));
+  line-height: calc(24px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-navy);
+}
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.sub,
+.hint,
+.foot {
+  margin: 0;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  color: var(--color-ink-muted);
+  overflow-wrap: anywhere;
+}
+.foot {
+  padding: 0 4px;
+}
+.text {
+  margin: 0;
+  font-size: calc(15px * var(--fs));
+  line-height: calc(22px * var(--fs));
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
+}
+.error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-warning-tint);
+  color: var(--color-warning-ink);
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+}
+.error svg {
+  flex: none;
+}
+
+/* ---------- the list ---------- */
+.card:has(> .rows) {
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+}
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rows li + li {
+  border-top: 1px solid var(--color-border);
+}
+.row,
+.linkRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-sizing: border-box;
+  min-height: 68px;
+  padding: 8px 12px 8px 16px;
+  color: inherit;
+  text-decoration: none;
+}
+.linkRow {
+  min-height: 48px;
+  padding: 4px 0;
+  justify-content: space-between;
+  border-top: 1px solid var(--color-border);
+}
+.name {
+  font-size: calc(16px * var(--fs));
+  line-height: calc(24px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-navy);
+  overflow-wrap: anywhere;
+}
+.disc {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+}
+.disc svg {
+  width: 24px;
+  height: 24px;
+}
+.discImg {
+  width: 28px;
+  height: 28px;
+}
+.chevron {
+  flex: none;
+  display: flex;
+  color: var(--color-ink-muted);
+}
+
+/* ---------- chips ---------- */
+.chips {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(76px, 1fr));
+  gap: 8px;
+}
+.chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 48px;
+  padding: 4px 6px;
+  border: 2px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: inherit;
+  font-size: calc(15px * var(--fs));
+  line-height: calc(22px * var(--fs));
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+.chipOn {
+  border-color: var(--color-primary);
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+  font-weight: var(--weight-semibold);
+}
+.chip svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  stroke-width: 3;
+}
+
+/* ---------- font size ---------- */
+.sizes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.size {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 64px;
+  padding: 10px 14px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.sizeOn {
+  border-color: var(--color-primary);
+  background: var(--color-primary-tint);
+}
+.sizeHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: calc(15px * var(--fs));
+  line-height: calc(22px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-primary-ink);
+}
+.sizeHead svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 3;
+}
+.size:not(.sizeOn) .sizeHead {
+  color: var(--color-navy);
+}
+/* The sample shows the sentence at the size the row names (the same --fs numbers as [data-fs] in tokens.css), whatever size is on now. */
+.sample {
+  color: var(--color-ink);
+  font-weight: var(--weight-medium);
+  overflow-wrap: anywhere;
+}
+.sample_n {
+  font-size: calc(16px * 1);
+  line-height: calc(24px * 1);
+}
+.sample_m {
+  font-size: calc(16px * 1.075);
+  line-height: calc(24px * 1.075);
+}
+.sample_l {
+  font-size: calc(16px * 1.24);
+  line-height: calc(24px * 1.24);
+}
+
+/* ---------- order, about ---------- */
+.template {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+  font-size: calc(15px * var(--fs));
+  line-height: calc(22px * var(--fs));
+  color: var(--color-ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.about {
+  align-items: center;
+  text-align: center;
+}
+.logo {
+  width: 72px;
+  height: 72px;
+}
+.appName {
+  margin: 0;
+  font-size: calc(20px * var(--fs));
+  line-height: calc(28px * var(--fs));
+  font-weight: var(--weight-bold);
+  color: var(--color-navy);
+}

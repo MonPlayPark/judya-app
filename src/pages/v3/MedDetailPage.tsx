@@ -11,7 +11,7 @@ import { openRoot, saveErrorText, useBangkokToday, type HomePageProps, type Load
 import { ProblemV3 } from './ProblemV3';
 import { MedDetailNotFound, MedDetailView, type DetailSheet, type MedDetailViewProps, type Persist } from './MedDetailV3';
 
-const SHEETS: readonly string[] = ['refill', 'stop', 'resume', 'history'];
+const SHEETS: readonly string[] = ['refill', 'stop', 'resume', 'history', 'edit', 'effects'];
 const isSheet = (v: string | null): v is DetailSheet => v !== null && SHEETS.includes(v);
 
 export function MedDetailV3Route({ id, ...props }: HomePageProps & { id: string }) {
@@ -31,7 +31,7 @@ const inMemory: Persist = () => ({ ok: true }); // demo: nothing is saved
 function DemoDetail({ name, id, initialSheet }: { name: MedsDemoName; id: string; initialSheet: DetailSheet | undefined }) {
   const [root] = useState<Root>(() => medsDemoRoot(name));
   const props: MedDetailViewProps = {
-    root, id, today: DEMO_TODAY, demo: true, persist: inMemory, listHref: `#/n/meds?demo=${name}`, initialSheet,
+    root, id, today: DEMO_TODAY, demo: true, persist: inMemory, listHref: `#/n/meds?demo=${name}`, editHref: `#/n/meds/${encodeURIComponent(id)}/edit?demo=${name}`, doseHref: `#/n/meds/${encodeURIComponent(id)}/dose?demo=${name}`, initialSheet, memberSuffix: `?demo=${name}`,
     nowIso: () => `${DEMO_TODAY}T09:00:00+07:00`,
   };
   return <MedDetailView {...props} />;
@@ -48,5 +48,5 @@ function LiveDetail({ id, initialSheet, getToday, store }: HomePageProps & { id:
     return result.ok ? { ok: true } : { ok: false, text: saveErrorText(result) };
   };
   if (!loaded.root.assignments.some((a) => a.id === id)) return <MedDetailNotFound listHref="#/n/meds" />;
-  return <MedDetailView root={loaded.root} id={id} today={today} demo={false} persist={persist} listHref="#/n/meds" initialSheet={initialSheet} nowIso={() => new Date().toISOString()} />;
+  return <MedDetailView root={loaded.root} id={id} today={today} demo={false} persist={persist} listHref="#/n/meds" editHref={`#/n/meds/${encodeURIComponent(id)}/edit`} doseHref={`#/n/meds/${encodeURIComponent(id)}/dose`} initialSheet={initialSheet} nowIso={() => new Date().toISOString()} />;
 }

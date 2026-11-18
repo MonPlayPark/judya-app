@@ -2,6 +2,8 @@
 // and every size in tokens.css is in rem, so the whole app scales. Stored on this device only, under its own key
 // (never the data key, never in the backup file).
 import { useCallback, useState } from 'react';
+import { fsOf } from '../domain/v3/settingsPage';
+import { loadRoot } from '../domain/v3/storage';
 
 export const FONT_SIZE_KEY = 'judya.fontsize';
 export const FONT_SIZES = ['n', 'm', 'l'] as const;
@@ -56,4 +58,14 @@ export function useFontSize(): [FontSize, (size: FontSize) => boolean] {
     return writeFontSize(next);
   }, []);
   return [size, set];
+}
+
+/** M4 PR 14: the size lives in the house (`root.settings.fontSize`, saved with `judya.v3`). At start, a readable house decides;
+ * with no house yet (or one that cannot be read) the old key `judya.fontsize` is read as before (never written by the v3 pages). */
+export function initFontSizeFromHouse(): FontSize {
+  const loaded = loadRoot();
+  if (loaded.status !== 'ok') return initFontSize();
+  const size = fsOf(loaded.root.settings.fontSize);
+  applyFontSize(size);
+  return size;
 }

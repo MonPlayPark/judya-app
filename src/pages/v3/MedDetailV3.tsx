@@ -1,17 +1,19 @@
 // The v3 medicine detail screen (M4 PR 5b): one page, no tabs, no bottom menu. What to show comes from
 // `buildMedDetail` (src/domain/v3/medDetail.ts); MedDetailPage owns the data, the clock and saving. Stop / resume /
 // refill / open a tube change a copy of the data and hand it to `persist`; if saving fails the screen keeps the old data.
-import { useMemo, useState } from 'react';
-import { BackIcon, ChevronRightIcon, InfoIcon, PlayIcon, StopIcon } from '../../components/icons';
-import { ComingSoon } from '../../components/v3/ComingSoon';
+import { useEffect, useMemo, useState } from 'react';
+import { BackIcon, ChevronRightIcon, InfoIcon, PlayIcon, StopIcon, WarningIcon } from '../../components/icons';
 import { KindIcon } from '../../components/v3/KindIcon';
 import { EveningIcon, MorningIcon, NightIcon, NoonIcon } from '../../components/v3/PeriodIcons';
 import { Sheet } from '../../components/v3/Sheet';
 import { ExpiryPart, NumberField, OptionButton, sheetStyles as form } from '../../components/v3/sheetParts';
+import { takeFlash } from '../../components/v3/flash';
+import { PriceCard, PriceSheet } from '../../components/v3/PriceCard';
 import { Toast, useToast } from '../../components/v3/Toast';
 import type { IsoDate } from '../../domain/calc';
 import type { Period } from '../../domain/v3/home';
-import { resumeMedication, stopMedication } from '../../domain/v3/medActions';
+import { SIDE_EFFECTS_MAX, setSideEffects } from '../../domain/v3/allergy';
+import { defaultNewId, resumeMedication, stopMedication } from '../../domain/v3/medActions';
 import {
   applyRefill,
   buildMedDetail,
@@ -22,12 +24,13 @@ import {
   type HistoryRow,
   type RefillValues,
 } from '../../domain/v3/medDetail';
+import { subjectOfMedication } from '../../domain/v3/medPrices';
 import { RESUME_REASONS, RESUME_REASON_LABEL, STOP_REASONS, STOP_REASON_LABEL, type Root } from '../../domain/v3/schema';
 import { openNewTube } from '../../domain/v3/stock';
 import { avatarUrl, iconUrl } from '../../visual';
 import styles from './MedDetailV3.module.css';
 
-export type DetailSheet = 'refill' | 'stop' | 'resume' | 'history';
+export type DetailSheet = 'refill' | 'stop' | 'resume' | 'history' | 'edit' | 'effects';
 export type Persist = (root: Root) => { ok: true } | { ok: false; text: string };
 
 export interface MedDetailViewProps {
@@ -38,8 +41,14 @@ export interface MedDetailViewProps {
   persist: Persist;
   /** Where the back arrow goes (keeps `?demo=` in a demo). */
   listHref: string;
-  /** Test links only: `&sheet=refill|stop|resume|history`. */
+  /** The edit page of this medicine (keeps `?demo=` in a demo). */
+  editHref: string;
+  /** The change-how-to-take page of this medicine (keeps `?demo=` in a demo). Not offered for a stopped medicine. */
+  doseHref: string;
+  /** Test links only: `&sheet=refill|stop|resume|history|edit`. */
   initialSheet?: DetailSheet;
+  /** '' or '?demo=...': kept on the link to the allergy page (M4 PR 10). */
+  memberSuffix?: string;
   nowIso: () => string;
 }
 
@@ -67,7 +76,7 @@ export function MedDetailNotFound({ listHref }: { listHref: string }) {
   );
 }
 
-export function MedDetailView({ root: initialRoot, id, today, demo, persist, listHref, initialSheet, nowIso }: MedDetailViewProps) {
+export function MedDetailView({ root: initialRoot, id, today, demo, persist, listHref, editHref, doseHref, initialSheet, nowIso, memberSuffix = '' }: MedDetailViewProps) {
   const [root, setRoot] = useState(initialRoot);
   const [sheet, setSheet] = useState<DetailSheet | null>(() => {
     const d = buildMedDetail(initialRoot, id, today);
@@ -78,11 +87,30 @@ export function MedDetailView({ root: initialRoot, id, today, demo, persist, lis
     return initialSheet;
   });
   const [toast, showToast] = useToast();
+  // the edit page leaves one message here when it saves ("บันทึกการแก้ไขแล้ว")
+  useEffect(() => {
+    const t = takeFlash();
+    if (t) showToast(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [pageError, setPageError] = useState<string | null>(null);
+  const [priceShop, setPriceShop] = useState<string | null>(null);
   const d = useMemo(() => buildMedDetail(root, id, today), [root, id, today]);
   if (!d) return <MedDetailNotFound listHref={listHref} />;
 
   const stopped = d.status === 'stopped';
+  const medicationId = root.assignments.find((x) => x.id === id)?.medicationId;
+  const priceSubject = medicationId === undefined ? null : subjectOfMedication(root, medicationId);
+  /** Saves a changed price list (one `persist`); on success shows it, closes the price sheet and says `message`. */
+  const commitPrice = (next: Root, message: string): string | null => {
+    const res = persist(next);
+    if (!res.ok) return res.text;
+    setRoot(next);
+    setPageError(null);
+    setPriceShop(null);
+    showToast(message);
+    return null;
+  };
   const close = (): void => setSheet(null);
   /** Saves a new root; on success shows it, closes the sheet and says `message`. On failure nothing changes. */
   const commit = (next: Root, message: string): string | null => {
@@ -131,9 +159,9 @@ export function MedDetailView({ root: initialRoot, id, today, demo, persist, lis
         </a>
         <img className={styles.headIcon} src={iconUrl('nav-medicines')} alt="" />
         <h1 className={styles.title}>รายละเอียดยา</h1>
-        <ComingSoon className={styles.round} aria-label="แก้ไขยานี้">
+        <button type="button" className={styles.round} aria-label="แก้ไขยานี้" onClick={() => setSheet('edit')}>
           <MoreGlyph />
-        </ComingSoon>
+        </button>
       </header>
 
       <main className={styles.body}>
@@ -237,6 +265,9 @@ export function MedDetailView({ root: initialRoot, id, today, demo, persist, lis
           )}
         </section>
 
+        {/* ----- card: price per shop (optional; not shown for a stopped medicine) ----- */}
+        {!stopped && priceSubject && <PriceCard root={root} subject={priceSubject} onPick={setPriceShop} shopsHref="#/n/shops" />}
+
         {/* ----- card 4: history ----- */}
         <section className={styles.card} aria-labelledby="card-history">
           <div className={styles.cardHead}>
@@ -254,6 +285,27 @@ export function MedDetailView({ root: initialRoot, id, today, demo, persist, lis
           )}
         </section>
 
+        {/* ----- card: side effects the person noticed (M4 PR 10; a note, no MedEvent) ----- */}
+        <section className={styles.card} aria-labelledby="card-effects">
+          <div className={styles.cardHead}>
+            <h2 id="card-effects" className={styles.cardTitle}>
+              ผลข้างเคียงที่สังเกตได้ (ไม่บังคับ)
+            </h2>
+            <button type="button" className={styles.effectsEdit} onClick={() => setSheet('effects')}>
+              แก้
+            </button>
+          </div>
+          <p className={d.sideEffects === null ? `${styles.sub} ${styles.effectsText}` : `${styles.effectsText} ${styles.effectsValue}`}>{d.sideEffects ?? 'ยังไม่ได้บันทึก'}</p>
+        </section>
+
+        {/* ----- allergy stop: the way to the allergy page ----- */}
+        {d.allergyStop && (
+          <a className={styles.allergyLink} href={`#/n/members/${encodeURIComponent(d.allergyStop.personId)}/allergy?sheet=add&drug=${encodeURIComponent(d.allergyStop.drug)}&symptom=${encodeURIComponent(d.allergyStop.symptom)}${memberSuffix === '' ? '' : `&${memberSuffix.replace('?', '')}`}`}>
+            <WarningIcon />
+            {`บันทึกในหัวข้อการแพ้ยาของ${d.allergyStop.personName}`}
+          </a>
+        )}
+
         {stopped ? (
           <button type="button" className={styles.resume} onClick={() => setSheet('resume')}>
             <PlayIcon />
@@ -267,6 +319,42 @@ export function MedDetailView({ root: initialRoot, id, today, demo, persist, lis
         )}
       </main>
 
+      {sheet === 'edit' && (
+        <Sheet title="แก้ไขยานี้" onClose={close}>
+          <div className={form.body}>
+            <ul className={styles.editRows}>
+              <li>
+                <a className={styles.editRow} href={editHref}>
+                  <img className={styles.editIcon} src={iconUrl('rx-medicine')} alt="" />
+                  <span className={styles.editText}>
+                    <span className={styles.rowTitle}>แก้ข้อมูลที่ใส่ผิดหรือไม่ครบ</span>
+                    <span className={styles.sub}>ชื่อ ความแรง ขนาดบรรจุ จำนวนที่มี · ไม่ลงในประวัติการใช้ยา</span>
+                  </span>
+                  <ChevronRightIcon />
+                </a>
+              </li>
+              {!stopped && (
+                <li>
+                  <a className={styles.editRow} href={doseHref}>
+                    <img className={styles.editIcon} src={iconUrl('prepare-meds')} alt="" />
+                    <span className={styles.editText}>
+                      <span className={styles.rowTitle}>เปลี่ยนวิธีกิน (หมอสั่งใหม่)</span>
+                      <span className={styles.sub}>เวลา ขนาดที่กิน ความถี่ · ลงในประวัติการใช้ยา</span>
+                    </span>
+                    <ChevronRightIcon />
+                  </a>
+                </li>
+              )}
+            </ul>
+            <div className={form.actions}>
+              <button type="button" className={form.cancel} onClick={close}>
+                ปิด
+              </button>
+            </div>
+          </div>
+        </Sheet>
+      )}
+      {sheet === 'effects' && <EffectsSheet root={root} id={id} initial={d.sideEffects ?? ''} onClose={close} commit={commit} />}
       {sheet === 'refill' && <RefillSheet root={root} id={id} medName={d.strength ? `${d.name} ${d.strength}` : d.name} today={today} onClose={close} commit={commit} />}
       {sheet === 'stop' && <ReasonSheet kind="stop" root={root} id={id} today={today} nowIso={nowIso} onClose={close} commit={commit} />}
       {sheet === 'resume' && <ReasonSheet kind="resume" root={root} id={id} today={today} nowIso={nowIso} onClose={close} commit={commit} />}
@@ -281,6 +369,9 @@ export function MedDetailView({ root: initialRoot, id, today, demo, persist, lis
             </div>
           </div>
         </Sheet>
+      )}
+      {priceShop !== null && !stopped && priceSubject && (
+        <PriceSheet root={root} subject={priceSubject} shopId={priceShop} today={today} newId={defaultNewId} onClose={() => setPriceShop(null)} onSave={commitPrice} />
       )}
       <Toast text={toast} />
     </div>
@@ -315,6 +406,7 @@ function Timeline({ rows }: { rows: HistoryRow[] }) {
           <p className={styles.rowTitle}>{r.title}</p>
           {r.line1 && <p className={styles.sub}>{r.line1}</p>}
           {r.line2 && <p className={styles.sub}>{r.line2}</p>}
+          {r.line3 && <p className={styles.sub}>{r.line3}</p>}
         </li>
       ))}
     </ol>
@@ -449,6 +541,44 @@ function ReasonSheet({ kind, root, id, today, nowIso, onClose, commit }: { kind:
         <div className={form.actions}>
           <button type="button" className={isStop ? form.danger : form.primary} disabled={!ready} onClick={confirm}>
             {isStop ? 'ยืนยันหยุดยา' : 'ยืนยันกลับมากินยา'}
+          </button>
+          <button type="button" className={form.cancel} onClick={onClose}>
+            ยกเลิก
+          </button>
+        </div>
+      </div>
+    </Sheet>
+  );
+}
+
+function EffectsSheet({ root, id, initial, onClose, commit }: { root: Root; id: string; initial: string; onClose: () => void; commit: Commit }) {
+  const [text, setText] = useState(initial);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const save = (): void => {
+    const res = setSideEffects(root, id, text);
+    if (!res.ok) {
+      setSaveError(res.error);
+      return;
+    }
+    const err = commit(res.root, 'บันทึกแล้ว');
+    if (err) setSaveError(err);
+  };
+  return (
+    <Sheet title="ผลข้างเคียงที่สังเกตได้" subtitle="จดไว้เผื่อบอกแพทย์ ไม่ลงในประวัติการใช้ยา" onClose={onClose}>
+      <div className={form.body}>
+        <label className={styles.textLabel}>
+          <span className={form.label}>ผลข้างเคียง (ไม่บังคับ)</span>
+          <textarea className={`${form.textInput} ${styles.effectsInput}`} maxLength={SIDE_EFFECTS_MAX} value={text} onChange={(e) => setText(e.target.value)} />
+        </label>
+        <p className={`${form.hint} ${styles.counter}`}>{`${text.length}/${SIDE_EFFECTS_MAX}`}</p>
+        {saveError && (
+          <p className={form.error} role="alert">
+            {saveError}
+          </p>
+        )}
+        <div className={form.actions}>
+          <button type="button" className={form.primary} onClick={save}>
+            บันทึก
           </button>
           <button type="button" className={form.cancel} onClick={onClose}>
             ยกเลิก

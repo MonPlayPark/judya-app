@@ -5,7 +5,8 @@ import { DEMO_TODAY } from './homeDemo';
 import { buildMedsList } from './medsList';
 import { medsDemoRoot } from './medsListDemo';
 import { type Assignment, type Root } from './schema';
-import { tubeLevel } from './stock';
+import { careItems } from './home';
+import { isLowStock, tubeLevel } from './stock';
 
 describe('tubeLevel', () => {
   it.each([
@@ -72,5 +73,31 @@ describe('the list follows the same rule as the detail page for creams', () => {
     };
     expect(creamRow(dropsRoot)?.chip.label).toBe('ใกล้หมด');
     expect(creamRow(dropsRoot)?.leftText).toBe('สำรอง 0 ขวด');
+  });
+});
+
+describe('creams / drops on the Home care list (11.6)', () => {
+  const careOfCream = (root: Root) => careItems(root, DEMO_TODAY).find((c) => c.key === 'a:a9');
+  it.each([
+    [true, 0, 'low', 'ใกล้หมด'], // opened, no spare
+    [false, 0, 'out', 'หมด'], // nothing at all
+  ] as const)('opened %s, spare %s -> %s with the list chip word "%s"', (opened, spare, kind, chip) => {
+    const item = careOfCream(withTube(opened, spare));
+    expect(item).toMatchObject({ kind, chip });
+  });
+  it.each([
+    [true, 1],
+    [false, 2],
+  ] as const)('opened %s, spare %s is not listed', (opened, spare) => {
+    expect(careOfCream(withTube(opened, spare))).toBeUndefined();
+  });
+  it('an uncounted cream (no stock) is not listed', () => {
+    expect(careOfCream(withTube(true, 0, { stock: null }))).toBeUndefined();
+  });
+  it('isLowStock itself is unchanged for tubes', () => {
+    const root = withTube(true, 0);
+    const a = root.assignments.find((x) => x.id === 'a9')!;
+    const m = root.medications.find((x) => x.id === a.medicationId)!;
+    expect(isLowStock(a, m, DEMO_TODAY, root.settings.lowStockDays, root.events)).toBe(false);
   });
 });

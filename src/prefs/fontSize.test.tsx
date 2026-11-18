@@ -3,11 +3,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   DEFAULT_FONT_SIZE,
   FONT_SIZE_KEY,
+  applyFontSize,
   initFontSize,
+  initFontSizeFromHouse,
   readFontSize,
   useFontSize,
   writeFontSize,
 } from './fontSize';
+import { blankRootV3 } from '../domain/v3/fixtures';
+import { saveRoot } from '../domain/v3/storage';
 
 beforeEach(() => {
   window.localStorage.clear();
@@ -71,5 +75,30 @@ describe('font size preference', () => {
     expect(result.current[0]).toBe('l');
     expect(window.localStorage.getItem(FONT_SIZE_KEY)).toBe('l');
     expect(document.documentElement.dataset.fs).toBe('l');
+  });
+});
+
+describe('font size from the saved house (M4 PR 14)', () => {
+  const rootWith = (fontSize: 'normal' | 'medium' | 'large') => {
+    const r = blankRootV3();
+    return { ...r, settings: { ...r.settings, fontSize } };
+  };
+  it('a readable house decides the size at start, over the old key', () => {
+    window.localStorage.setItem(FONT_SIZE_KEY, 'n');
+    expect(saveRoot(rootWith('large')).ok).toBe(true);
+    expect(initFontSizeFromHouse()).toBe('l');
+    expect(document.documentElement.dataset.fs).toBe('l');
+    window.localStorage.clear();
+  });
+  it('with no house (or one that cannot be read) the old behaviour stays', () => {
+    window.localStorage.setItem(FONT_SIZE_KEY, 'm');
+    expect(initFontSizeFromHouse()).toBe('m');
+    window.localStorage.setItem('judya.v3', '{broken');
+    expect(initFontSizeFromHouse()).toBe('m');
+    window.localStorage.clear();
+  });
+  it('applying a size never writes the old key', () => {
+    applyFontSize('l');
+    expect(window.localStorage.getItem(FONT_SIZE_KEY)).toBeNull();
   });
 });

@@ -80,10 +80,10 @@ describe('the save button', () => {
     expect(save()).toBeDisabled();
     expect(screen.getByText('พิมพ์ชื่อก่อน')).toBeInTheDocument();
   });
-  it('a wrong birth year blocks it too; empty is fine', () => {
+  it('a wrong 4-digit birth year blocks it too; empty is fine', () => {
     open('?demo=nomember');
     fill();
-    typeYear('25');
+    typeYear('1999');
     expect(save()).toBeDisabled();
     expect(screen.getByText('แก้ปีเกิดให้ถูกต้องก่อน')).toBeInTheDocument();
     typeYear('');
@@ -106,6 +106,49 @@ describe('birth year', () => {
     expect(note()).toHaveTextContent('ปีเกิดต้องเป็น');
     typeYear('2400');
     expect(note()).toHaveTextContent(`อายุ ${maxBirthYearBE() - 2400} ปี`);
+  });
+  describe('the error is red only when it is time (d5)', () => {
+    const input = () => screen.getByLabelText('ปีเกิด (พ.ศ.)');
+    const note = () => document.getElementById('mf-year-note');
+    const neutral = () => {
+      expect(input()).not.toHaveAttribute('aria-invalid', 'true');
+      expect(input().className).not.toMatch(/inputError/);
+      expect(note()?.className).not.toMatch(/hintError/);
+      expect(note()?.querySelector('svg')).toBeNull();
+    };
+    const red = () => {
+      expect(input()).toHaveAttribute('aria-invalid', 'true');
+      expect(input().className).toMatch(/inputError/);
+      expect(note()?.className).toMatch(/hintError/);
+      expect(note()?.querySelector('svg')).not.toBeNull();
+    };
+    it.each(['2', '250'])('"%s" (fewer than 4 digits) stays neutral', (v) => {
+      open('?demo=nomember');
+      typeYear(v);
+      neutral();
+    });
+    it('2400 is fine, 1999 is red', () => {
+      open('?demo=nomember');
+      typeYear('2400');
+      neutral();
+      expect(note()).toHaveTextContent('อายุ');
+      typeYear('1999');
+      red();
+    });
+    it('pressing save with "25" turns it red and does not save', () => {
+      const store = memoryStore();
+      open('?', store);
+      fill();
+      typeYear('25');
+      neutral();
+      expect(save()).toBeEnabled();
+      fireEvent.click(save());
+      red();
+      expect(store.data[STORAGE_KEY]).toBeUndefined();
+      expect(screen.queryByText('บันทึกแล้ว')).toBeNull();
+      typeYear('2503');
+      neutral();
+    });
   });
   it('keeps digits only, at most 4', () => {
     open('?demo=nomember');

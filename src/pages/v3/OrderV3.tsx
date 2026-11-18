@@ -20,8 +20,10 @@ import { recipientOf, withRecipient } from '../../domain/v3/recipient';
 import type { MedKind, Root } from '../../domain/v3/schema';
 import { useRoute } from '../../router';
 import { cancelOrder, reorderLines, reorderMessage } from '../../domain/v3/orderHistory';
+import { dropRest } from '../../domain/v3/orderReceive';
 import { OrderBook } from './OrderBook';
 import { OrderHistory, type CancelOutcome } from './OrderHistory';
+import { ReceiveScreen, type AddItem } from './OrderReceive';
 import { OrderCompare, type PriceOutcome } from './OrderCompare';
 import { OrderMessage, type PickedShop, type SaveOutcome } from './OrderMessage';
 import { AddItemSheet, UnitSheet, type AddTab } from './OrderSheets';
@@ -64,12 +66,17 @@ const CartGlyph = () => (
 );
 const REASON_ICON: Record<DraftReason, () => JSX.Element> = { low: WarningIcon, unknown: InfoIcon, typed: PlusIcon, manual: CheckCircleIcon, repeat: ClockIcon };
 
-/** The hash of the order page with the same test-link options (?demo=…) and `screen` set (history) or removed (the order list). The history is the
- * same route with `?screen=history`, so the page stays mounted: the ticked lines are kept, and the phone's back button comes back from it. */
-function orderHash(query: URLSearchParams, view: 'order' | 'history'): string {
+/** The hash of the order page with the same test-link options (?demo=…) and `screen` set (history, or receiving one order: `screen=receive&order=<id>`) or
+ * removed (the order list). The history and the receiving screen are the same route, so the page stays mounted: the ticked lines are kept, and the
+ * phone's back button comes back from them. */
+function orderHash(query: URLSearchParams, view: 'order' | 'history' | 'receive', orderId?: string): string {
   const q = new URLSearchParams(query);
+  q.delete('order');
   if (view === 'history') q.set('screen', 'history');
-  else q.delete('screen');
+  else if (view === 'receive' && orderId !== undefined) {
+    q.set('screen', 'receive');
+    q.set('order', orderId);
+  } else q.delete('screen');
   const text = q.toString();
   return `#/n/order${text ? `?${text}` : ''}`;
 }
@@ -119,7 +126,11 @@ export function OrderView({ root: first, today, demo, initial, persist, newId = 
   });
   const [toast, showToast] = useToast();
   const { query } = useRoute();
-  const view = query.get('screen') === 'history' ? 'history' : 'order';
+  const screenParam = query.get('screen');
+  const receiving = screenParam === 'receive' ? root.orders.find((o) => o.id === query.get('order') && (o.status === 'waiting' || o.status === 'partial')) : undefined;
+  const view: 'order' | 'history' | 'receive' = receiving ? 'receive' : screenParam === 'history' || screenParam === 'receive' ? 'history' : 'order';
+  const [barHost, setBarHost] = useState<HTMLDivElement | null>(null); // the receiving screen puts its bar in the dock
+  const [addAsk, setAddAsk] = useState<AddItem[] | null>(null);
   const dockRef = useRef<HTMLDivElement>(null);
   useToastAbove(dockRef); // every floating message floats above the dock: the bar and the menu on the list, the menu alone on the history
   const [includeShipping, setIncludeShipping] = useState(!initial?.noShipping);
@@ -220,6 +231,35 @@ export function OrderView({ root: first, today, demo, initial, persist, newId = 
     return { ok: true };
   };
 
+  /** Receiving: the screen hands the new root; ONE write; the toast is the screen's. The order page's lines lose the "สั่งแล้ว รอรับ" badge of orders that are closed now (`clearOnOrder`, as after a cancel). */
+  const receive = (next: Root, toast: string): { ok: true } | { ok: false; text: string } => {
+    const res = commit(next);
+    if (!res.ok) return res;
+    setLines((all) => clearOnOrder(all, next, today));
+    showToast(toast);
+    return { ok: true };
+  };
+  /** "ไม่รอแล้ว": drops what is still waited for; ONE write. */
+  const dropOrder = (orderId: string): { ok: true } | { ok: false; text: string } => {
+    const made = dropRest(root, orderId, nowIso());
+    if (!made.ok) return { ok: false, text: made.error };
+    const res = commit(made.root);
+    if (!res.ok) return res;
+    setLines((all) => clearOnOrder(all, made.root, today));
+    showToast('ปิดใบสั่ง ไม่รอของที่เหลือแล้ว');
+    return { ok: true };
+  };
+  /** After a good save: typed medicines ticked "เพิ่มเข้ารายการยา" and arrived. One goes straight to the add-medicine page (filled in); more than one
+   * stay on the history, which lists them in a sheet. Then, or with none, the history opens (pill "ทั้งหมด"). */
+  const afterReceive = (adds: AddItem[]): void => {
+    if (adds.length === 1) {
+      window.location.hash = adds[0]!.href;
+      return;
+    }
+    setAddAsk(adds.length > 1 ? adds : null);
+    window.location.hash = orderHash(query, 'history');
+  };
+
   const update = (key: string, fn: (l: DraftLine) => DraftLine): void => setLines((all) => all.map((l) => (l.key === key ? fn(l) : l)));
   const unitLine = sheet?.kind === 'unit' ? lines.find((l) => l.key === sheet.key) : undefined;
 
@@ -233,11 +273,15 @@ export function OrderView({ root: first, today, demo, initial, persist, newId = 
       )}
 
       <header className={styles.head}>
-        <a className={styles.round} href={view === 'history' ? orderHash(query, 'order') : '#/n'} aria-label={view === 'history' ? 'กลับหน้าสั่งซื้อยา' : 'กลับหน้าหลัก'}>
+        <a
+          className={styles.round}
+          href={view === 'receive' ? orderHash(query, 'history') : view === 'history' ? orderHash(query, 'order') : '#/n'}
+          aria-label={view === 'receive' ? 'กลับหน้าประวัติ' : view === 'history' ? 'กลับหน้าสั่งซื้อยา' : 'กลับหน้าหลัก'}
+        >
           <BackIcon />
         </a>
         <span className={styles.cart}>{view === 'history' ? <ClockIcon /> : <CartGlyph />}</span>
-        <h1 className={styles.title}>{view === 'history' ? 'ประวัติการสั่งยา' : 'สั่งซื้อยา'}</h1>
+        <h1 className={styles.title}>{view === 'receive' ? 'รับของแล้ว' : view === 'history' ? 'ประวัติการสั่งยา' : 'สั่งซื้อยา'}</h1>
         {view === 'order' && (
           <a className={`${styles.round} ${styles.historyButton}`} href={orderHash(query, 'history')} aria-label="ประวัติการสั่งซื้อ">
             <ClockIcon />
@@ -247,8 +291,33 @@ export function OrderView({ root: first, today, demo, initial, persist, newId = 
 
       {view === 'history' && (
         <main className={styles.body}>
-          <OrderHistory root={root} onAgain={again} onCancel={cancel} />
+          <OrderHistory
+            root={root}
+            onReceive={(id) => {
+              window.location.hash = orderHash(query, 'receive', id);
+            }}
+            addAsk={addAsk}
+            onCloseAddAsk={() => setAddAsk(null)}
+            onAgain={again}
+            onCancel={cancel}
+            onDrop={dropOrder}
+          />
         </main>
+      )}
+
+      {receiving && (
+        <ReceiveScreen
+          key={receiving.id}
+          root={root}
+          order={receiving}
+          today={today}
+          nowIso={nowIso}
+          newId={newId}
+          demo={demo ? query.get('demo') : null}
+          barHost={barHost}
+          onSave={receive}
+          onDone={afterReceive}
+        />
       )}
 
       {view === 'order' && <main className={styles.body}>
@@ -329,7 +398,7 @@ export function OrderView({ root: first, today, demo, initial, persist, newId = 
         </button>
       </div>
       )}
-      <V3Nav current="home" />
+      {view === 'receive' ? <div ref={setBarHost} /> : <V3Nav current="home" />}
       </div>
 
       {view === 'order' && sheet?.kind === 'add' && (

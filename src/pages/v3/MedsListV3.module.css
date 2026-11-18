@@ -364,6 +364,21 @@
 .orderButton > :first-child {
   gap: 8px;
 }
+.orderLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 0 12px;
+  text-align: center;
+  text-decoration: none;
+  gap: 8px;
+}
+.orderLink > :first-child {
+  flex: none;
+  width: 22px;
+  height: 22px;
+}
 .foldAction {
   flex: none;
   min-height: 44px;

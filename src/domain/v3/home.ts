@@ -5,7 +5,7 @@ import { diffDays, expiryStatus, type IsoDate } from '../calc';
 import { backupBanner, bangkokDate } from './backup';
 import { dosesOn } from './schedule';
 import type { Assignment, HouseItem, Medication, Person, Root, Schedule } from './schema';
-import { daysLeft, houseStatus, isLowStock } from './stock';
+import { daysLeft, houseStatus, isLowStock, tubeLevel } from './stock';
 import { formatDaysLeft, unitFor } from './stockText';
 
 export type Period = 'morning' | 'noon' | 'evening' | 'bedtime';
@@ -55,6 +55,9 @@ export function formatAmount(n: number): string {
   const whole = Math.floor(n);
   return n - whole === 0.5 ? `${whole > 0 ? whole : ''}½` : String(n);
 }
+
+/** A dose or an amount of one medicine: liquids are plain decimals ('7.5'), everything else uses the half sign ('1½'). */
+export const formatDose = (m: Pick<Medication, 'kind'>, n: number): string => (m.kind === 'liquid' ? String(n) : formatAmount(n));
 
 /** Name with the strength next to it: 'ยาตัวอย่าง A 500 mg', 'ยาตัวอย่าง D 1%'. */
 export function medicineLabel(m: Medication): string {
@@ -121,7 +124,7 @@ function rowsOfAssignment(a: Assignment, m: Medication, today: IsoDate, done: Re
         key,
         period,
         periodLabel: PERIOD_LABEL[period],
-        amountText: `${formatAmount(schedule.pills)} ${unit}`,
+        amountText: `${formatDose(m, schedule.pills)} ${unit}`,
         extra: `ทุก ${schedule.everyHours} ชั่วโมง`,
         done: done[key] === true,
         sort: [PERIODS.indexOf(period), INTERVAL_MEAL_RANK, time, name],
@@ -139,7 +142,7 @@ function rowsOfAssignment(a: Assignment, m: Medication, today: IsoDate, done: Re
       key,
       period,
       periodLabel: PERIOD_LABEL[period],
-      amountText: `${formatAmount(slot.pills)} ${unit}`,
+      amountText: `${formatDose(m, slot.pills)} ${unit}`,
       extra: meal ? MEAL_LABEL[meal] : null,
       done: done[key] === true,
       sort: [PERIODS.indexOf(period), meal ? MEAL_RANK[meal] : 0, '', name],
@@ -254,6 +257,11 @@ function careOfAssignment(a: Assignment, root: Root, today: IsoDate): CareItem |
   if (expiry.status === 'expired') {
     return { ...base, kind: 'expired', reason: CARE_REASON.expired, chip: 'เลิกใช้', sortDays: a.expiry ? diffDays(today, a.expiry) : 0 };
   }
+  // cream / drops counted in tubes: the owner's rule from `tubeLevel` (the same words as the medicine list); isLowStock stays as it is
+  const tubes = daysLeft(a, m, today, root.events);
+  const level = tubes.status === 'tubes' ? tubeLevel(tubes) : null;
+  if (level === 'out') return { ...base, kind: 'out', reason: CARE_REASON.out, chip: 'หมด', sortDays: 0 };
+  if (level === 'low') return { ...base, kind: 'low', reason: CARE_REASON.low, chip: 'ใกล้หมด', sortDays: 0 };
   if (isLowStock(a, m, today, root.settings.lowStockDays, root.events)) {
     const d = daysLeft(a, m, today, root.events);
     return { ...base, kind: 'low', reason: CARE_REASON.low, chip: formatDaysLeft(d, unitFor(a.schedule)), sortDays: d.status === 'ok' ? d.days : 0 };
@@ -283,7 +291,7 @@ function careOfHouse(h: HouseItem, root: Root, today: IsoDate): CareItem | null 
 }
 
 /** Medicines that need care, worst first: expired, out, low stock, expiring soon (fewest days first). A medicine is
- * listed once, under its worst problem. Cream / drops are not warned about low stock yet (stock.ts decides).
+ * listed once, under its worst problem. Cream / drops counted in tubes are listed when `tubeLevel` is low or out.
  * Stopped medicines and removed members are left out. */
 export function careItems(root: Root, today: IsoDate): CareItem[] {
   const items: CareItem[] = [];

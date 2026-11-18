@@ -1,7 +1,10 @@
 // The v3 Home screen (M4 PR 4): view only. All decisions come from `buildHome` (src/domain/v3/home.ts); the page that
 // owns the data and the clock is HomeV3Page. Places with no destination yet use <ComingSoon>.
-import { CheckIcon, WarningIcon, InfoIcon, PlusIcon } from '../../components/icons';
-import { ComingSoon } from '../../components/v3/ComingSoon';
+import { useState } from 'react';
+import { useRoute } from '../../router';
+import { Sheet } from '../../components/v3/Sheet';
+import type { DoctorPerson } from '../../domain/v3/doctorSummary';
+import { CheckIcon, ChevronRightIcon, WarningIcon, InfoIcon, PlusIcon } from '../../components/icons';
 import { EveningIcon, MorningIcon, NightIcon, NoonIcon } from '../../components/v3/PeriodIcons';
 import { V3Nav } from '../../components/v3/V3Nav';
 import { PERIOD_LABEL, type CareItem, type DoseRow, type HomeModel, type Period } from '../../domain/v3/home';
@@ -14,6 +17,8 @@ export interface HomeViewProps {
   demo: boolean;
   /** Readable text when the last tick could not be saved; null = nothing to report. */
   saveError: string | null;
+  /** The members of the "แชร์ให้แพทย์" tile (from the house). */
+  doctorPeople?: readonly DoctorPerson[];
   onPick: (personId: string) => void;
   onToggle: (key: string) => void;
   /** '' or '?demo=...' added to links, so a demo stays a demo on the next page. */
@@ -30,7 +35,7 @@ const PERIOD_ICON: Record<Period, (p: { size?: number }) => JSX.Element> = {
 /** The brand mark only (no word): public/icons/judya-mark.svg. */
 const LOGO_URL = `${import.meta.env.BASE_URL}icons/judya-mark.svg`;
 
-export function HomeView({ model, demo, saveError, onPick, onToggle, linkSuffix = '' }: HomeViewProps) {
+export function HomeView({ model, demo, saveError, doctorPeople = [], onPick, onToggle, linkSuffix = '' }: HomeViewProps) {
   const addMemberHref = `#/n/members/new${linkSuffix}`;
   const m = model;
   const hero = m.headline.done ? `${styles.hero} ${styles.heroDone}` : styles.hero;
@@ -80,10 +85,10 @@ export function HomeView({ model, demo, saveError, onPick, onToggle, linkSuffix 
           </p>
         )}
         {m.state !== 'ready' && <StartCard model={m} addMemberHref={addMemberHref} addMedHref={`#/n/meds/new${linkSuffix}`} />}
-        {m.showMembers && <MembersCard model={m} onPick={onPick} addMemberHref={addMemberHref} />}
+        {m.showMembers && <MembersCard model={m} onPick={onPick} addMemberHref={addMemberHref} manageHref={`#/n/members${linkSuffix}`} />}
         {m.showToday && <TodayCard model={m} onToggle={onToggle} />}
         {m.care.length > 0 && <CareCard model={m} />}
-        {m.showTiles && <Shortcuts />}
+        {m.showTiles && <Shortcuts people={doctorPeople} linkSuffix={linkSuffix} />}
       </main>
 
       <V3Nav current="home" />
@@ -144,16 +149,17 @@ function StartCard({ model, addMemberHref, addMedHref }: { model: HomeModel; add
   );
 }
 
-function MembersCard({ model, onPick, addMemberHref }: { model: HomeModel; onPick: (id: string) => void; addMemberHref: string }) {
+function MembersCard({ model, onPick, addMemberHref, manageHref }: { model: HomeModel; onPick: (id: string) => void; addMemberHref: string; manageHref: string }) {
   return (
     <section className={`${styles.card} ${styles.cardMembers}`} aria-labelledby="members-h">
       <div className={styles.cardHead}>
         <h2 id="members-h" className={styles.headingInline}>
           สมาชิกในครอบครัว
         </h2>
-        <ComingSoon className={styles.manage} badgeClassName={styles.manageBadge}>
+        <a className={styles.manage} href={manageHref}>
           จัดการ
-        </ComingSoon>
+          <ChevronRightIcon />
+        </a>
       </div>
       <div className={styles.members}>
         {model.members.map((c) => {
@@ -249,10 +255,10 @@ function CareCard({ model }: { model: HomeModel }) {
         <CareLine key={c.key} item={c} />
       ))}
       {model.careMore > 0 && <p className={styles.more}>และอีก {model.careMore} รายการ</p>}
-      <ComingSoon className={styles.orderButton} badgeClassName={styles.orderBadge}>
+      <a href="#/n/order" className={`${styles.orderButton} ${styles.orderLink}`}>
         <img className={styles.orderIcon} src={iconUrl('order')} alt="" />
         สั่งยา
-      </ComingSoon>
+      </a>
     </section>
   );
 }
@@ -275,29 +281,82 @@ function CareLine({ item }: { item: CareItem }) {
   );
 }
 
-function Shortcuts() {
+function Shortcuts({ people, linkSuffix }: { people: readonly DoctorPerson[]; linkSuffix: string }) {
   return (
     <div className={styles.tiles}>
-      <Tile icon="order" title="สั่งซื้อยา" sub="เปรียบเทียบราคา" />
-      <Tile icon="share-doctor" title="แชร์ให้แพทย์" sub="สรุปข้อมูลยา" />
+      <OrderTile />
+      <DoctorTile people={people} linkSuffix={linkSuffix} />
       <MedsTile />
     </div>
   );
 }
 
-function Tile({ icon, title, sub }: { icon: 'order' | 'share-doctor'; title: string; sub: string }) {
-  return (
-    <ComingSoon className={styles.tile} badgeClassName={styles.tileBadge}>
-      <img className={styles.tileIcon} src={iconUrl(icon)} alt="" />
+const summaryHref = (id: string, linkSuffix: string): string => `#/n/members/${encodeURIComponent(id)}/summary${linkSuffix}`;
+
+/** "แชร์ให้แพทย์" (M4 PR 15a, owner decision d6): no member = link to add one; one member = straight to the summary; more = a sheet "สรุปยาของใคร".
+ * `?sheet=doctor` opens the sheet (test link). */
+function DoctorTile({ people, linkSuffix }: { people: readonly DoctorPerson[]; linkSuffix: string }) {
+  const { query } = useRoute();
+  const [open, setOpen] = useState(query.get('sheet') === 'doctor');
+  const body = (
+    <>
+      <img className={styles.tileIcon} src={iconUrl('share-doctor')} alt="" />
       <span className={styles.tileText}>
-        <span className={styles.tileTitle}>{title}</span>
-        <span className={styles.tileSub}>{sub}</span>
+        <span className={styles.tileTitle}>แชร์ให้แพทย์</span>
+        <span className={styles.tileSub}>สรุปข้อมูลยา</span>
       </span>
-    </ComingSoon>
+    </>
+  );
+  const only = people.length === 1 ? people[0] : undefined;
+  if (people.length <= 1) {
+    const href = only ? summaryHref(only.id, linkSuffix) : `#/n/members/new${linkSuffix}`;
+    return (
+      <a href={href} className={`${styles.tile} ${styles.tileLink}`}>
+        {body}
+      </a>
+    );
+  }
+  return (
+    <>
+      <button type="button" className={`${styles.tile} ${styles.tileLink} ${styles.tileButton}`} onClick={() => setOpen(true)}>
+        {body}
+      </button>
+      {open && (
+        <Sheet title="สรุปยาของใคร" onClose={() => setOpen(false)} closeButton>
+          <ul className={styles.pickList}>
+            {people.map((p) => (
+              <li key={p.id}>
+                <a className={styles.pickRow} href={summaryHref(p.id, linkSuffix)}>
+                  <img className={styles.pickAvatar} src={avatarUrl(p.avatar)} alt="" />
+                  <span className={styles.pickText}>
+                    <span className={styles.pickName}>{p.name}</span>
+                    <span className={styles.pickSub}>{p.medText}</span>
+                  </span>
+                  <ChevronRightIcon />
+                </a>
+              </li>
+            ))}
+          </ul>
+        </Sheet>
+      )}
+    </>
   );
 }
 
-/** The only shortcut with a page so far: a real link to the medicine list (same card look, no "coming soon" badge). */
+/** A real link to the order page (same card look as the other tiles, no "coming soon"). */
+function OrderTile() {
+  return (
+    <a href="#/n/order" className={`${styles.tile} ${styles.tileLink}`}>
+      <img className={styles.tileIcon} src={iconUrl('order')} alt="" />
+      <span className={styles.tileText}>
+        <span className={styles.tileTitle}>สั่งซื้อยา</span>
+        <span className={styles.tileSub}>เปรียบเทียบราคา</span>
+      </span>
+    </a>
+  );
+}
+
+/** A shortcut with a page: a real link to the medicine list: a real link to the medicine list (same card look, no "coming soon" badge). */
 function MedsTile() {
   return (
     <a href="#/n/meds" className={`${styles.tile} ${styles.tileWide} ${styles.tileLink}`}>

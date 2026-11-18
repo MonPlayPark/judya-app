@@ -6,7 +6,9 @@ import { blankRootV3, NOW } from './fixtures';
 import type { Assignment, HouseItem, Medication, MedEvent, Person, Root, Schedule } from './schema';
 
 // cream / notdaily / stopped are for the detail page (#/n/meds/:id?demo=...): the normal house plus what that view needs.
-export const MEDS_DEMO_NAMES = ['normal', 'nomember', 'nomeds', 'nohouse', 'cream', 'notdaily', 'stopped'] as const;
+// members: the members tab (PR 9): five people (one manages their own medicine, one has no medicine, one was taken out).
+// dose: the normal house plus what the dose-change page needs (a syrup, 4 meals, a low stock, an every-N-hours medicine, a cream, chosen days).
+export const MEDS_DEMO_NAMES = ['normal', 'nomember', 'nomeds', 'nohouse', 'cream', 'notdaily', 'stopped', 'dose', 'price', 'members'] as const;
 export type MedsDemoName = (typeof MEDS_DEMO_NAMES)[number];
 
 export const isMedsDemoName = (v: string | null): v is MedsDemoName => v !== null && (MEDS_DEMO_NAMES as readonly string[]).includes(v);
@@ -23,6 +25,24 @@ const MORNING_EVENING = meal('morning', 'evening');
 const PERSONS: Person[] = [
   { id: 'p1', name: 'คุณพ่อ', relation: 'พ่อ', avatar: 'avatar-01', color: 'blue', selfManaged: false, allergies: { status: 'unknown' } },
   { id: 'p2', name: 'คุณแม่', relation: 'แม่', avatar: 'avatar-02', color: 'green', selfManaged: false, allergies: { status: 'unknown' } },
+];
+
+/** p1 and p2 own the medicines of the normal house; p3 manages their own medicine and has none here; p4 has no birth year and no medicine; p5 was taken out. */
+const MEMBERS_DEMO_PERSONS: Person[] = [
+  { ...PERSONS[0]!, birthYearBE: 2498 },
+  { ...PERSONS[1]!, birthYearBE: 2503, allergies: { status: 'none_confirmed', confirmedAt: '2026-10-20' }, coverage: { type: 'private', company: 'บริษัทประกันตัวอย่างชื่อยาวมากสำหรับทดสอบการตัดบรรทัด' } },
+  {
+    id: 'p3', name: 'พี่ชาย', relation: 'ลูก', birthYearBE: 2540, avatar: 'avatar-03', color: 'yellow', selfManaged: true,
+    allergies: {
+      status: 'listed',
+      items: [
+        { drug: 'ยาตัวอย่างสำหรับทดสอบชื่อยาที่ยาวมากเกือบหกสิบตัวอักษรพอดี', reaction: 'ผื่นคันตามตัวและหายใจไม่สะดวกมากในช่วงสองชั่วโมงหลังกินยา ต้องไปห้องฉุกเฉินตามที่หมอแจ้งไว้ในครั้งก่อน' },
+        { drug: 'ยาตัวอย่าง Z', reaction: 'ผื่นตัวอย่าง' },
+      ],
+    },
+  },
+  { id: 'p4', name: 'คุณลุง', relation: 'ญาติ', avatar: 'avatar-04', color: 'gray', selfManaged: false, allergies: { status: 'unknown' }, coverage: { type: 'social' } },
+  { id: 'p5', name: 'คุณยาย', relation: 'ญาติ', birthYearBE: 2480, avatar: 'avatar-05', color: 'blue', selfManaged: false, allergies: { status: 'unknown' }, removedAt: '2026-10-03T10:00:00+07:00' },
 ];
 
 const tablet = (id: string, name: string, value: number, unit: 'mg' | 'IU'): Medication => ({ id, name, kind: 'tablet', strength: { value, unit }, pack: { type: 'none' } });
@@ -76,6 +96,23 @@ const MON_WED_FRI: Schedule = { kind: 'meal', slots: { morning: { pills: 1, meal
 const CREAM: Assignment = { id: 'a9', medicationId: 'm8', personId: 'p1', schedule: MORNING, stock: { kind: 'tubes', opened: true, spare: 2 }, status: 'active', createdAt: NOW };
 const NOT_DAILY: Assignment = { id: 'a10', medicationId: 'm9', personId: 'p2', schedule: MON_WED_FRI, stock: { kind: 'count', strips: 0, loose: 30, countedOn: DEMO_TODAY }, status: 'active', createdAt: NOW };
 
+// extra medicines for the dose-change page (demo "dose"): a syrup counted in ml, four meals a day, a low stock, and a medicine every 8 hours
+const DOSE_MEDICATIONS: Medication[] = [
+  { id: 'm10', name: 'Ambroxol', kind: 'liquid', strength: { value: 15, unit: 'mg/5 ml' }, pack: { type: 'container', amount: 100, unit: 'ml' } },
+  tablet('m11', 'Calcium', 600, 'mg'),
+  tablet('m12', 'Omega3', 1000, 'mg'),
+  tablet('m13', 'Cetirizine', 10, 'mg'),
+];
+const FOUR_MEALS: Schedule = { kind: 'meal', slots: { morning: { pills: 1, meal: 'after' }, noon: { pills: 1, meal: 'after' }, evening: { pills: 1, meal: 'after' }, bedtime: { pills: 1 } }, days: { kind: 'daily' } };
+const SYRUP: Schedule = { kind: 'meal', slots: { morning: { pills: 5, meal: 'after' }, evening: { pills: 5, meal: 'after' } }, days: { kind: 'daily' } };
+const EVERY_8H: Schedule = { kind: 'interval', everyHours: 8, firstTime: '08:00', pills: 1, course: { kind: 'ongoing' } };
+const DOSE_ASSIGNMENTS: Assignment[] = [
+  { id: 'a11', medicationId: 'm10', personId: 'p1', schedule: SYRUP, stock: { kind: 'volume', ml: 240, countedOn: DEMO_TODAY }, status: 'active', createdAt: NOW },
+  lasting(12, 'm11', 'p1', FOUR_MEALS, 30, 4),
+  lasting(13, 'm12', 'p2', MORNING_EVENING, 20, 2), // 40 pills, 2 a day: raising one dose by 1 leaves 13 days (low)
+  { id: 'a14', medicationId: 'm13', personId: 'p1', schedule: EVERY_8H, stock: { kind: 'count', strips: 0, loose: 60, countedOn: DEMO_TODAY }, status: 'active', createdAt: NOW },
+];
+
 const HOUSE: HouseItem[] = [
   { id: 'h1', name: 'ยาดมแก้วิงเวียน', kind: 'other', stock: { qty: 0, unit: 'อัน' } },
   { id: 'h2', name: 'ยาธาตุน้ำขาว', kind: 'liquid', stock: { qty: 1, unit: 'ขวด' }, expiry: '2026-09-30' },
@@ -100,6 +137,42 @@ export function medsDemoRoot(name: MedsDemoName): Root {
       return { ...blank, persons: PERSONS, medications: MEDICATIONS, assignments: ASSIGNMENTS, events: EVENTS, houseItems: HOUSE };
     case 'cream':
       return { ...blank, persons: PERSONS, medications: [...MEDICATIONS, ...EXTRA_MEDICATIONS], assignments: [...ASSIGNMENTS, CREAM], events: [...EVENTS, start(CREAM)], houseItems: HOUSE };
+    case 'dose': {
+      const assignments = [...ASSIGNMENTS, CREAM, NOT_DAILY, ...DOSE_ASSIGNMENTS];
+      return {
+        ...blank,
+        persons: PERSONS,
+        medications: [...MEDICATIONS, ...EXTRA_MEDICATIONS, ...DOSE_MEDICATIONS],
+        assignments,
+        events: [...EVENTS, start(CREAM), start(NOT_DAILY), ...DOSE_ASSIGNMENTS.map((a) => start(a))],
+        houseItems: HOUSE,
+      };
+    }
+    case 'price': {
+      // the cream house plus three shops; VitaminD (m4): ก 180/box, ข 65/strip, ค none; the cream (m8): ก 45/tube; house h5: ก 25/strip
+      const item = (medicationId: string) => ({ kind: 'med', medicationId }) as const;
+      return {
+        ...blank,
+        persons: PERSONS,
+        medications: [...MEDICATIONS, ...EXTRA_MEDICATIONS],
+        assignments: [...ASSIGNMENTS, CREAM],
+        events: [...EVENTS, start(CREAM)],
+        houseItems: HOUSE,
+        shops: [
+          { id: 's1', name: 'ร้านทดสอบ ก', delivery: { kind: 'pickup' } },
+          { id: 's2', name: 'ร้านทดสอบ ข', delivery: { kind: 'pickup' } },
+          { id: 's3', name: 'ร้านทดสอบ ค', delivery: { kind: 'pickup' } },
+        ],
+        prices: [
+          { id: 'pr1', shopId: 's1', item: item('m4'), price: 180, sellUnit: 'กล่อง', perSellUnit: 30, date: '2026-10-20' },
+          { id: 'pr2', shopId: 's2', item: item('m4'), price: 65, sellUnit: 'แผง', perSellUnit: 10, date: '2026-10-12' },
+          { id: 'pr3', shopId: 's1', item: item('m8'), price: 45, sellUnit: 'หลอด', perSellUnit: 1, date: '2026-10-20' },
+          { id: 'pr4', shopId: 's1', item: { kind: 'house', houseItemId: 'h5' }, price: 25, sellUnit: 'แผง', perSellUnit: 1, date: '2026-10-20' },
+        ],
+      };
+    }
+    case 'members':
+      return { ...blank, persons: MEMBERS_DEMO_PERSONS, medications: MEDICATIONS, assignments: ASSIGNMENTS, events: EVENTS, houseItems: HOUSE };
     case 'notdaily':
       return { ...blank, persons: PERSONS, medications: [...MEDICATIONS, ...EXTRA_MEDICATIONS], assignments: [...ASSIGNMENTS, NOT_DAILY], events: [...EVENTS, start(NOT_DAILY)], houseItems: HOUSE };
   }
