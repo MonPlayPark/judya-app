@@ -1,0 +1,140 @@
+/* v3 shops page (M4 PR 11.3a). Same head / card / rows as the order page (11.2); colours only from tokens.css. Rows and buttons are 44px or more. */
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--color-background);
+  font-family: var(--font-sans);
+}
+.demo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 6px var(--screen-pad);
+  background: var(--color-warning-tint);
+  color: var(--color-warning-ink);
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+}
+.head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 6px 12px 12px;
+  background: var(--color-band);
+}
+.round {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: var(--color-navy);
+  cursor: pointer;
+}
+.title {
+  min-width: 0;
+  margin: 0;
+  font-size: calc(20px * var(--fs));
+  line-height: calc(28px * var(--fs));
+  font-weight: var(--weight-bold);
+  color: var(--color-navy);
+}
+.body {
+  flex: 1;
+  padding: 12px 12px 96px;
+}
+.card {
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  box-shadow: var(--elevation-1);
+  overflow: hidden;
+}
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rows li + li {
+  border-top: 1px solid var(--color-border);
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 64px;
+  padding: 10px 12px 10px 16px;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.name {
+  font-size: calc(16px * var(--fs));
+  line-height: calc(24px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-navy);
+  overflow-wrap: anywhere;
+}
+.sub {
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  color: var(--color-ink-muted);
+  overflow-wrap: anywhere;
+}
+.chevron {
+  flex: none;
+  display: flex;
+  color: var(--color-ink-muted);
+}
+.addButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-sizing: border-box;
+  width: calc(100% - 24px);
+  min-height: 48px;
+  margin: 8px 12px 12px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-tint);
+  color: var(--color-primary-ink);
+  font-family: inherit;
+  font-size: calc(15px * var(--fs));
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+.emptyTitle {
+  margin: 16px 16px 0;
+  font-size: calc(16px * var(--fs));
+  line-height: calc(24px * var(--fs));
+  font-weight: var(--weight-semibold);
+  color: var(--color-navy);
+}
+.emptyText {
+  margin: 4px 16px 8px;
+  font-size: calc(14px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  color: var(--color-ink-muted);
+}

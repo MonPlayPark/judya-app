@@ -123,7 +123,7 @@ describe('checking a backup file', () => {
 
   it('a file with a broken reference between tables -> invalid', () => {
     const root = sampleRootV3();
-    root.orders[0]!.shopId = 'gone';
+    root.orders[0]!.lines[0]!.source = { kind: 'med', medicationId: 'gone', shares: [{ assignmentId: 'a1', qty: 1 }] };
     expect(summarizeBackup(JSON.stringify(root))).toEqual({ ok: false, error: 'invalid' });
   });
 
@@ -333,5 +333,19 @@ describe('storage keys', () => {
     expect(localStorage.getItem('old.app')).toBe('v2 data');
     expect(localStorage.getItem('old.app.prev')).toBe('v2 prev');
     localStorage.clear();
+  });
+});
+
+describe('backup files with orders (M4 PR 11.1)', () => {
+  it('a backup of the new order shape reads back the same', () => {
+    const root = sampleRootV3();
+    const r = summarizeBackup(JSON.stringify(root));
+    expect(r.ok && r.root.orders).toEqual(root.orders);
+  });
+  it('a backup file with the older order shape -> invalid', () => {
+    const root = JSON.parse(JSON.stringify(sampleRootV3()));
+    root.orders[0].lines[0].source = { kind: 'assignment', assignmentId: 'a1' };
+    delete root.orders[0].shopName;
+    expect(summarizeBackup(JSON.stringify(root))).toEqual({ ok: false, error: 'invalid' });
   });
 });

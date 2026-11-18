@@ -2,6 +2,140 @@
 
 Read `CLAUDE.md` and `docs/BRIEF.md` first. Update this file at the end of every session.
 
+## M4 PR 11.4 — order history, cancel, "สั่งซ้ำ" (5 พ.ย. 2569)
+
+Branch `m4-pr11-order` (PR #39, draft). The clock button on `#/n/order` opens the history in the same page (`?screen=history`, ticked lines kept): pills ทั้งหมด / รอรับของ / รับแล้ว, one card per order (date, shop, N รายการ, status chip, total), "ยกเลิกใบสั่ง" for `waiting` only (one write, `closedAt`, stock untouched), "สั่งซ้ำ" for received / cancelled (adds to the list, nothing removed, reason "สั่งซ้ำ", shop cleared). Faded "เร็ว ๆ นี้" buttons: รับของแล้ว, รับของที่เหลือ, ไม่รอแล้ว (11.5). Fixes: faded "บันทึกว่าสั่งแล้ว"; bar + menu in one sticky box. Test link: `#/n/order?demo=normal&screen=history&orders=history`. Details and own decisions: DECISIONS "M4 PR 11.4".
+
+### Status
+tsc, `npm test` 1054 pass (1014 before), build pass, JS gzip 161.29 kB (158.69 before). `check:overflow`: see the PR comment. Pictures: branch `shots-pr11-4`.
+
+### Left for later (do not start before the owner says)
+11.5 receiving + stock (changes an order to `partial` / `received`), 11.6 Home buttons.
+
+### Waiting for the owner
+A look at the pictures and the "decided on my own" list (card icon, total with only a fee, "สั่งซ้ำ" counting).
+
+## M4 PR 11.3b-2b — "สั่งแล้วใช่ไหม" sheet and saving the order (4 พ.ย. 2569)
+
+Branch `m4-pr11-order` (PR #39, draft). On `#/n/order` with a shop chosen: "บันทึกว่าสั่งแล้ว" (and a copy / LINE that worked) opens "สั่งแล้วใช่ไหม"; "สั่งแล้ว" writes one `waiting` order plus the prices typed there with ONE `saveRoot`, the booked lines leave the list, toast "บันทึกใบสั่งแล้ว"; "ยังไม่ได้สั่ง" saves nothing. Medicines on a `waiting` / `partial` order start unticked with the badge "สั่งแล้ว รอรับ". **Still no** history, receiving, Home button or stock cut.
+
+### Status
+tsc, build, `npm test` 1011 pass (975 before), JS 567.16 kB / gzip 158.44 kB (156.80 before), `check:overflow` 1440 checks, 0 problems. Details: DECISIONS "M4 PR 11.3b-2b" (locked by the owner / decided on my own). Pictures: branch `shots-pr11-3b2b`.
+
+### What is there now
+- `domain/v3/orderPlace.ts` (`placeOrder`, `shortestAssignmentId`), `markOnOrder` in `orderLines.ts`, `withDemoWaitingOrder` in `orderDemo.ts` (link `&orders=waiting`).
+- `pages/v3/OrderBook.tsx` (+css): the sheet; `OrderCompare.tsx` now exports `PriceRow` / `PriceSheet`. `OrderView` props `nowIso`, `onRoot`.
+
+### Fix 4–5 พ.ย.: buttons overlapping on the order page
+The floating message sat on top of the bottom bar's blue button and the button had the browser's grey border; both fixed (details and causes: DECISIONS "fix ซ้อนทับ 4–5 พ.ย."). "ดูข้อความสั่งยา" is faded and does nothing while 0 lines are ticked. Tests 1014, JS gzip 158.69 kB, `check:overflow` 2040 checks (now also measures overlaps, the floating message and the end of the page), pictures on branch `shots-pr11-3b2b-fix`. Not changed but worth a look: the bar's `bottom: 72px` is 1–5px shorter than the real menu height; "บันทึกว่าสั่งแล้ว" has no faded look when disabled.
+
+### Left for later (do not start before the owner says)
+11.4 history / cancel / reorder (the clock button is still `ComingSoon`), 11.5 receiving + stock, 11.6 Home buttons.
+
+### Waiting for the owner
+A look at the pictures and the "decided on my own" list (mainly: no `unitPrice` when the price was converted from another unit).
+
+## M4 PR 11.3b-2a — compare shops, choose a shop, add prices (2 พ.ย. 2569)
+
+Branch `m4-pr11-order` (PR #39, draft). On `#/n/order`: card "เทียบราคา N ร้าน" under the ticked list (switch "รวมค่าส่ง", one card per shop, "ถูกที่สุด", yellow "ไม่รวม N รายการ", "ใส่ราคา" sheet), tapping a card chooses the shop, the message follows the shop type, the TEMP switch is gone. With no shop: big "เพิ่มร้านแรก" (opens the 11.3a form). **Still no order is saved** (no "สั่งแล้วใช่ไหม" sheet, history, receiving, Home button, stock cut). The page now also writes shops and remembered prices, only through `saveRoot`.
+
+### Fix 3 พ.ย.
+`freeOver` is no longer counted: `orderCompare` charges the fee for a delivery shop with a priced line; no `freeShipping` / `buyMore*`; `shopSub` has no "ซื้อครบ"; `feeLine(shop, includeShipping)`. Data still keeps `freeOver`. Both open questions are decided (DECISIONS "ตัดสินแล้ว 3 พ.ย.").
+
+### Status
+tsc, build, `npm test` 975 pass (938 before), JS 560.63 kB / gzip 156.80 kB after the 3 พ.ย. fix (156.97 before), `check:overflow` 1356 checks, 0 problems. Details and own decisions: DECISIONS "M4 PR 11.3b-2a". Screenshots: branch `shots-pr11-3b2a`.
+
+### What is there now
+- `domain/v3/orderShops.ts` (compare lines, `modeOfShop`, `cheapestShopIds`, `priceableMissing`, `saveShopPrices` via `upsertPrice`, `feeLine`, `baht`); `buildOrderMessage` / `recipientMissing` accept mode `null` (no shop).
+- `pages/v3/OrderCompare.tsx` (+css): card and price sheet. `OrderMessage.tsx`: "ร้านที่เลือก" part, "เปิด LINE", "โทรหาร้าน", faded "บันทึกว่าสั่งแล้ว" with "เร็ว ๆ นี้".
+- Demo links: `&shops=three`, `&shop=s1|s2|s3`, `&sheet=prices&shop=s3`, `&sheet=shop`, `&shipping=off`. `&mode=pickup` was removed.
+
+### Left for later (do not start before the owner says)
+11.3b-2b: "สั่งแล้วใช่ไหม" sheet and saving the order, then history, receiving, Home button, stock cut.
+
+### Waiting for the owner
+Nothing open for 11.3b-2a.
+
+## M4 PR 11.3b-1 — order message, recipient, copy and LINE (2 พ.ย. 2569)
+
+Branch `m4-pr11-order` (PR #39, draft). On `#/n/order`: a card "ข้อความสั่งยา" with the recipient bar (opens a sheet: address, name, phone), a TEMP switch "ส่งถึงบ้าน / มารับเอง" (11.3b-2 replaces it with the shop), a read-only preview, and "คัดลอกข้อความ" / "ส่งทาง LINE". **No order is saved.** The recipient is three optional settings saved with `saveRoot`; it is not in the backup file (rule of PR 6c; a new device needs it typed again). Data version stays 3; `orderTemplate` untouched.
+
+### Status
+See DECISIONS "M4 PR 11.3b-1" for every choice made on my own. Checks and numbers are in the PR comment.
+
+### What is there now
+- `domain/v3/orderMessage.ts` (`buildOrderMessage`, `messageItems`, `recipientMissing`, `lineLink`, `lineLinkTooLong`), `domain/v3/recipient.ts` (`checkRecipient`, `withRecipient`, `recipientOf`).
+- `pages/v3/OrderMessage.tsx` (+ css): the card and the recipient sheet. `OrderPage.tsx` is the only order file that names `saveRoot`.
+
+### Left for later (do not start before the owner says)
+11.3b-2: shop choice replaces the TEMP switch, shop comparison, the "สั่งแล้วใช่ไหม" sheet, saving the order. Then 11.4–11.6.
+
+### Waiting for the owner
+Two questions at the end of DECISIONS "M4 PR 11.3b-1", and a look at the screenshots (branch `shots-pr11-3b1`).
+
+## M4 PR 11.3a — shop form and the "ร้านค้า" page (2 พ.ย. 2569)
+
+Branch `m4-pr11-order` (PR #39). **First step that writes to storage:** `#/n/shops` (link only, `?demo=normal|empty|long`) lists shops and adds / edits / deletes them in `judya.v3` through `saveRoot`. Nothing else writes. No button on Home or the order page; 11.3b (compare card, LINE text, "สั่งแล้วใช่ไหม" sheet, saving an order) is **not** started. Details and points to check: `docs/DECISIONS.md` "M4 PR 11.3a".
+
+### Status
+`npx tsc`, `npm test` 877 pass (828 before), `npm run build` pass (JS gzip 149.62 kB, was 146.25), `npm run check:overflow` see the PR comment for the last run. Schema and data version (3) unchanged.
+
+### What is there now
+- `domain/v3/shops.ts`: `addShop`, `updateShop` (keeps `freeOver`), `deleteShop` (shop + its prices, orders stay), `shopLine`, `SHOP_ERROR_TEXT`. `shopsDemo.ts`.
+- `components/v3/ShopForm.tsx`: one component (sheet + delete question), props `shop?`, `onSave`, `onCancel`, `onDelete?`; reusable by PR 14.
+- `pages/v3/ShopsPage.tsx` (route, demo / live), `ShopsV3.tsx` (list, toast).
+
+### Left for later (do not start before the owner says)
+11.3b, 11.4, 11.5, 11.6 as in the 11.2 notes below.
+
+### Waiting for the owner
+Two questions at the end of DECISIONS "M4 PR 11.3a", and a look at the form (screenshots on branch `shots-pr11-3a`).
+
+
+## M4 PR 11.2 — order draft page and "add an item" sheet (1 พ.ย. 2569)
+
+Branch `m4-pr11-order` (PR #39). First screen of the order work: `#/n/order` (test links only: `?demo=normal|nolow|nomeds`, `&sheet=add&tab=meds|new[&name=…]`, `&sheet=unit[&item=med:m1]`). Not tied to Home (that is 11.6). **Nothing is written to storage** (tests prove it). Details and the points to check: `docs/DECISIONS.md` "M4 PR 11.2".
+
+### Status
+`npm test` 828 pass (762 before); `npx tsc`, `npm run build` pass; `npm run check:overflow` 0 problems at 360 / 412px and 3 font sizes (the order page, both sheets and 15 pressed states are in `scripts/check-overflow.mjs`).
+
+### What is there now
+- `orderDraft.ts`: pick list (`orderCandidates`), sell-as choices (`sellUnitChoices`), `changeSellUnit`, `qtyText`, `stepLine`, `defaultPerSellUnit`. `orderLines.ts`: `makeManualLine`, `makeFreeLine` with `medKind` / `strength` / `addToList`. `schema.ts`: free source has optional `medKind`, `strength`.
+- `OrderPage.tsx` (route, demo / live), `OrderV3.tsx` (list, bottom bar), `OrderSheets.tsx` (add sheet, unit sheet). The draft is `DraftLine[]` in component state.
+
+### Left for later (do not start before the owner says)
+- 11.3: compare 3 shops, shipping switch, LINE text, "สั่งแล้วใช่ไหม" sheet = the only place that writes (build the order from the ticked `DraftLine`s; rebuild `shares` when a quantity was changed; store `shopName`, `shippingFee`; save the remembered price). The "ดูข้อความสั่งยา" button and the total "–" are waiting for it.
+- 11.4 history (the clock button is `ComingSoon`), 11.5 receiving, 11.6 Home buttons.
+
+### Waiting for the owner
+Two questions at the end of DECISIONS "M4 PR 11.2" (house medicine that is not counted, kind labels, the ticked ask-later box), and a look at what I designed myself (unit sheet, empty states).
+
+### Owner's test
+A PR that is not merged is not on GitHub Pages. To look at it now: on a computer run `npm run build` then `npm run preview -- --host`, open the shown network address on the phone (same Wi-Fi) and add `#/n/order?demo=normal` after `/judya-app/`.
+
+
+## M4 PR 11.1 — order data and rules, domain only (1 พ.ย. 2569)
+
+Branch `m4-pr11-order` (draft PR). Domain only; the app looks exactly the same. Details and the points to check: `docs/DECISIONS.md` "M4 PR 11.1".
+
+### Status
+`npm test` 762 pass (684 before); `npm run build` passes. No file in `pages/`, `components/`, `App.tsx`, `HomeV3.tsx` changed; only `judya.v3` / `judya.v3.prev` are used.
+
+### What is there now
+- `schema.ts`: order line source `med { medicationId, shares[] }`; order has `shopName`, `shippingFee?`, `closedAt?`; new reference check (medication, share -> assignment of that medication). Order `shopId` is no longer checked (a shop can be deleted; the order keeps its name).
+- `prices.ts`: `upsertPrice`, `latestPrice`, `latestPriceAnyShop`, `checkEnteredPrice`.
+- `orderLines.ts`: `buildOrderLines` (auto list, tubes, shares), `makeFreeLine`, `findNameClash`.
+- `orderCompare.ts`: `compareShops` (counts only priced lines, delivery, free-over, unit conversion).
+
+### Left for later (do not start before the owner says)
+- 11.2: the order page and "สั่งแล้ว" (build the stored order from `DraftLine`s, rebuild `shares` if the owner changes a quantity, store `shopName` and `shippingFee`).
+- Receiving: split received stock by shares, tubes fewer than people, kind `other` not updated, never-counted warning. Rules are written in DECISIONS.
+- Wire the Home buttons (two "coming soon" spots in `HomeV3.tsx`).
+
+### Waiting for the owner
+Two questions at the end of DECISIONS "M4 PR 11.1" (order of shops with missing prices; stricter unit rule for house medicines).
+
+
 ## M4 PR 7b — v2 is gone (1 พ.ย. 2569)
 
 Branch `ccr-1ee8bdd6-ct7h60`. All v2 code is deleted (137 files); the app is v3 only. Every unknown route opens v3 Home. The `v3theme` values now live in `:root` of `src/styles/tokens.css` and the `.v3theme` class is gone. Nothing deletes the owner's old v2 key (it just stays in the phone). The full list of what was kept, what was deleted and why: `docs/DECISIONS.md` "M4 PR 7b".

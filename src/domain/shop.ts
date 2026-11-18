@@ -54,11 +54,11 @@ export function firstShopError(errors: Partial<Record<ShopField, ShopFieldError>
   return undefined;
 }
 
-/** How the shop gets the medicine to you, in words: 'ไปรับเองที่ร้าน' / 'ให้ร้านส่ง ค่าส่ง ฿40 · ซื้อครบ ฿1000 ส่งฟรี' / 'ให้ร้านส่ง ส่งฟรี'. */
+/** How the shop gets the medicine to you, in words: 'ไปรับเองที่ร้าน' / 'ให้ร้านส่ง ค่าส่ง ฿40' / 'ให้ร้านส่ง ส่งฟรี' (fee 0). `freeOver` is kept in the data but never shown. */
 export function deliveryText(delivery: Shop['delivery']): string {
   if (delivery.kind === 'pickup') return 'ไปรับเองที่ร้าน';
   const fee = delivery.fee > 0 ? `ค่าส่ง ฿${delivery.fee}` : 'ส่งฟรี';
-  return delivery.freeOver !== undefined ? `ให้ร้านส่ง ${fee} · ซื้อครบ ฿${delivery.freeOver} ส่งฟรี` : `ให้ร้านส่ง ${fee}`;
+  return `ให้ร้านส่ง ${fee}`;
 }
 
 /** Second line of a shop in the list: phone (or that there is none) and the delivery words. */

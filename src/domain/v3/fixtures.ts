@@ -82,17 +82,17 @@ export function sampleRootV3(): Root {
     source, qtyOrdered: 2, sellUnit: 'แผง', perSellUnit: 10, unitPrice: 45, qtyReceived: 0, leftover: null, ...over,
   });
   const orders: Order[] = [
-    { id: 'o1', shopId: 's1', createdAt: NOW, status: 'waiting', includeShipping: false, lines: [line({ kind: 'assignment', assignmentId: 'a1' })] },
+    { id: 'o1', shopId: 's1', shopName: 'ร้านตัวอย่าง 1', createdAt: NOW, status: 'waiting', includeShipping: false, lines: [line({ kind: 'med', medicationId: 'm1', shares: [{ assignmentId: 'a1', qty: 20 }] })] },
     {
-      id: 'o2', shopId: 's2', createdAt: NOW, status: 'partial', includeShipping: true,
+      id: 'o2', shopId: 's2', shopName: 'ร้านตัวอย่าง 2', createdAt: NOW, status: 'partial', includeShipping: true, shippingFee: 40,
       lines: [
-        line({ kind: 'assignment', assignmentId: 'a2' }, { qtyReceived: 1, leftover: 'waiting' }),
+        line({ kind: 'med', medicationId: 'm2', shares: [{ assignmentId: 'a2', qty: 30 }] }, { qtyReceived: 1, leftover: 'waiting' }),
         line({ kind: 'house', houseItemId: 'h1' }, { perSellUnit: 1, qtyReceived: 2 }),
       ],
       note: 'ตัวอย่างรับบางส่วน',
     },
-    { id: 'o3', shopId: 's1', createdAt: NOW, status: 'received', includeShipping: false, lines: [line({ kind: 'free', name: 'ยาตัวอย่าง H' }, { unitPrice: undefined, qtyReceived: 2, addToList: true })] },
-    { id: 'o4', shopId: 's3', createdAt: NOW, status: 'cancelled', includeShipping: false, lines: [line({ kind: 'assignment', assignmentId: 'a3' }, { qtyReceived: 1, leftover: 'dropped' })] },
+    { id: 'o3', shopId: 's1', shopName: 'ร้านตัวอย่าง 1', createdAt: NOW, closedAt: NOW, status: 'received', includeShipping: false, lines: [line({ kind: 'free', name: 'ยาตัวอย่าง H' }, { unitPrice: undefined, qtyReceived: 2, addToList: true })] },
+    { id: 'o4', shopId: 's3', shopName: 'ร้านตัวอย่าง 3', createdAt: NOW, closedAt: NOW, status: 'cancelled', includeShipping: false, lines: [line({ kind: 'med', medicationId: 'm3', shares: [{ assignmentId: 'a3', qty: 60 }] }, { qtyReceived: 1, leftover: 'dropped' })] },
   ];
 
   return {

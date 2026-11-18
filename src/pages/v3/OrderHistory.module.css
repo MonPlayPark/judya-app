@@ -1,0 +1,70 @@
+/* v3 order history (M4 PR 11.4). Colours only from tokens.css; text sizes are px at "normal" times var(--fs); every button is 44px or more. */
+.filters { display: flex; gap: 8px; }
+.pill {
+  flex: 1;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-ink-muted);
+  font-family: inherit;
+  font-size: calc(15px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+.pill[aria-pressed='true'] { border-color: var(--color-primary); background: var(--color-primary-tint); color: var(--color-primary-ink); font-weight: var(--weight-bold); }
+
+.list { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.card { padding: 14px 14px 12px; border-radius: var(--radius-card); background: var(--color-surface); box-shadow: var(--elevation-1); }
+.top { display: flex; align-items: flex-start; gap: 10px; }
+.cardIcon { flex: none; width: 36px; height: 36px; border-radius: 50%; }
+.who { flex: 1; min-width: 0; }
+.date, .count, .unpriced { margin: 0; font-size: calc(14px * var(--fs)); line-height: calc(20px * var(--fs)); color: var(--color-ink-muted); }
+.shop { margin: 0; font-size: calc(16px * var(--fs)); line-height: calc(24px * var(--fs)); font-weight: var(--weight-bold); color: var(--color-navy); overflow-wrap: anywhere; }
+.side { flex: none; max-width: 46%; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; }
+.chip { display: inline-flex; align-items: center; gap: 4px; margin: 0; padding: 2px 8px; border-radius: 999px; font-size: calc(14px * var(--fs)); line-height: calc(20px * var(--fs)); font-weight: var(--weight-semibold); }
+.chip svg { flex: none; width: 16px; height: 16px; }
+.warn { background: var(--color-warning-tint); color: var(--color-warning-ink); }
+.ok { background: var(--color-success-tint); color: var(--color-success-ink); }
+.grey { background: var(--color-border); color: var(--color-hero-ink-muted); }
+.total { margin: 0; font-size: calc(18px * var(--fs)); line-height: calc(26px * var(--fs)); font-weight: var(--weight-bold); color: var(--color-navy); }
+.noPrice { margin: 0; font-size: calc(14px * var(--fs)); line-height: calc(20px * var(--fs)); color: var(--color-ink-muted); }
+.waitChip { margin-top: 8px; }
+
+.buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.buttons > * { flex: 1 1 140px; }
+.later, .cancel, .again, .dangerOutline {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  min-height: 48px;
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: calc(15px * var(--fs));
+  line-height: calc(20px * var(--fs));
+  font-weight: var(--weight-bold);
+  cursor: pointer;
+}
+.later { flex-direction: column; border: 1.5px solid transparent; cursor: not-allowed; }
+.laterMain { background: var(--color-border); color: var(--color-ink-muted); }
+.laterGrey { background: var(--color-surface); border-color: var(--color-border); color: var(--color-ink-muted); }
+.soonChip { padding: 0 8px; border-radius: 999px; background: var(--color-surface); color: var(--color-ink-muted); font-size: calc(14px * var(--fs)); line-height: calc(20px * var(--fs)); font-weight: var(--weight-semibold); }
+.cancel { border: 1.5px solid var(--color-border); background: var(--color-surface); color: var(--color-primary-ink); }
+.again { border: 0; background: var(--color-primary-tint); color: var(--color-primary-ink); }
+.again svg { flex: none; }
+
+.empty { padding: 24px 16px; border-radius: var(--radius-card); background: var(--color-surface); box-shadow: var(--elevation-1); text-align: center; }
+.emptyTitle { margin: 0; font-size: calc(16px * var(--fs)); line-height: calc(24px * var(--fs)); font-weight: var(--weight-semibold); color: var(--color-ink-muted); }
+
+.sheetMain { margin: 0 0 4px; font-size: calc(16px * var(--fs)); line-height: calc(24px * var(--fs)); font-weight: var(--weight-semibold); color: var(--color-navy); overflow-wrap: anywhere; }
+.sheetSmall { margin: 0 0 12px; font-size: calc(14px * var(--fs)); line-height: calc(20px * var(--fs)); color: var(--color-ink-muted); }
+.sheetError { display: flex; align-items: flex-start; gap: 6px; margin: 0 0 10px; font-size: calc(14px * var(--fs)); line-height: calc(20px * var(--fs)); font-weight: var(--weight-semibold); color: var(--color-error-ink); }
+.sheetError svg { flex: none; }
+.dangerOutline { width: 100%; border: 1.5px solid var(--color-error-ink); background: var(--color-surface); color: var(--color-error-ink); }

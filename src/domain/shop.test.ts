@@ -70,13 +70,17 @@ describe('shop texts and the form step', () => {
   const shop = (delivery: Shop['delivery'], phone?: string): Shop => ({ id: 's', name: 'ร้านทดสอบ', ...(phone ? { phone } : {}), delivery });
   it('delivery words', () => {
     expect(deliveryText({ kind: 'pickup' })).toBe('ไปรับเองที่ร้าน');
-    expect(deliveryText({ kind: 'deliver', fee: 40, freeOver: 1000 })).toBe('ให้ร้านส่ง ค่าส่ง ฿40 · ซื้อครบ ฿1000 ส่งฟรี');
+    expect(deliveryText({ kind: 'deliver', fee: 40, freeOver: 1000 })).toBe('ให้ร้านส่ง ค่าส่ง ฿40');
+    expect(deliveryText({ kind: 'deliver', fee: 0, freeOver: 1000 })).toBe('ให้ร้านส่ง ส่งฟรี');
     expect(deliveryText({ kind: 'deliver', fee: 0 })).toBe('ให้ร้านส่ง ส่งฟรี');
     expect(deliveryText({ kind: 'deliver', fee: 40 })).toBe('ให้ร้านส่ง ค่าส่ง ฿40');
   });
   it('list line: phone or "ยังไม่ใส่เบอร์โทร", then the delivery words', () => {
     expect(shopSub(shop({ kind: 'pickup' }))).toBe('ยังไม่ใส่เบอร์โทร · ไปรับเองที่ร้าน');
     expect(shopSub(shop({ kind: 'deliver', fee: 0 }, '081-234-5678'))).toBe('081-234-5678 · ให้ร้านส่ง ส่งฟรี');
+    const withLimit = shopSub(shop({ kind: 'deliver', fee: 40, freeOver: 500 }, '081-234-5678'));
+    expect(withLimit).toBe('081-234-5678 · ให้ร้านส่ง ค่าส่ง ฿40');
+    expect(withLimit).not.toContain('ซื้อครบ');
   });
   it('form <-> input: a delivery shop round-trips; a blank fee is refused; pick-up ignores the fee boxes', () => {
     const s = shop({ kind: 'deliver', fee: 40, freeOver: 500 }, '081-234-5678');
